@@ -141,6 +141,15 @@ class TestEventRelayReset:
         assert fut.cancelled()
         assert len(relay._waiters) == 0
 
+    @pytest.mark.asyncio
+    async def test_reset_clears_loop(self) -> None:
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+        relay.reset()
+        assert relay._loop is None
+        with pytest.raises(RuntimeError, match="no bound event loop"):
+            await relay.wait_for(SpawnEvent, timeout=0.01)
+
 
 class TestEventRelayRawEvents:
     """Tests for raw event dispatch."""

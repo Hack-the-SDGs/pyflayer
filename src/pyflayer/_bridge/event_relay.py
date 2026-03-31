@@ -52,10 +52,13 @@ class EventRelay:
         self._loop = loop
 
     def reset(self) -> None:
-        """Clean up JS handler references and pending waiters.
+        """Clean up JS handler references, pending waiters, and loop binding.
 
         Call on disconnect so that a subsequent ``connect()`` starts
-        with a clean slate.
+        with a clean slate.  Clearing ``_loop`` ensures that
+        ``wait_for()`` raises ``RuntimeError`` (surfaced as
+        ``PyflayerConnectionError`` by ``ObserveAPI``) when the bot
+        is not connected, rather than silently timing out.
         """
         self._js_handler_refs.clear()
         # Cancel all pending waiters
@@ -64,6 +67,7 @@ class EventRelay:
                 if not fut.done():
                     fut.cancel()
         self._waiters.clear()
+        self._loop = None
 
     def register_js_events(self, js_bot: Any, on_fn: Any) -> None:
         """Register ``@On`` handlers for core mineflayer events.
