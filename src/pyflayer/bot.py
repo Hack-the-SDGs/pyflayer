@@ -472,10 +472,16 @@ class Bot:
 
         Raises:
             PyflayerConnectionError: If the bot is not connected.
+            InventoryError: If *item_name* is not found in inventory.
         """
         ctrl = self._ensure_connected()
         if item_name is not None:
-            ctrl.equip_item(item_name)
+            try:
+                ctrl.equip_item(item_name)
+            except ValueError as exc:
+                from pyflayer.models.errors import InventoryError
+
+                raise InventoryError(str(exc)) from exc
         js_block = ctrl.block_at(
             int(reference_block.position.x),
             int(reference_block.position.y),
