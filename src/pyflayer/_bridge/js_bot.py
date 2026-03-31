@@ -55,7 +55,12 @@ class JSBotController:
         if self._config.auth is not None:
             options["auth"] = self._config.auth
         self._js_bot = mineflayer.createBot(options)
-        self._helpers = self._runtime.require(str(_JS_HELPERS_PATH))
+        try:
+            self._helpers = self._runtime.require(str(_JS_HELPERS_PATH.as_posix()))
+        except Exception as exc:
+            raise BridgeError(
+                f"Failed to load JS helpers at {_JS_HELPERS_PATH}: {exc}"
+            ) from exc
 
     @property
     def js_bot(self) -> Any:
