@@ -53,6 +53,10 @@ class TestPluginHostPathfinder:
         host.setup_pathfinder_movements()
         pf_mod.Movements.assert_called_once_with(js_bot, mcdata)
         js_bot.pathfinder.setMovements.assert_called_once_with(movements)
+        # Conservative defaults: no digging, no scaffolding
+        assert movements.canDig is False
+        assert movements.allow1by1towers is False
+        assert movements.scafoldingBlocks == []
 
     def test_set_goal_near(self) -> None:
         host, _rt, js_bot, pf_mod = self._make_host()
