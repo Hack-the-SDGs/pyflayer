@@ -31,7 +31,9 @@ E = TypeVar("E")
 
 _Handler = Callable[[E], Coroutine[Any, Any, None]]
 
-# Type mapping from EntityKind enum to JS entity type strings
+# Type mapping from EntityKind enum to JS entity type strings.
+# EntityKind.OTHER is intentionally omitted: mineflayer has no literal
+# "other" type, so OTHER acts as a catch-all with no JS type filter.
 _ENTITY_KIND_TO_JS: dict[EntityKind, str] = {
     EntityKind.PLAYER: "player",
     EntityKind.MOB: "mob",
@@ -39,7 +41,6 @@ _ENTITY_KIND_TO_JS: dict[EntityKind, str] = {
     EntityKind.HOSTILE: "hostile",
     EntityKind.PROJECTILE: "projectile",
     EntityKind.OBJECT: "object",
-    EntityKind.OTHER: "other",
 }
 
 
