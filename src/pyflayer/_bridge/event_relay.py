@@ -7,8 +7,6 @@ from collections import defaultdict
 from collections.abc import Coroutine
 from typing import Any, Callable
 
-_log = logging.getLogger(__name__)
-
 from pyflayer.models.events import (
     ChatEvent,
     DeathEvent,
@@ -21,6 +19,8 @@ from pyflayer.models.events import (
     WhisperEvent,
 )
 from pyflayer.models.vec3 import Vec3
+
+_log = logging.getLogger(__name__)
 
 
 class EventRelay:
