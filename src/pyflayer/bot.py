@@ -14,7 +14,7 @@ from pyflayer._bridge.runtime import BridgeRuntime
 from pyflayer.config import BotConfig
 from pyflayer.models.block import Block
 from pyflayer.models.entity import Entity, EntityKind
-from pyflayer.models.errors import NavigationError, NotSpawnedError
+from pyflayer.models.errors import ConnectionError, NavigationError, NotSpawnedError
 from pyflayer.models.events import GoalFailedEvent, GoalReachedEvent, SpawnEvent
 from pyflayer.models.vec3 import Vec3
 
@@ -206,7 +206,7 @@ class Bot:
     def _ensure_connected(self) -> JSBotController:
         """Return the controller or raise if not connected."""
         if self._controller is None or not self._connected:
-            raise NotSpawnedError("Bot is not connected.")
+            raise ConnectionError("Bot is not connected.")
         return self._controller
 
     # -- Lifecycle --
