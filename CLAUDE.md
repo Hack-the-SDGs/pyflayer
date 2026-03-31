@@ -280,7 +280,8 @@ class GoalFailedEvent:
 
 @dataclass(frozen=True)
 class BlockBrokenEvent:
-    block: Block
+    block_name: str
+    position: Vec3
 
 @dataclass(frozen=True)
 class CollectCompletedEvent:
