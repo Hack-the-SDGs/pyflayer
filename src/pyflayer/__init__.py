@@ -1,5 +1,6 @@
 """pyflayer -- A Python-first Mineflayer SDK."""
 
+from pyflayer.api.navigation import NavigationAPI
 from pyflayer.api.observe import ObserveAPI
 from pyflayer.bot import Bot
 from pyflayer.models.block import Block
@@ -26,6 +27,7 @@ __all__ = [
     "EntityKind",
     "InventoryError",
     "ItemStack",
+    "NavigationAPI",
     "NavigationError",
     "NotSpawnedError",
     "ObserveAPI",
