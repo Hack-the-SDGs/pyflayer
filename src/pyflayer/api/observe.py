@@ -26,14 +26,31 @@ class ObserveAPI:
         self._on_fn: Any = None
 
     def _bind_js(self, js_bot: Any, on_fn: Any) -> None:
-        """Store JS references and bind any queued raw events."""
+        """Store JS references and bind any queued or previously bound raw events.
+
+        On initial connect only events queued before ``Bot.connect()``
+        (``_pending_raw_events``) need binding.  On reconnect the
+        underlying JS handlers have been cleared by
+        ``EventRelay.reset()``, so all previously bound events must be
+        re-bound to the new JS context as well.
+        """
+        new_context = self._js_bot is not js_bot or self._on_fn is not on_fn
         self._js_bot = js_bot
         self._on_fn = on_fn
-        # Bind raw events that were registered before connect()
-        for event_name in self._pending_raw_events:
-            self._relay.bind_raw_js_event(js_bot, on_fn, event_name)
-            self._bound_raw_events.add(event_name)
-        self._pending_raw_events.clear()
+
+        if new_context and self._bound_raw_events:
+            # Re-bind all previously bound events to the new JS context
+            all_events = self._bound_raw_events | self._pending_raw_events
+            for event_name in all_events:
+                self._relay.bind_raw_js_event(js_bot, on_fn, event_name)
+            self._bound_raw_events = all_events
+            self._pending_raw_events.clear()
+        else:
+            # Initial connect: bind only queued events
+            for event_name in self._pending_raw_events:
+                self._relay.bind_raw_js_event(js_bot, on_fn, event_name)
+                self._bound_raw_events.add(event_name)
+            self._pending_raw_events.clear()
 
     @overload
     def on(self, event_type: type[E]) -> Callable[[_Handler[E]], _Handler[E]]: ...
