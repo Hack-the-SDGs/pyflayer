@@ -9,9 +9,9 @@ from pyflayer.config import BotConfig
 class JSBotController:
     """The sole holder of the JS bot proxy.
 
-    All methods are **synchronous** (they block on JSPyBridge IPC).
-    The public :class:`~pyflayer.bot.Bot` wraps them with
-    ``asyncio.to_thread``.
+    All methods are **synchronous** — they block on JSPyBridge IPC which
+    is fast enough to call directly.  The public :class:`~pyflayer.bot.Bot`
+    layer should *not* wrap these with ``asyncio.to_thread``.
     """
 
     def __init__(self, runtime: BridgeRuntime, config: BotConfig) -> None:
@@ -39,9 +39,17 @@ class JSBotController:
         """Raw JS bot proxy (for event binding)."""
         return self._js_bot
 
+    # -- Chat --
+
     def chat(self, message: str) -> None:
         """Send a chat message. Blocking."""
         self._js_bot.chat(message)
+
+    def whisper(self, username: str, message: str) -> None:
+        """Send a whisper to a player. Blocking."""
+        self._js_bot.whisper(username, message)
+
+    # -- State queries --
 
     def get_position(self) -> dict[str, float]:
         """Read bot position as ``{x, y, z}`` dict."""
@@ -49,16 +57,176 @@ class JSBotController:
         return {"x": float(pos.x), "y": float(pos.y), "z": float(pos.z)}
 
     def get_health(self) -> float:
-        """Read bot health (0-20)."""
+        """Read bot health (0–20)."""
         return float(self._js_bot.health)
 
     def get_food(self) -> float:
-        """Read bot food level (0-20)."""
+        """Read bot food level (0–20)."""
         return float(self._js_bot.food)
 
     def get_username(self) -> str:
         """Read bot username."""
         return str(self._js_bot.username)
+
+    def get_game_mode(self) -> str:
+        """Read current game mode (``"survival"``, ``"creative"``, etc.)."""
+        gm = self._js_bot.game.gameMode
+        return str(gm) if gm is not None else "unknown"
+
+    def get_players(self) -> Any:
+        """Return the raw JS ``bot.players`` object."""
+        return self._js_bot.players
+
+    def is_alive(self) -> bool:
+        """Whether the bot entity is alive (health > 0)."""
+        try:
+            return float(self._js_bot.health) > 0
+        except (TypeError, AttributeError):
+            return False
+
+    # -- World queries --
+
+    def block_at(self, x: int, y: int, z: int) -> Any | None:
+        """Return the raw JS Block at the given position, or ``None``."""
+        vec3_mod = self._runtime.require("vec3")
+        pos = vec3_mod.vec3(x, y, z)
+        block = self._js_bot.blockAt(pos)
+        return block
+
+    def find_blocks(
+        self,
+        block_name: str,
+        max_distance: float,
+        count: int,
+    ) -> list[Any]:
+        """Find blocks by name. Returns list of raw JS Block proxies."""
+        mcdata = self._js_bot.registry
+        block_type = mcdata.blocksByName.get(block_name)
+        if block_type is None:
+            return []
+        block_id = int(block_type.id)
+
+        positions = self._js_bot.findBlocks(
+            {
+                "matching": block_id,
+                "maxDistance": max_distance,
+                "count": count,
+            }
+        )
+        results: list[Any] = []
+        for pos in positions:
+            block = self._js_bot.blockAt(pos)
+            if block is not None:
+                results.append(block)
+        return results
+
+    def get_entity_by_filter(
+        self,
+        name: str | None,
+        entity_type: str | None,
+        max_distance: float,
+    ) -> Any | None:
+        """Find the nearest entity matching the filter criteria.
+
+        Returns the raw JS Entity proxy or ``None``.
+        """
+        bot_pos = self._js_bot.entity.position
+        best: Any = None
+        best_dist: float = max_distance
+
+        entities = self._js_bot.entities
+        for eid in entities:
+            entity = entities[eid]
+            if entity is None:
+                continue
+
+            # Skip the bot itself
+            if int(entity.id) == int(self._js_bot.entity.id):
+                continue
+
+            # Name filter
+            if name is not None:
+                ename = getattr(entity, "name", None) or getattr(
+                    entity, "username", None
+                )
+                if ename is None or str(ename) != name:
+                    continue
+
+            # Type filter
+            if entity_type is not None:
+                etype = getattr(entity, "type", None)
+                if etype is None or str(etype) != entity_type:
+                    continue
+
+            # Distance check
+            epos = entity.position
+            dx = float(epos.x) - float(bot_pos.x)
+            dy = float(epos.y) - float(bot_pos.y)
+            dz = float(epos.z) - float(bot_pos.z)
+            dist = (dx * dx + dy * dy + dz * dz) ** 0.5
+
+            if dist < best_dist:
+                best_dist = dist
+                best = entity
+
+        return best
+
+    # -- Actions --
+
+    def dig(self, js_block: Any) -> None:
+        """Dig a block. Blocking — calls ``bot.dig(block)`` synchronously.
+
+        This calls the async JS method via ``.valueOf()`` to wait for
+        completion on the bridge thread.
+        """
+        self._js_bot.dig(js_block)
+
+    def place_block(
+        self,
+        js_reference_block: Any,
+        face_x: float,
+        face_y: float,
+        face_z: float,
+    ) -> None:
+        """Place a block against a reference block face. Blocking."""
+        vec3_mod = self._runtime.require("vec3")
+        face_vec = vec3_mod.vec3(face_x, face_y, face_z)
+        self._js_bot.placeBlock(js_reference_block, face_vec)
+
+    def equip_item(self, item_name: str) -> None:
+        """Equip an item by name to the hand. Blocking."""
+        inv = self._js_bot.inventory
+        items = inv.items()
+        for item in items:
+            if str(item.name) == item_name:
+                self._js_bot.equip(item, "hand")
+                return
+
+    def attack(self, js_entity: Any) -> None:
+        """Attack an entity. Blocking."""
+        self._js_bot.attack(js_entity)
+
+    def use_item(self) -> None:
+        """Activate the held item. Blocking."""
+        self._js_bot.activateItem()
+
+    # -- Movement --
+
+    def look_at(self, x: float, y: float, z: float) -> None:
+        """Rotate to look at a position. Blocking."""
+        vec3_mod = self._runtime.require("vec3")
+        pos = vec3_mod.vec3(x, y, z)
+        self._js_bot.lookAt(pos)
+
+    def jump(self) -> None:
+        """Set the jump control state for one tick."""
+        self._js_bot.setControlState("jump", True)
+
+    def clear_control_states(self) -> None:
+        """Stop all movement controls."""
+        self._js_bot.clearControlStates()
+
+    # -- Lifecycle --
 
     def quit(self) -> None:
         """Graceful disconnect. Blocking."""
