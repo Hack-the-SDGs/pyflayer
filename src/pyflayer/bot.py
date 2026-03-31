@@ -513,26 +513,32 @@ class Bot:
 
         ctrl.set_goal_near(x, y, z, radius)
 
-        try:
-            done, pending = await asyncio.wait(
-                [asyncio.ensure_future(reached_fut), asyncio.ensure_future(failed_fut)],
-                return_when=asyncio.FIRST_COMPLETED,
-            )
-        except asyncio.TimeoutError:
-            ctrl.stop_pathfinder()
-            raise NavigationError("Navigation timed out")
+        done, pending = await asyncio.wait(
+            [asyncio.ensure_future(reached_fut), asyncio.ensure_future(failed_fut)],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
 
         for task in pending:
             task.cancel()
 
+        # Inspect completed tasks — translate exceptions into NavigationError
+        events: list[object] = []
+        for task in done:
+            exc = task.exception()
+            if exc is not None:
+                ctrl.stop_pathfinder()
+                if isinstance(exc, asyncio.TimeoutError):
+                    raise NavigationError("Navigation timed out") from exc
+                raise NavigationError(f"Navigation failed: {exc}") from exc
+            events.append(task.result())
+
         # Both futures may complete together (path_stop always fires after
-        # goal_reached).  Prioritize success: if GoalReachedEvent is among
-        # the results, treat navigation as successful.
-        events = [task.result() for task in done]
+        # goal_reached).  Prioritize success.
         if any(isinstance(e, GoalReachedEvent) for e in events):
             return
         failed = next((e for e in events if isinstance(e, GoalFailedEvent)), None)
         if failed is not None:
+            ctrl.stop_pathfinder()
             raise NavigationError(f"Navigation failed: {failed.reason}")
 
     async def look_at(self, x: float, y: float, z: float) -> None:
