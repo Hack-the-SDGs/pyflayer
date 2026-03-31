@@ -269,13 +269,18 @@ class Bot:
         self._connected = True
 
     async def disconnect(self) -> None:
-        """Disconnect from the server and clean up."""
-        if not self._connected:
-            return
+        """Disconnect from the server and clean up resources.
+
+        Safe to call even after a remote disconnect — the runtime and
+        controller are always cleaned up if they exist.
+        """
         if self._controller is not None:
-            self._controller.quit()
+            if self._connected:
+                self._controller.quit()
+            self._controller = None
         if self._runtime is not None:
             self._runtime.shutdown()
+            self._runtime = None
         self._connected = False
         self._spawned = False
 
