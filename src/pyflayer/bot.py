@@ -426,6 +426,8 @@ class Bot:
 
         Raises:
             PyflayerConnectionError: If the bot is not connected.
+            PyflayerError: If the block is no longer present (chunk
+                unloaded or block changed).
         """
         ctrl = self._ensure_connected()
         # We need the JS block proxy, so re-query by position
@@ -435,7 +437,12 @@ class Bot:
             int(block.position.z),
         )
         if js_block is None:
-            return
+            from pyflayer.models.errors import PyflayerError
+
+            raise PyflayerError(
+                f"Block at {block.position} is no longer available "
+                "(chunk unloaded or block changed)"
+            )
         ctrl.dig(js_block)
 
     async def place_block(
@@ -465,7 +472,12 @@ class Bot:
             int(reference_block.position.z),
         )
         if js_block is None:
-            return
+            from pyflayer.models.errors import PyflayerError
+
+            raise PyflayerError(
+                f"Block at {reference_block.position} is no longer available "
+                "(chunk unloaded or block changed)"
+            )
         ctrl.place_block(js_block, face.x, face.y, face.z)
 
     async def use_item(self) -> None:
