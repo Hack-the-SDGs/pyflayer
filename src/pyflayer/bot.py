@@ -73,6 +73,7 @@ class Bot:
         self._spawned = False
         self._plugin_host: PluginHost | None = None
         self._navigation: NavigationAPI | None = None
+        self._on_end_handler: object | None = None
 
     def _ensure_connected(self) -> JSBotController:
         """Return the controller or raise if not connected."""
@@ -135,10 +136,18 @@ class Bot:
 
         # Register internal EndEvent handler *before* setting _connected,
         # so an immediate "end" event (e.g. connection refused) is caught.
+        # Remove any previous handler to avoid accumulation on reconnect.
+        if self._on_end_handler is not None:
+            try:
+                self._relay.remove_handler(EndEvent, self._on_end_handler)  # type: ignore[arg-type]
+            except ValueError:
+                pass  # Already removed by reset()
+
         async def _on_end(_event: EndEvent) -> None:
             self._connected = False
             self._spawned = False
 
+        self._on_end_handler = _on_end
         self._relay.add_handler(EndEvent, _on_end)  # type: ignore[arg-type]
         self._connected = True
 
@@ -150,6 +159,7 @@ class Bot:
         """
         self._relay.reset()
         self._observe._reset()
+        self._on_end_handler = None
         if self._controller is not None:
             if self._connected:
                 self._controller.quit()
