@@ -453,11 +453,12 @@ class Bot:
             y: Target Y coordinate.
             z: Target Z coordinate.
         """
-        ctrl = self._ensure_connected()
-        ctrl.start_look_at(x, y, z)
-        event = await self._relay.wait_for(_LookAtDoneEvent, timeout=10.0)
-        if event.error is not None:
-            raise BridgeError(f"look_at failed: {event.error}")
+        async with self._look_at_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_look_at(x, y, z)
+            event = await self._relay.wait_for(_LookAtDoneEvent, timeout=10.0)
+            if event.error is not None:
+                raise BridgeError(f"look_at failed: {event.error}")
 
     async def jump(self) -> None:
         """Make the bot jump once."""
