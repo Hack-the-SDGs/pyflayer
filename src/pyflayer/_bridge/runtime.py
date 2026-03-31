@@ -34,6 +34,11 @@ class BridgeRuntime:
                 text=True,
                 timeout=5,
             )
+            if result.returncode != 0:
+                stderr = result.stderr.strip()
+                raise BridgeError(
+                    f"'node --version' failed (exit {result.returncode}): {stderr}"
+                )
             version_str = result.stdout.strip().lstrip("v")
             major = int(version_str.split(".")[0])
             if major < 18:
