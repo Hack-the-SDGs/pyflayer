@@ -54,14 +54,13 @@ class NavigationAPI:
             await self.stop()
 
         self._navigating = True
+        reached_fut = asyncio.ensure_future(
+            self._relay.wait_for(GoalReachedEvent, timeout=300.0)
+        )
+        failed_fut = asyncio.ensure_future(
+            self._relay.wait_for(GoalFailedEvent, timeout=300.0)
+        )
         try:
-            reached_fut = asyncio.ensure_future(
-                self._relay.wait_for(GoalReachedEvent, timeout=300.0)
-            )
-            failed_fut = asyncio.ensure_future(
-                self._relay.wait_for(GoalFailedEvent, timeout=300.0)
-            )
-
             self._host.set_goal_near(x, y, z, radius)
 
             done, pending = await asyncio.wait(
@@ -93,6 +92,13 @@ class NavigationAPI:
                     raise NavigationError(
                         f"Navigation failed: {result.reason}"
                     )
+        except BaseException:
+            reached_fut.cancel()
+            failed_fut.cancel()
+            await asyncio.gather(
+                reached_fut, failed_fut, return_exceptions=True
+            )
+            raise
         finally:
             self._navigating = False
 

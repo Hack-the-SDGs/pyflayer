@@ -8,7 +8,7 @@ import pytest
 from pyflayer._bridge.event_relay import EventRelay
 from pyflayer.api.navigation import NavigationAPI
 from pyflayer.models.entity import EntityKind
-from pyflayer.models.errors import NavigationError
+from pyflayer.models.errors import BridgeError, NavigationError
 from pyflayer.models.events import GoalFailedEvent, GoalReachedEvent
 from pyflayer.models.vec3 import Vec3
 
@@ -102,6 +102,22 @@ class TestNavigationGoto:
 
         assert observed == [True]
         assert nav.is_navigating is False
+
+    @pytest.mark.asyncio
+    async def test_goto_set_goal_near_error_cleans_up_futures(self) -> None:
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+        host = MagicMock()
+        host.set_goal_near.side_effect = BridgeError("pathfinder not ready")
+        ctrl = MagicMock()
+        nav = NavigationAPI(host, ctrl, relay)
+
+        with pytest.raises(BridgeError):
+            await nav.goto(10, 64, 20)
+
+        assert nav.is_navigating is False
+        assert len(relay._waiters.get(GoalReachedEvent, [])) == 0
+        assert len(relay._waiters.get(GoalFailedEvent, [])) == 0
 
 
 class TestNavigationFollow:

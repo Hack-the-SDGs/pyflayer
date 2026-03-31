@@ -107,3 +107,24 @@ class TestPluginHostPathfinder:
         js_bot.pathfinder.setGoal.side_effect = Exception("boom")
         with pytest.raises(BridgeError, match="set_goal_near"):
             host.set_goal_near(0, 0, 0, 1)
+
+    def test_set_goal_near_not_loaded_raises_bridge_error(self) -> None:
+        runtime = MagicMock()
+        js_bot = MagicMock()
+        host = PluginHost(runtime, js_bot)
+        with pytest.raises(BridgeError, match="load_pathfinder"):
+            host.set_goal_near(0, 0, 0, 1)
+
+    def test_set_goal_follow_not_loaded_raises_bridge_error(self) -> None:
+        runtime = MagicMock()
+        js_bot = MagicMock()
+        host = PluginHost(runtime, js_bot)
+        with pytest.raises(BridgeError, match="load_pathfinder"):
+            host.set_goal_follow(MagicMock(), 2.0)
+
+    def test_set_goal_follow_error_raises_bridge_error(self) -> None:
+        host, _rt, js_bot, _pf = self._make_host()
+        host.load_pathfinder()
+        js_bot.pathfinder.setGoal.side_effect = Exception("boom")
+        with pytest.raises(BridgeError, match="set_goal_follow"):
+            host.set_goal_follow(MagicMock(), 2.0)
