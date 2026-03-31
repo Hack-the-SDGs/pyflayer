@@ -97,6 +97,16 @@ def js_entity_to_entity(js_obj: Any) -> Entity:
     if js_name is not None:
         name = str(js_name)
 
+    metadata: dict | None = None
+    js_meta = getattr(js_obj, "metadata", None)
+    if js_meta is not None:
+        try:
+            raw = js_meta.valueOf()
+            if isinstance(raw, dict):
+                metadata = raw
+        except (AttributeError, TypeError):
+            pass
+
     return Entity(
         id=int(js_obj.id),
         name=name,
@@ -104,6 +114,7 @@ def js_entity_to_entity(js_obj: Any) -> Entity:
         position=position,
         velocity=velocity,
         health=health,
+        metadata=metadata,
     )
 
 

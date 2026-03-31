@@ -5,7 +5,8 @@ import asyncio
 import pytest
 
 from pyflayer._bridge.event_relay import EventRelay
-from pyflayer.bot import Bot, ObserveAPI
+from pyflayer.api.observe import ObserveAPI
+from pyflayer.bot import Bot
 from pyflayer.models.errors import PyflayerConnectionError
 from pyflayer.models.events import ChatEvent, SpawnEvent
 
