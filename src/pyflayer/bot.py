@@ -523,10 +523,9 @@ class Bot:
     async def jump(self) -> None:
         """Make the bot jump once."""
         ctrl = self._ensure_connected()
-        ctrl.jump()
-        # Brief delay then release
+        ctrl.set_control_state("jump", True)
         await asyncio.sleep(0.1)
-        self._controller._js_bot.setControlState("jump", False)  # type: ignore[union-attr]
+        ctrl.set_control_state("jump", False)
 
     async def stop(self) -> None:
         """Stop all movement and cancel pathfinding."""

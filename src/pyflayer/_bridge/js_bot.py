@@ -247,9 +247,15 @@ class JSBotController:
         pos = Vec3(x, y, z)
         self._js_bot.lookAt(pos)
 
-    def jump(self) -> None:
-        """Set the jump control state for one tick."""
-        self._js_bot.setControlState("jump", True)
+    def set_control_state(self, control: str, state: bool) -> None:
+        """Set a movement control state.
+
+        Args:
+            control: One of ``"forward"``, ``"back"``, ``"left"``,
+                ``"right"``, ``"jump"``, ``"sprint"``, ``"sneak"``.
+            state: ``True`` to activate, ``False`` to deactivate.
+        """
+        self._js_bot.setControlState(control, state)
 
     def clear_control_states(self) -> None:
         """Stop all movement controls."""
