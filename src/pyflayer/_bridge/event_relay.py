@@ -195,11 +195,10 @@ class EventRelay:
         self._waiters[event_type].append(fut)
         try:
             return await asyncio.wait_for(fut, timeout=timeout)
-        except asyncio.TimeoutError:
+        finally:
             waiters = self._waiters.get(event_type, [])
             if fut in waiters:
                 waiters.remove(fut)
-            raise
 
     # -- Internal dispatch --
 
