@@ -295,7 +295,7 @@ class CollectCompletedEvent:
 class PyflayerError(Exception):
     """所有 pyflayer 例外的基底類別"""
 
-class ConnectionError(PyflayerError):
+class PyflayerConnectionError(PyflayerError):
     """連線失敗或斷線"""
 
 class NotSpawnedError(PyflayerError):
