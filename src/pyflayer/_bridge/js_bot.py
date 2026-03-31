@@ -103,7 +103,7 @@ class JSBotController:
     ) -> list[Any]:
         """Find blocks by name. Returns list of raw JS Block proxies."""
         mcdata = self._js_bot.registry
-        block_type = mcdata.blocksByName.get(block_name)
+        block_type = getattr(mcdata.blocksByName, block_name, None)
         if block_type is None:
             return []
         block_id = int(block_type.id)
