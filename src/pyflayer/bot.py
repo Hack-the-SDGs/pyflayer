@@ -149,6 +149,7 @@ class Bot:
         controller are always cleaned up if they exist.
         """
         self._relay.reset()
+        self._observe._reset()
         if self._controller is not None:
             if self._connected:
                 self._controller.quit()

@@ -25,6 +25,18 @@ class ObserveAPI:
         self._js_bot: Any = None
         self._on_fn: Any = None
 
+    def _reset(self) -> None:
+        """Clear JS binding state so the next ``_bind_js()`` starts clean.
+
+        Called by ``Bot.disconnect()``.  User-registered handlers
+        (via ``on``/``on_raw``) are preserved across reconnect.
+        """
+        self._js_bot = None
+        self._on_fn = None
+        # Move bound events back to pending so they get rebound on reconnect
+        self._pending_raw_events.update(self._bound_raw_events)
+        self._bound_raw_events.clear()
+
     def _bind_js(self, js_bot: Any, on_fn: Any) -> None:
         """Store JS references and bind any queued or previously bound raw events.
 
