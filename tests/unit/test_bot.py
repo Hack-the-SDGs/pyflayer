@@ -82,13 +82,6 @@ class TestBotState:
 class TestEventRelayDispatch:
     """Tests for EventRelay dispatch mechanics."""
 
-    @pytest.fixture
-    def relay_with_loop(self) -> EventRelay:
-        relay = EventRelay()
-        loop = asyncio.get_event_loop()
-        relay.set_loop(loop)
-        return relay
-
     @pytest.mark.asyncio
     async def test_wait_for_resolves(self) -> None:
         relay = EventRelay()
