@@ -1,10 +1,13 @@
 """Bridge JS EventEmitter callbacks into asyncio dispatch."""
 
 import asyncio
+import logging
 import time
 from collections import defaultdict
 from collections.abc import Coroutine
 from typing import Any, Callable
+
+_log = logging.getLogger(__name__)
 
 from pyflayer.models.events import (
     ChatEvent,
@@ -218,6 +221,19 @@ class EventRelay:
             except RuntimeError:
                 pass
 
+    @staticmethod
+    def _on_handler_done(task: asyncio.Task[None]) -> None:
+        """Log exceptions from user event handlers."""
+        if task.cancelled():
+            return
+        exc = task.exception()
+        if exc is not None:
+            _log.exception(
+                "Unhandled exception in event handler %s",
+                task.get_name(),
+                exc_info=exc,
+            )
+
     def _dispatch(self, event_type: type, event: object) -> None:
         """Runs on the asyncio event loop thread."""
         for fut in self._waiters.pop(event_type, []):
@@ -225,10 +241,12 @@ class EventRelay:
                 fut.set_result(event)
         if self._loop is not None:
             for handler in self._handlers.get(event_type, []):
-                self._loop.create_task(handler(event))
+                task = self._loop.create_task(handler(event))
+                task.add_done_callback(self._on_handler_done)
 
     def _dispatch_raw(self, event_name: str, data: dict[str, Any]) -> None:
         """Dispatch raw events on the asyncio event loop thread."""
         if self._loop is not None:
             for handler in self._raw_handlers.get(event_name, []):
-                self._loop.create_task(handler(data))
+                task = self._loop.create_task(handler(data))
+                task.add_done_callback(self._on_handler_done)
