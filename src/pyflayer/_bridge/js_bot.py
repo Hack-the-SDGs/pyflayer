@@ -213,13 +213,15 @@ class JSBotController:
                 if int(entity.id) == int(self._js_bot.entity.id):
                     continue
 
-                # Name filter
+                # Name filter: check username first (players), then
+                # name (mobs/objects).  Player entities have name="player"
+                # so checking name first would never match by username.
                 if name is not None:
-                    ename = getattr(entity, "name", None) or getattr(
-                        entity, "username", None
-                    )
+                    ename = getattr(entity, "username", None)
                     if ename is None or str(ename) != name:
-                        continue
+                        ename = getattr(entity, "name", None)
+                        if ename is None or str(ename) != name:
+                            continue
 
                 # Type filter
                 if entity_type is not None:

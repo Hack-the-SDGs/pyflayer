@@ -93,7 +93,10 @@ def js_entity_to_entity(js_obj: Any) -> Entity:
             pass
 
     name: str | None = None
-    js_name = getattr(js_obj, "name", None) or getattr(js_obj, "username", None)
+    # Prefer username (set for players) over name (entity type string).
+    # Player entities have name="player", so checking name first would
+    # produce a misleading Entity.name value.
+    js_name = getattr(js_obj, "username", None) or getattr(js_obj, "name", None)
     if js_name is not None:
         name = str(js_name)
 

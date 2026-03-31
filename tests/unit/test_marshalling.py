@@ -106,6 +106,24 @@ class TestJsEntityToEntity:
         assert entity.velocity is None
         assert entity.health is None
 
+    def test_player_with_entity_name(self) -> None:
+        """Player entities in mineflayer have name='player' AND username='Steve'.
+
+        The marshaller must prefer username over the generic entity type name.
+        """
+        js_entity = SimpleNamespace(
+            id=1,
+            name="player",
+            username="Steve",
+            type="player",
+            position=_mock_vec3(0.0, 65.0, 0.0),
+            velocity=None,
+            health=None,
+        )
+        entity = js_entity_to_entity(js_entity)
+        assert entity.name == "Steve"
+        assert entity.kind is EntityKind.PLAYER
+
     def test_unknown_type(self) -> None:
         js_entity = SimpleNamespace(
             id=99,
