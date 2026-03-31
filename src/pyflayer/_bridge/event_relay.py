@@ -183,7 +183,11 @@ class EventRelay:
 
     async def wait_for(self, event_type: type, *, timeout: float = 30.0) -> Any:
         """Wait for a single event of the given type."""
-        assert self._loop is not None
+        if self._loop is None:
+            raise RuntimeError(
+                "EventRelay has no bound event loop. "
+                "Call Bot.connect() before waiting for events."
+            )
         fut: asyncio.Future[Any] = self._loop.create_future()
         self._waiters[event_type].append(fut)
         try:
