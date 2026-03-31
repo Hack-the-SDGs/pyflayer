@@ -52,6 +52,10 @@ class PluginHost:
         self, x: float, y: float, z: float, radius: float
     ) -> None:
         """Set a GoalNear target.  Pathfinder starts navigating immediately."""
+        if not self._pf_loaded:
+            raise BridgeError(
+                "set_goal_near failed: load_pathfinder() has not been called"
+            )
         try:
             goal = self._pf_goals.GoalNear(x, y, z, radius)
             self._js_bot.pathfinder.setGoal(goal)
@@ -65,6 +69,10 @@ class PluginHost:
             js_entity: Raw JS entity proxy to follow.
             distance: Desired follow distance in blocks.
         """
+        if not self._pf_loaded:
+            raise BridgeError(
+                "set_goal_follow failed: load_pathfinder() has not been called"
+            )
         try:
             goal = self._pf_goals.GoalFollow(js_entity, distance)
             self._js_bot.pathfinder.setGoal(goal, True)

@@ -79,7 +79,7 @@ class TestPluginHostPathfinder:
         host, _rt, js_bot, _pf = self._make_host()
         host.load_pathfinder()
         host.stop_pathfinder()
-        js_bot.pathfinder.setGoal.assert_called_with(None)
+        js_bot.pathfinder.setGoal.assert_called_once_with(None)
 
     def test_is_pathfinding_false(self) -> None:
         host, _rt, js_bot, _pf = self._make_host()
