@@ -176,10 +176,11 @@ class JSBotController:
     # -- Actions --
 
     def dig(self, js_block: Any) -> None:
-        """Dig a block. Blocking — calls ``bot.dig(block)`` synchronously.
+        """Dig a block. Blocking.
 
-        This calls the async JS method via ``.valueOf()`` to wait for
-        completion on the bridge thread.
+        Mineflayer's ``bot.dig()`` returns a Promise. JSPyBridge
+        transparently blocks until the promise settles, so this call
+        does not return until the dig animation finishes.
         """
         self._js_bot.dig(js_block)
 
