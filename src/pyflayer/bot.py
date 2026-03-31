@@ -501,10 +501,14 @@ class Bot:
 
         ctrl.set_goal_near(x, y, z, radius)
 
-        done, pending = await asyncio.wait(
-            [asyncio.ensure_future(reached_fut), asyncio.ensure_future(failed_fut)],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
+        try:
+            done, pending = await asyncio.wait(
+                [asyncio.ensure_future(reached_fut), asyncio.ensure_future(failed_fut)],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+        except asyncio.TimeoutError:
+            ctrl.stop_pathfinder()
+            raise NavigationError("Navigation timed out")
 
         for task in pending:
             task.cancel()
