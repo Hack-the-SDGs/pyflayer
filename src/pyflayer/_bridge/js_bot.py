@@ -88,8 +88,8 @@ class JSBotController:
 
     def block_at(self, x: int, y: int, z: int) -> Any | None:
         """Return the raw JS Block at the given position, or ``None``."""
-        vec3_mod = self._runtime.require("vec3")
-        pos = vec3_mod.vec3(x, y, z)
+        Vec3 = self._runtime.require("vec3").Vec3
+        pos = Vec3(x, y, z)
         block = self._js_bot.blockAt(pos)
         return block
 
@@ -189,8 +189,8 @@ class JSBotController:
         face_z: float,
     ) -> None:
         """Place a block against a reference block face. Blocking."""
-        vec3_mod = self._runtime.require("vec3")
-        face_vec = vec3_mod.vec3(face_x, face_y, face_z)
+        Vec3 = self._runtime.require("vec3").Vec3
+        face_vec = Vec3(face_x, face_y, face_z)
         self._js_bot.placeBlock(js_reference_block, face_vec)
 
     def equip_item(self, item_name: str) -> None:
@@ -214,8 +214,8 @@ class JSBotController:
 
     def look_at(self, x: float, y: float, z: float) -> None:
         """Rotate to look at a position. Blocking."""
-        vec3_mod = self._runtime.require("vec3")
-        pos = vec3_mod.vec3(x, y, z)
+        Vec3 = self._runtime.require("vec3").Vec3
+        pos = Vec3(x, y, z)
         self._js_bot.lookAt(pos)
 
     def jump(self) -> None:
