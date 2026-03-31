@@ -74,6 +74,12 @@ class Bot:
         self._plugin_host: PluginHost | None = None
         self._navigation: NavigationAPI | None = None
         self._on_end_handler: object | None = None
+        # Serialize long-running operations that use global completion
+        # events, preventing concurrent calls from stealing each other's
+        # completion signal.
+        self._dig_lock = asyncio.Lock()
+        self._place_lock = asyncio.Lock()
+        self._look_at_lock = asyncio.Lock()
 
     def _ensure_connected(self) -> JSBotController:
         """Return the controller or raise if not connected."""
@@ -335,21 +341,22 @@ class Bot:
             PyflayerError: If the block is no longer present.
             BridgeError: If the JS dig operation fails.
         """
-        ctrl = self._ensure_connected()
-        js_block = ctrl.block_at(
-            int(block.position.x),
-            int(block.position.y),
-            int(block.position.z),
-        )
-        if js_block is None:
-            raise PyflayerError(
-                f"Block at {block.position} is no longer available "
-                "(chunk unloaded or block changed)"
+        async with self._dig_lock:
+            ctrl = self._ensure_connected()
+            js_block = ctrl.block_at(
+                int(block.position.x),
+                int(block.position.y),
+                int(block.position.z),
             )
-        ctrl.start_dig(js_block)
-        event = await self._relay.wait_for(_DigDoneEvent, timeout=60.0)
-        if event.error is not None:
-            raise BridgeError(f"dig failed: {event.error}")
+            if js_block is None:
+                raise PyflayerError(
+                    f"Block at {block.position} is no longer available "
+                    "(chunk unloaded or block changed)"
+                )
+            ctrl.start_dig(js_block)
+            event = await self._relay.wait_for(_DigDoneEvent, timeout=60.0)
+            if event.error is not None:
+                raise BridgeError(f"dig failed: {event.error}")
 
     async def place_block(
         self,
