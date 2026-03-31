@@ -505,9 +505,15 @@ class Bot:
         for task in pending:
             task.cancel()
 
-        result = done.pop().result()
-        if isinstance(result, GoalFailedEvent):
-            raise NavigationError(f"Navigation failed: {result.reason}")
+        # Both futures may complete together (path_stop always fires after
+        # goal_reached).  Prioritize success: if GoalReachedEvent is among
+        # the results, treat navigation as successful.
+        events = [task.result() for task in done]
+        if any(isinstance(e, GoalReachedEvent) for e in events):
+            return
+        failed = next((e for e in events if isinstance(e, GoalFailedEvent)), None)
+        if failed is not None:
+            raise NavigationError(f"Navigation failed: {failed.reason}")
 
     async def look_at(self, x: float, y: float, z: float) -> None:
         """Rotate the bot to look at a position.
