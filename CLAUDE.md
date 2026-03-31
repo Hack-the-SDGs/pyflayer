@@ -147,18 +147,18 @@ asyncio.run(main())
 
 ### Bridge 層的 async 橋接策略
 
-JSPyBridge 的 callback 跑在它自己的 thread 上，不在 asyncio event loop 裡。bridge 層必須處理這個問題：
+JSPyBridge 的 callback 跑在它自己的 thread 上，不在 asyncio event loop 裡。bridge 層必須處理這個問題，且 **所有 JSPyBridge 呼叫必須固定在初始化它的同一個 thread 上（目前就是 asyncio event loop 所在的 thread）**：
 
-1. **JS → Python 事件**：JS 端的事件 callback 透過 `asyncio.get_event_loop().call_soon_threadsafe()` 將事件投遞到 asyncio loop。
-2. **Python → JS 呼叫**：公開 API 的 `await bot.chat(...)` 內部用 `asyncio.to_thread()` 或 `loop.run_in_executor()` 將 blocking 的 JSPyBridge 同步呼叫包裝成 awaitable。
-3. **等待型操作**：像 `goto()` 這種需要等 JS 端事件觸發才完成的操作，使用 `asyncio.Future`，由 event_relay 在收到對應事件時 resolve。
+1. **JS → Python 事件**：JS 端的事件 callback 透過 `asyncio.get_event_loop().call_soon_threadsafe()` 將事件投遞到 asyncio loop，由 loop thread 上的 event_relay 處理並轉成 Python 事件 / `Future` 完成。
+2. **Python → JS 呼叫**：公開 API 的 `await bot.chat(...)` 等方法，會在 **event loop thread 上直接以同步方式呼叫 JSPyBridge / mineflayer**，不使用 `asyncio.to_thread()` 或 `loop.run_in_executor()` 將呼叫搬到其他 thread，避免觸發 JSPyBridge「必須在初始化 thread 呼叫」的限制。
+3. **等待型操作**：像 `goto()` 這種需要等 JS 端事件觸發才完成的操作，會在 Python 端建立對應的 `asyncio.Future`，並由 JS → Python 的事件 relay 在收到對應事件時，在 asyncio loop thread 上 `set_result()` / `set_exception()` 來 resolve。
 
 ### 重要原則
 
 - 公開 API **全部** 是 `async def`（除了純資料存取的 property）
 - 使用者的 callback（透過 `bot.observe.on()`）也必須是 `async def`
-- Bridge 層內部允許使用 thread，但不暴露給使用者
-- 若 JSPyBridge 的同步呼叫可能阻塞超過 50ms，必須用 `run_in_executor` 包裝
+- Bridge 層內部允許使用 thread，但 JS ↔ Python 的橋接邏輯必須清楚分工：**JSPyBridge 呼叫只能在初始化它的 thread 上執行，不能被 `asyncio.to_thread()` / `run_in_executor()` 搬到其他 thread。**
+- 若某個 JS 行為可能在 JSPyBridge 同步呼叫中阻塞過久，**不得**直接把 JSPyBridge 呼叫包進 executor，而是應在 JS 端設計為非阻塞 / 事件驅動 API，並在 Python 端透過事件 + `asyncio.Future` 的方式等待完成。
 
 ---
 
