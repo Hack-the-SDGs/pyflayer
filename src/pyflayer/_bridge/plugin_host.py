@@ -83,11 +83,21 @@ class PluginHost:
             raise BridgeError(f"set_goal_follow failed: {exc}") from exc
 
     def stop_pathfinder(self) -> None:
-        """Clear the current pathfinder goal."""
+        """Clear the current pathfinder goal.  Best-effort cleanup.
+
+        Silently returns when the pathfinder plugin is not loaded or the
+        bot is mid-shutdown, so that cleanup code never masks the
+        original error that triggered the stop.
+        """
+        if not self._pf_loaded:
+            return
         try:
-            self._js_bot.pathfinder.setGoal(None)
-        except Exception as exc:
-            raise BridgeError(f"stop_pathfinder failed: {exc}") from exc
+            pathfinder = getattr(self._js_bot, "pathfinder", None)
+            if pathfinder is None:
+                return
+            pathfinder.setGoal(None)
+        except (AttributeError, TypeError):
+            return
 
     def is_pathfinding(self) -> bool:
         """Whether the pathfinder is actively moving along a path."""

@@ -68,6 +68,21 @@ class TestPluginHostPathfinder:
         host.stop_pathfinder()
         js_bot.pathfinder.setGoal.assert_called_once_with(None)
 
+    def test_stop_pathfinder_not_loaded_is_noop(self) -> None:
+        runtime = MagicMock()
+        js_bot = MagicMock()
+        host = PluginHost(runtime, js_bot)
+        # Should not raise
+        host.stop_pathfinder()
+        js_bot.pathfinder.setGoal.assert_not_called()
+
+    def test_stop_pathfinder_swallows_attribute_error(self) -> None:
+        host, _rt, js_bot, _pf = self._make_host()
+        host.load_pathfinder()
+        js_bot.pathfinder.setGoal.side_effect = AttributeError("gone")
+        # Should not raise
+        host.stop_pathfinder()
+
     def test_is_pathfinding_false(self) -> None:
         host, _rt, js_bot, _pf = self._make_host()
         js_bot.pathfinder.isMoving.return_value = False
