@@ -344,7 +344,7 @@ class Bot:
 
         Raises:
             PyflayerError: If the block is no longer present.
-            BridgeError: If the JS dig operation fails.
+            BridgeError: If the JS dig operation fails or times out.
         """
         async with self._dig_lock:
             ctrl = self._ensure_connected()
@@ -359,7 +359,10 @@ class Bot:
                     "(chunk unloaded or block changed)"
                 )
             ctrl.start_dig(js_block)
-            event = await self._relay.wait_for(_DigDoneEvent, timeout=60.0)
+            try:
+                event = await self._relay.wait_for(_DigDoneEvent, timeout=60.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("dig timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"dig failed: {event.error}")
 
