@@ -32,6 +32,8 @@ async def main() -> None:
         while bot.is_connected:
             await asyncio.sleep(1)
     except KeyboardInterrupt:
+        pass
+    finally:
         await bot.disconnect()
 
 
