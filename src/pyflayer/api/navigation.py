@@ -32,6 +32,7 @@ class NavigationAPI:
         self._ctrl = controller
         self._relay = relay
         self._navigating = False
+        self._goto_futs: list[asyncio.Future[object]] = []
 
     async def goto(
         self, x: float, y: float, z: float, *, radius: float = 1.0
@@ -60,6 +61,7 @@ class NavigationAPI:
         failed_fut = asyncio.ensure_future(
             self._relay.wait_for(GoalFailedEvent, timeout=300.0)
         )
+        self._goto_futs = [reached_fut, failed_fut]
         try:
             self._host.set_goal_near(x, y, z, radius)
 
@@ -114,6 +116,7 @@ class NavigationAPI:
             )
             raise
         finally:
+            self._goto_futs = []
             self._navigating = False
 
     async def follow(
@@ -143,8 +146,16 @@ class NavigationAPI:
         self._navigating = True
 
     async def stop(self) -> None:
-        """Stop current navigation."""
+        """Stop current navigation.
+
+        Cancels any in-flight ``goto()`` waiters so they unblock
+        immediately instead of waiting until the timeout.
+        """
         self._host.stop_pathfinder()
+        for fut in self._goto_futs:
+            if not fut.done():
+                fut.cancel()
+        self._goto_futs = []
         self._navigating = False
 
     @property
