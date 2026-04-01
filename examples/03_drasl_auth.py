@@ -1,6 +1,8 @@
 """03_drasl_auth.py -- Connect via a custom Drasl auth server.
 
 Run with:
+    cp examples/.env.example examples/.env
+    # Edit examples/.env with your credentials, then:
     uv run --env-file examples/.env examples/03_drasl_auth.py
 """
 
