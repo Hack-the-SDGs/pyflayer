@@ -155,6 +155,13 @@ class EventRelay:
                     GoalFailedEvent(reason="noPath"),
                 )
 
+        @on_fn(js_bot, "path_stop")
+        def _on_path_stop(*_args: Any) -> None:
+            self._post(
+                GoalFailedEvent,
+                GoalFailedEvent(reason="stopped"),
+            )
+
         @on_fn(js_bot, "end")
         def _on_end(*args: Any) -> None:
             reason = str(args[0]) if len(args) > 0 else "unknown"
@@ -192,6 +199,7 @@ class EventRelay:
             _on_end,
             _on_goal_reached,
             _on_path_update,
+            _on_path_stop,
             _on_dig_done,
             _on_place_done,
             _on_equip_done,
