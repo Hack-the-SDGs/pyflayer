@@ -167,13 +167,30 @@ class TestJsEntityToEntity:
         entity = js_entity_to_entity(js_entity)
         assert entity.metadata == {"key": "value"}
 
-    def test_metadata_non_dict_ignored(self) -> None:
-        """Entity with non-dict valueOf result should leave metadata as None."""
+    def test_metadata_dict_like_proxy(self) -> None:
+        """valueOf() returning a dict-like mapping (not a literal dict) should convert."""
+        from collections import OrderedDict
+
+        meta = SimpleNamespace()
+        meta.valueOf = lambda: OrderedDict([("a", 1), ("b", 2)])
+
+        js_entity = SimpleNamespace(
+            id=21,
+            name="cow",
+            type="animal",
+            position=_mock_vec3(0.0, 0.0, 0.0),
+            metadata=meta,
+        )
+        entity = js_entity_to_entity(js_entity)
+        assert entity.metadata == {"a": 1, "b": 2}
+
+    def test_metadata_non_mapping_ignored(self) -> None:
+        """Entity with non-mapping valueOf result should leave metadata as None."""
         meta = SimpleNamespace()
         meta.valueOf = lambda: [1, 2, 3]
 
         js_entity = SimpleNamespace(
-            id=21,
+            id=22,
             name="cow",
             type="animal",
             position=_mock_vec3(0.0, 0.0, 0.0),

@@ -104,10 +104,8 @@ def js_entity_to_entity(js_obj: Any) -> Entity:
     js_meta = getattr(js_obj, "metadata", None)
     if js_meta is not None:
         try:
-            raw = js_meta.valueOf()
-            if isinstance(raw, dict):
-                metadata = raw
-        except (AttributeError, TypeError):
+            metadata = dict(js_meta.valueOf())
+        except (AttributeError, TypeError, ValueError):
             pass
 
     return Entity(
