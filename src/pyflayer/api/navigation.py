@@ -104,6 +104,9 @@ class NavigationAPI:
                         f"Navigation failed: {result.reason}"
                     )
         except BaseException:
+            # Stop the underlying pathfinder goal so the bot doesn't
+            # keep navigating after caller cancellation / other errors.
+            self._host.stop_pathfinder()
             reached_fut.cancel()
             failed_fut.cancel()
             await asyncio.gather(
