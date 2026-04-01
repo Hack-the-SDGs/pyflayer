@@ -50,6 +50,7 @@ class NavigationAPI:
         Raises:
             NavigationError: If the pathfinder cannot reach the goal
                 or navigation times out.
+            BridgeError: If the underlying pathfinder plugin call fails.
         """
         if self._navigating:
             await self.stop()
