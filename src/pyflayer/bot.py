@@ -53,6 +53,7 @@ class Bot:
         host: str,
         port: int = 25565,
         username: str = "pyflayer",
+        *,
         password: str | None = None,
         version: str | None = None,
         auth: str | None = None,
