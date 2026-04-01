@@ -7,6 +7,12 @@ from collections import defaultdict
 from collections.abc import Coroutine
 from typing import Any, Callable
 
+from pyflayer._bridge._events import (
+    _DigDoneEvent,
+    _EquipDoneEvent,
+    _LookAtDoneEvent,
+    _PlaceDoneEvent,
+)
 from pyflayer.models.events import (
     ChatEvent,
     DeathEvent,
@@ -44,6 +50,24 @@ class EventRelay:
     def set_loop(self, loop: asyncio.AbstractEventLoop) -> None:
         """Bind to the running asyncio event loop."""
         self._loop = loop
+
+    def reset(self) -> None:
+        """Clean up JS handler references, pending waiters, and loop binding.
+
+        Call on disconnect so that a subsequent ``connect()`` starts
+        with a clean slate.  Clearing ``_loop`` ensures that
+        ``wait_for()`` raises ``RuntimeError`` (surfaced as
+        ``PyflayerConnectionError`` by ``ObserveAPI``) when the bot
+        is not connected, rather than silently timing out.
+        """
+        self._js_handler_refs.clear()
+        # Cancel all pending waiters
+        for waiter_list in self._waiters.values():
+            for fut in waiter_list:
+                if not fut.done():
+                    fut.cancel()
+        self._waiters.clear()
+        self._loop = None
 
     def register_js_events(self, js_bot: Any, on_fn: Any) -> None:
         """Register ``@On`` handlers for core mineflayer events.
@@ -93,7 +117,7 @@ class EventRelay:
                 )
                 self._post(HealthChangedEvent, event)
             except (AttributeError, TypeError):
-                pass
+                _log.debug("Failed to read health data", exc_info=True)
 
         @on_fn(js_bot, "death")
         def _on_death(*_args: Any) -> None:
@@ -119,14 +143,51 @@ class EventRelay:
                     GoalReachedEvent(position=Vec3(0.0, 0.0, 0.0)),
                 )
 
+        @on_fn(js_bot, "path_update")
+        def _on_path_update(*args: Any) -> None:
+            if not args:
+                return
+            result = args[0]
+            status = getattr(result, "status", None)
+            if status is not None and str(status) == "noPath":
+                self._post(
+                    GoalFailedEvent,
+                    GoalFailedEvent(reason="noPath"),
+                )
+
         @on_fn(js_bot, "path_stop")
         def _on_path_stop(*_args: Any) -> None:
-            self._post(GoalFailedEvent, GoalFailedEvent(reason="path_stop"))
+            self._post(
+                GoalFailedEvent,
+                GoalFailedEvent(reason="stopped"),
+            )
 
         @on_fn(js_bot, "end")
         def _on_end(*args: Any) -> None:
             reason = str(args[0]) if len(args) > 0 else "unknown"
             self._post(EndEvent, EndEvent(reason=reason))
+
+        # -- Internal async-operation completion events --
+
+        @on_fn(js_bot, "_pyflayer:digDone")
+        def _on_dig_done(*args: Any) -> None:
+            error = str(args[0]) if args and args[0] is not None else None
+            self._post(_DigDoneEvent, _DigDoneEvent(error=error))
+
+        @on_fn(js_bot, "_pyflayer:placeDone")
+        def _on_place_done(*args: Any) -> None:
+            error = str(args[0]) if args and args[0] is not None else None
+            self._post(_PlaceDoneEvent, _PlaceDoneEvent(error=error))
+
+        @on_fn(js_bot, "_pyflayer:equipDone")
+        def _on_equip_done(*args: Any) -> None:
+            error = str(args[0]) if args and args[0] is not None else None
+            self._post(_EquipDoneEvent, _EquipDoneEvent(error=error))
+
+        @on_fn(js_bot, "_pyflayer:lookAtDone")
+        def _on_look_at_done(*args: Any) -> None:
+            error = str(args[0]) if args and args[0] is not None else None
+            self._post(_LookAtDoneEvent, _LookAtDoneEvent(error=error))
 
         self._js_handler_refs.extend([
             _on_spawn,
@@ -137,7 +198,12 @@ class EventRelay:
             _on_kicked,
             _on_end,
             _on_goal_reached,
+            _on_path_update,
             _on_path_stop,
+            _on_dig_done,
+            _on_place_done,
+            _on_equip_done,
+            _on_look_at_done,
         ])
 
     # -- Handler management (called from ObserveAPI) --

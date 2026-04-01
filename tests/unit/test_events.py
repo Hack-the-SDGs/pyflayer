@@ -4,6 +4,7 @@ from pyflayer.models.events import (
     ChatEvent,
     CollectCompletedEvent,
     DeathEvent,
+    EndEvent,
     GoalFailedEvent,
     GoalReachedEvent,
     HealthChangedEvent,
@@ -89,6 +90,17 @@ class TestBlockBrokenEvent:
         event = BlockBrokenEvent(block_name="oak_log", position=pos)
         assert event.block_name == "oak_log"
         assert event.position == pos
+
+
+class TestEndEvent:
+    def test_creation(self) -> None:
+        event = EndEvent(reason="disconnect")
+        assert event.reason == "disconnect"
+
+    def test_frozen(self) -> None:
+        event = EndEvent(reason="kicked")
+        with pytest.raises(AttributeError):
+            event.reason = "other"  # type: ignore[misc]
 
 
 class TestCollectCompletedEvent:

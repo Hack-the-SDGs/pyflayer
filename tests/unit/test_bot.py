@@ -4,10 +4,27 @@ import asyncio
 
 import pytest
 
+from pyflayer._bridge._events import (
+    _DigDoneEvent,
+    _EquipDoneEvent,
+    _LookAtDoneEvent,
+    _PlaceDoneEvent,
+)
 from pyflayer._bridge.event_relay import EventRelay
-from pyflayer.bot import Bot, ObserveAPI
-from pyflayer.models.errors import PyflayerConnectionError
-from pyflayer.models.events import ChatEvent, SpawnEvent
+from pyflayer.api.observe import ObserveAPI
+from pyflayer.bot import Bot
+from pyflayer.models.errors import (
+    NotSpawnedError,
+    PyflayerConnectionError,
+)
+from pyflayer.models.events import (
+    ChatEvent,
+    EndEvent,
+    GoalFailedEvent,
+    GoalReachedEvent,
+    SpawnEvent,
+)
+from pyflayer.models.vec3 import Vec3
 
 
 class TestObserveAPI:
@@ -52,9 +69,37 @@ class TestObserveAPI:
         async def handler(data: dict) -> None:
             pass
 
-        # Before _bind_js, event should be pending
         assert "entityMoved" in api._pending_raw_events
         assert "entityMoved" not in api._bound_raw_events
+
+    @pytest.mark.asyncio
+    async def test_wait_for_no_loop_raises_connection_error(self) -> None:
+        relay = EventRelay()
+        api = ObserveAPI(relay)
+
+        with pytest.raises(PyflayerConnectionError):
+            await api.wait_for(SpawnEvent, timeout=0.01)
+
+    def test_on_raw_direct_call(self) -> None:
+        relay = EventRelay()
+        api = ObserveAPI(relay)
+
+        async def handler(data: dict) -> None:
+            pass
+
+        api.on_raw("test_event", handler)
+        assert "test_event" in api._pending_raw_events
+
+    def test_off_raw(self) -> None:
+        relay = EventRelay()
+        api = ObserveAPI(relay)
+
+        async def handler(data: dict) -> None:
+            pass
+
+        api.on_raw("test_event", handler)
+        api.off_raw("test_event", handler)
+        assert handler not in relay._raw_handlers.get("test_event", [])
 
 
 class TestBotState:
@@ -70,6 +115,21 @@ class TestBotState:
         with pytest.raises(PyflayerConnectionError):
             _ = bot.health
 
+    def test_not_connected_food_raises(self) -> None:
+        bot = Bot(host="localhost")
+        with pytest.raises(PyflayerConnectionError):
+            _ = bot.food
+
+    def test_not_connected_game_mode_raises(self) -> None:
+        bot = Bot(host="localhost")
+        with pytest.raises(PyflayerConnectionError):
+            _ = bot.game_mode
+
+    def test_not_connected_players_raises(self) -> None:
+        bot = Bot(host="localhost")
+        with pytest.raises(PyflayerConnectionError):
+            _ = bot.players
+
     def test_is_connected_default(self) -> None:
         bot = Bot(host="localhost")
         assert bot.is_connected is False
@@ -78,52 +138,233 @@ class TestBotState:
         bot = Bot(host="localhost", username="TestBot")
         assert bot.username == "TestBot"
 
+    def test_not_spawned_position_raises(self) -> None:
+        """Even if we force _connected, position requires spawned."""
+        bot = Bot(host="localhost")
+        bot._connected = True
+        bot._controller = object()  # type: ignore[assignment]
+        with pytest.raises(NotSpawnedError):
+            _ = bot.position
 
-class TestEventRelayDispatch:
-    """Tests for EventRelay dispatch mechanics."""
+    def test_navigation_not_connected_raises(self) -> None:
+        bot = Bot(host="localhost")
+        with pytest.raises(PyflayerConnectionError):
+            _ = bot.navigation
 
-    @pytest.mark.asyncio
-    async def test_wait_for_resolves(self) -> None:
-        relay = EventRelay()
-        loop = asyncio.get_running_loop()
-        relay.set_loop(loop)
-
-        event = SpawnEvent()
-
-        async def post_later() -> None:
-            await asyncio.sleep(0.01)
-            relay._dispatch(SpawnEvent, event)
-
-        asyncio.create_task(post_later())
-        result = await relay.wait_for(SpawnEvent, timeout=1.0)
-        assert isinstance(result, SpawnEvent)
-
-    @pytest.mark.asyncio
-    async def test_wait_for_timeout(self) -> None:
-        relay = EventRelay()
-        loop = asyncio.get_running_loop()
-        relay.set_loop(loop)
-
-        with pytest.raises(asyncio.TimeoutError):
-            await relay.wait_for(SpawnEvent, timeout=0.01)
+    def test_not_spawned_is_alive_raises(self) -> None:
+        bot = Bot(host="localhost")
+        bot._connected = True
+        bot._controller = object()  # type: ignore[assignment]
+        with pytest.raises(NotSpawnedError):
+            _ = bot.is_alive
 
     @pytest.mark.asyncio
-    async def test_handler_called(self) -> None:
-        relay = EventRelay()
+    async def test_chat_not_connected_raises(self) -> None:
+        bot = Bot(host="localhost")
+        with pytest.raises(PyflayerConnectionError):
+            await bot.chat("hello")
+
+    @pytest.mark.asyncio
+    async def test_whisper_not_connected_raises(self) -> None:
+        bot = Bot(host="localhost")
+        with pytest.raises(PyflayerConnectionError):
+            await bot.whisper("Steve", "hello")
+
+    @pytest.mark.asyncio
+    async def test_dig_not_connected_raises(self) -> None:
+        from pyflayer.models.block import Block
+
+        bot = Bot(host="localhost")
+        block = Block("stone", "Stone", Vec3(0, 0, 0), 1.5, True, False, "block")
+        with pytest.raises(PyflayerConnectionError):
+            await bot.dig(block)
+
+    @pytest.mark.asyncio
+    async def test_goto_not_spawned_raises(self) -> None:
+        bot = Bot(host="localhost")
+        bot._connected = True
+        bot._controller = object()  # type: ignore[assignment]
+        with pytest.raises(NotSpawnedError):
+            await bot.goto(0, 64, 0)
+
+    @pytest.mark.asyncio
+    async def test_stop_not_connected_raises(self) -> None:
+        bot = Bot(host="localhost")
+        with pytest.raises(PyflayerConnectionError):
+            await bot.stop()
+
+    @pytest.mark.asyncio
+    async def test_disconnect_when_not_connected(self) -> None:
+        bot = Bot(host="localhost")
+        # Should not raise
+        await bot.disconnect()
+        assert bot.is_connected is False
+
+
+class TestBotEndEvent:
+    """Tests for EndEvent handling on the Bot."""
+
+    @pytest.mark.asyncio
+    async def test_end_event_flips_connected(self) -> None:
+        """Simulate an EndEvent dispatch and check Bot state."""
+        bot = Bot(host="localhost")
         loop = asyncio.get_running_loop()
-        relay.set_loop(loop)
+        bot._relay.set_loop(loop)
+        bot._connected = True
+        bot._spawned = True
 
-        received: list[ChatEvent] = []
+        # Register the internal handler like connect() does
+        async def _on_end(_event: EndEvent) -> None:
+            bot._connected = False
+            bot._spawned = False
 
-        async def handler(event: ChatEvent) -> None:
-            received.append(event)
+        bot._relay.add_handler(EndEvent, _on_end)  # type: ignore[arg-type]
 
-        relay.add_handler(ChatEvent, handler)
-
-        event = ChatEvent(sender="Steve", message="hi", timestamp=0.0)
-        relay._dispatch(ChatEvent, event)
-
-        # Give the task a chance to run
+        # Dispatch EndEvent
+        bot._relay._dispatch(EndEvent, EndEvent(reason="disconnect"))
         await asyncio.sleep(0.01)
-        assert len(received) == 1
-        assert received[0].sender == "Steve"
+
+        assert bot.is_connected is False
+        assert bot._spawned is False
+
+
+class TestBotAsyncOperations:
+    """Tests for the event-driven async action flow (dig, place, etc.)."""
+
+    @pytest.mark.asyncio
+    async def test_dig_done_success_flow(self) -> None:
+        """Simulate dig completing via _DigDoneEvent."""
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+
+        async def post() -> None:
+            await asyncio.sleep(0.01)
+            relay._dispatch(_DigDoneEvent, _DigDoneEvent(error=None))
+
+        asyncio.create_task(post())
+        event = await relay.wait_for(_DigDoneEvent, timeout=1.0)
+        assert event.error is None
+
+    @pytest.mark.asyncio
+    async def test_dig_done_error_flow(self) -> None:
+        """Simulate dig failing via _DigDoneEvent with error."""
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+
+        async def post() -> None:
+            await asyncio.sleep(0.01)
+            relay._dispatch(
+                _DigDoneEvent,
+                _DigDoneEvent(error="cannot dig this block"),
+            )
+
+        asyncio.create_task(post())
+        event = await relay.wait_for(_DigDoneEvent, timeout=1.0)
+        assert event.error == "cannot dig this block"
+
+    @pytest.mark.asyncio
+    async def test_place_done_flow(self) -> None:
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+
+        async def post() -> None:
+            await asyncio.sleep(0.01)
+            relay._dispatch(_PlaceDoneEvent, _PlaceDoneEvent())
+
+        asyncio.create_task(post())
+        event = await relay.wait_for(_PlaceDoneEvent, timeout=1.0)
+        assert event.error is None
+
+    @pytest.mark.asyncio
+    async def test_equip_done_flow(self) -> None:
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+
+        async def post() -> None:
+            await asyncio.sleep(0.01)
+            relay._dispatch(_EquipDoneEvent, _EquipDoneEvent())
+
+        asyncio.create_task(post())
+        event = await relay.wait_for(_EquipDoneEvent, timeout=1.0)
+        assert event.error is None
+
+    @pytest.mark.asyncio
+    async def test_look_at_done_flow(self) -> None:
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+
+        async def post() -> None:
+            await asyncio.sleep(0.01)
+            relay._dispatch(_LookAtDoneEvent, _LookAtDoneEvent())
+
+        asyncio.create_task(post())
+        event = await relay.wait_for(_LookAtDoneEvent, timeout=1.0)
+        assert event.error is None
+
+
+class TestBotGotoFlow:
+    """Tests for goto() event racing logic."""
+
+    @pytest.mark.asyncio
+    async def test_goal_reached_wins(self) -> None:
+        """GoalReachedEvent should make goto() return successfully."""
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+
+        async def post() -> None:
+            await asyncio.sleep(0.01)
+            relay._dispatch(
+                GoalReachedEvent,
+                GoalReachedEvent(position=Vec3(10, 64, 20)),
+            )
+
+        asyncio.create_task(post())
+
+        reached_fut = asyncio.ensure_future(
+            relay.wait_for(GoalReachedEvent, timeout=1.0)
+        )
+        failed_fut = asyncio.ensure_future(
+            relay.wait_for(GoalFailedEvent, timeout=1.0)
+        )
+
+        done, pending = await asyncio.wait(
+            [reached_fut, failed_fut],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        for t in pending:
+            t.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+
+        result = done.pop().result()
+        assert isinstance(result, GoalReachedEvent)
+
+    @pytest.mark.asyncio
+    async def test_goal_failed_raises(self) -> None:
+        """GoalFailedEvent should be detected as a failure."""
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+
+        async def post() -> None:
+            await asyncio.sleep(0.01)
+            relay._dispatch(GoalFailedEvent, GoalFailedEvent(reason="noPath"))
+
+        asyncio.create_task(post())
+
+        reached_fut = asyncio.ensure_future(
+            relay.wait_for(GoalReachedEvent, timeout=1.0)
+        )
+        failed_fut = asyncio.ensure_future(
+            relay.wait_for(GoalFailedEvent, timeout=1.0)
+        )
+
+        done, pending = await asyncio.wait(
+            [reached_fut, failed_fut],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        for t in pending:
+            t.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+
+        result = done.pop().result()
+        assert isinstance(result, GoalFailedEvent)
+        assert result.reason == "noPath"

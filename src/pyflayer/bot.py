@@ -1,194 +1,38 @@
 """Bot -- the public entry point for pyflayer."""
 
 import asyncio
-from collections.abc import Awaitable, Coroutine
-from typing import Any, Callable, TypeVar, overload
 
+from pyflayer._bridge._events import (
+    _DigDoneEvent,
+    _EquipDoneEvent,
+    _LookAtDoneEvent,
+    _PlaceDoneEvent,
+)
 from pyflayer._bridge.event_relay import EventRelay
 from pyflayer._bridge.js_bot import JSBotController
 from pyflayer._bridge.marshalling import (
     js_block_to_block,
     js_entity_to_entity,
 )
+from pyflayer._bridge.plugin_host import PluginHost
 from pyflayer._bridge.runtime import BridgeRuntime
+from pyflayer.api.navigation import NavigationAPI
+from pyflayer.api.observe import ObserveAPI
 from pyflayer.config import BotConfig
 from pyflayer.models.block import Block
 from pyflayer.models.entity import Entity, EntityKind
 from pyflayer.models.errors import (
-    NavigationError,
+    BridgeError,
+    InventoryError,
     NotSpawnedError,
     PyflayerConnectionError,
+    PyflayerError,
 )
 from pyflayer.models.events import (
     EndEvent,
-    GoalFailedEvent,
-    GoalReachedEvent,
     SpawnEvent,
 )
 from pyflayer.models.vec3 import Vec3
-
-E = TypeVar("E")
-
-_Handler = Callable[[E], Coroutine[Any, Any, None]]
-
-# Type mapping from EntityKind enum to JS entity type strings.
-# EntityKind.OTHER is intentionally omitted: mineflayer has no literal
-# "other" type, so OTHER acts as a catch-all with no JS type filter.
-_ENTITY_KIND_TO_JS: dict[EntityKind, str] = {
-    EntityKind.PLAYER: "player",
-    EntityKind.MOB: "mob",
-    EntityKind.ANIMAL: "animal",
-    EntityKind.HOSTILE: "hostile",
-    EntityKind.PROJECTILE: "projectile",
-    EntityKind.OBJECT: "object",
-}
-
-
-class ObserveAPI:
-    """Event subscription API.
-
-    Supports decorator-style and method-style registration, plus
-    one-shot ``wait_for`` and raw JS event access.
-    """
-
-    def __init__(self, relay: EventRelay) -> None:
-        self._relay = relay
-        self._bound_raw_events: set[str] = set()
-        self._pending_raw_events: set[str] = set()
-        self._js_bot: Any = None
-        self._on_fn: Any = None
-
-    def _bind_js(self, js_bot: Any, on_fn: Any) -> None:
-        """Store JS references and bind any queued raw events."""
-        self._js_bot = js_bot
-        self._on_fn = on_fn
-        # Bind raw events that were registered before connect()
-        for event_name in self._pending_raw_events:
-            self._relay.bind_raw_js_event(js_bot, on_fn, event_name)
-            self._bound_raw_events.add(event_name)
-        self._pending_raw_events.clear()
-
-    @overload
-    def on(self, event_type: type[E]) -> Callable[[_Handler[E]], _Handler[E]]: ...
-
-    @overload
-    def on(self, event_type: type[E], handler: _Handler[E]) -> None: ...
-
-    def on(
-        self,
-        event_type: type[E],
-        handler: _Handler[E] | None = None,
-    ) -> Callable[[_Handler[E]], _Handler[E]] | None:
-        """Subscribe to an event type.
-
-        Can be used as a decorator::
-
-            @bot.observe.on(ChatEvent)
-            async def on_chat(event: ChatEvent):
-                ...
-
-        Or called directly::
-
-            bot.observe.on(ChatEvent, handle_chat)
-        """
-        if handler is not None:
-            self._relay.add_handler(event_type, handler)  # type: ignore[arg-type]
-            return None
-
-        def decorator(fn: _Handler[E]) -> _Handler[E]:
-            self._relay.add_handler(event_type, fn)  # type: ignore[arg-type]
-            return fn
-
-        return decorator
-
-    def off(self, event_type: type[E], handler: _Handler[E]) -> None:
-        """Unsubscribe a handler."""
-        self._relay.remove_handler(event_type, handler)  # type: ignore[arg-type]
-
-    async def wait_for(self, event_type: type[E], *, timeout: float = 30.0) -> E:
-        """Wait for a single event occurrence.
-
-        Raises:
-            PyflayerConnectionError: If called before ``Bot.connect()``.
-            asyncio.TimeoutError: If no event arrives within *timeout* seconds.
-        """
-        try:
-            return await self._relay.wait_for(event_type, timeout=timeout)  # type: ignore[return-value]
-        except RuntimeError as exc:
-            raise PyflayerConnectionError(
-                "Bot is not connected; call Bot.connect() before wait_for()."
-            ) from exc
-
-    @overload
-    def on_raw(
-        self, event_name: str
-    ) -> Callable[
-        [Callable[[dict], Awaitable[None]]], Callable[[dict], Awaitable[None]]
-    ]: ...
-
-    @overload
-    def on_raw(
-        self, event_name: str, handler: Callable[[dict], Awaitable[None]]
-    ) -> None: ...
-
-    def on_raw(
-        self,
-        event_name: str,
-        handler: Callable[[dict], Awaitable[None]] | None = None,
-    ) -> (
-        Callable[
-            [Callable[[dict], Awaitable[None]]], Callable[[dict], Awaitable[None]]
-        ]
-        | None
-    ):
-        """Subscribe to a raw JS event by name.
-
-        This is an escape hatch for events not covered by the typed API.
-        The handler receives a ``dict`` with an ``"args"`` key containing
-        the raw JS callback arguments.
-
-        Can be used as a decorator::
-
-            @bot.observe.on_raw("entityMoved")
-            async def on_entity_moved(data: dict):
-                ...
-
-        Or called directly::
-
-            bot.observe.on_raw("entityMoved", handler)
-
-        Warning:
-            Raw event data is not typed or validated.
-        """
-        def _register(fn: Callable[[dict], Awaitable[None]]) -> None:
-            if event_name not in self._bound_raw_events:
-                if self._js_bot is not None and self._on_fn is not None:
-                    self._relay.bind_raw_js_event(
-                        self._js_bot, self._on_fn, event_name
-                    )
-                    self._bound_raw_events.add(event_name)
-                else:
-                    # Queue for binding once connect() provides JS refs
-                    self._pending_raw_events.add(event_name)
-            self._relay.add_raw_handler(event_name, fn)  # type: ignore[arg-type]
-
-        if handler is not None:
-            _register(handler)
-            return None
-
-        def decorator(
-            fn: Callable[[dict], Awaitable[None]],
-        ) -> Callable[[dict], Awaitable[None]]:
-            _register(fn)
-            return fn
-
-        return decorator
-
-    def off_raw(
-        self, event_name: str, handler: Callable[[dict], Awaitable[None]]
-    ) -> None:
-        """Unsubscribe a raw event handler."""
-        self._relay.remove_raw_handler(event_name, handler)  # type: ignore[arg-type]
 
 
 class Bot:
@@ -227,6 +71,15 @@ class Bot:
         self._controller: JSBotController | None = None
         self._connected = False
         self._spawned = False
+        self._plugin_host: PluginHost | None = None
+        self._navigation: NavigationAPI | None = None
+        self._on_end_handler: object | None = None
+        # Serialize long-running operations that use global completion
+        # events, preventing concurrent calls from stealing each other's
+        # completion signal.
+        self._dig_lock = asyncio.Lock()
+        self._place_lock = asyncio.Lock()
+        self._look_at_lock = asyncio.Lock()
 
     def _ensure_connected(self) -> JSBotController:
         """Return the controller or raise if not connected."""
@@ -237,7 +90,7 @@ class Bot:
     def _ensure_spawned(self) -> JSBotController:
         """Return the controller or raise if not spawned.
 
-        Implies connected — raises ``PyflayerConnectionError`` first if
+        Implies connected -- raises ``PyflayerConnectionError`` first if
         not connected, then ``NotSpawnedError`` if not yet spawned.
         """
         ctrl = self._ensure_connected()
@@ -272,7 +125,11 @@ class Bot:
         self._controller = JSBotController(self._runtime, self._config)
         self._controller.create_bot()
 
-        self._controller.load_pathfinder()
+        self._plugin_host = PluginHost(self._runtime, self._controller.js_bot)
+        self._plugin_host.load_pathfinder()
+        self._navigation = NavigationAPI(
+            self._plugin_host, self._controller, self._relay
+        )
 
         self._relay.register_js_events(
             self._controller.js_bot,
@@ -285,23 +142,41 @@ class Bot:
 
         # Register internal EndEvent handler *before* setting _connected,
         # so an immediate "end" event (e.g. connection refused) is caught.
+        # Remove any previous handler to avoid accumulation on reconnect.
+        if self._on_end_handler is not None:
+            try:
+                self._relay.remove_handler(EndEvent, self._on_end_handler)  # type: ignore[arg-type]
+            except ValueError:
+                pass  # Already removed by reset()
+
         async def _on_end(_event: EndEvent) -> None:
             self._connected = False
             self._spawned = False
 
+        self._on_end_handler = _on_end
         self._relay.add_handler(EndEvent, _on_end)  # type: ignore[arg-type]
         self._connected = True
 
     async def disconnect(self) -> None:
         """Disconnect from the server and clean up resources.
 
-        Safe to call even after a remote disconnect — the runtime and
+        Safe to call even after a remote disconnect -- the runtime and
         controller are always cleaned up if they exist.
         """
+        if self._on_end_handler is not None:
+            try:
+                self._relay.remove_handler(EndEvent, self._on_end_handler)  # type: ignore[arg-type]
+            except ValueError:
+                pass  # Handler already gone
+            self._on_end_handler = None
+        self._relay.reset()
+        self._observe._reset()
         if self._controller is not None:
             if self._connected:
                 self._controller.quit()
             self._controller = None
+        self._navigation = None
+        self._plugin_host = None
         if self._runtime is not None:
             self._runtime.shutdown()
             self._runtime = None
@@ -314,8 +189,8 @@ class Bot:
             return
         await self._observe.wait_for(SpawnEvent, timeout=timeout)
         self._spawned = True
-        if self._controller is not None:
-            self._controller.setup_pathfinder_movements()
+        if self._plugin_host is not None:
+            self._plugin_host.setup_pathfinder_movements()
 
     # -- State properties --
 
@@ -343,7 +218,7 @@ class Bot:
 
     @property
     def health(self) -> float:
-        """Bot health (0–20).
+        """Bot health (0-20).
 
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
@@ -353,7 +228,7 @@ class Bot:
 
     @property
     def food(self) -> float:
-        """Bot food level (0–20).
+        """Bot food level (0-20).
 
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
@@ -373,18 +248,10 @@ class Bot:
         return ctrl.get_game_mode()
 
     @property
-    def players(self) -> dict[str, dict]:
+    def players(self) -> dict[str, dict[str, object]]:
         """Online players as ``{username: info_dict}``."""
         ctrl = self._ensure_connected()
-        js_players = ctrl.get_players()
-        result: dict[str, dict] = {}
-        for key in js_players:
-            p = js_players[key]
-            result[str(key)] = {
-                "username": str(p.username),
-                "ping": int(p.ping) if hasattr(p, "ping") else 0,
-            }
-        return result
+        return ctrl.get_players_dict()
 
     # -- Chat --
 
@@ -461,13 +328,12 @@ class Bot:
             The nearest matching :class:`Entity`, or ``None``.
         """
         ctrl = self._ensure_connected()
-        entity_type = _ENTITY_KIND_TO_JS.get(kind) if kind is not None else None
-        js_entity = ctrl.get_entity_by_filter(name, entity_type, max_distance)
+        js_entity = ctrl.get_entity_by_filter(name, kind, max_distance)
         if js_entity is None:
             return None
         return js_entity_to_entity(js_entity)
 
-    # -- Actions --
+    # -- Actions (non-blocking, event-driven) --
 
     async def dig(self, block: Block) -> None:
         """Dig (break) a block.
@@ -477,25 +343,28 @@ class Bot:
                 :meth:`block_at` to obtain one.
 
         Raises:
-            PyflayerConnectionError: If the bot is not connected.
-            PyflayerError: If the block is no longer present (chunk
-                unloaded or block changed).
+            PyflayerError: If the block is no longer present.
+            BridgeError: If the JS dig operation fails or times out.
         """
-        ctrl = self._ensure_connected()
-        # We need the JS block proxy, so re-query by position
-        js_block = ctrl.block_at(
-            int(block.position.x),
-            int(block.position.y),
-            int(block.position.z),
-        )
-        if js_block is None:
-            from pyflayer.models.errors import PyflayerError
-
-            raise PyflayerError(
-                f"Block at {block.position} is no longer available "
-                "(chunk unloaded or block changed)"
+        async with self._dig_lock:
+            ctrl = self._ensure_connected()
+            js_block = ctrl.block_at(
+                int(block.position.x),
+                int(block.position.y),
+                int(block.position.z),
             )
-        ctrl.dig(js_block)
+            if js_block is None:
+                raise PyflayerError(
+                    f"Block at {block.position} is no longer available "
+                    "(chunk unloaded or block changed)"
+                )
+            ctrl.start_dig(js_block)
+            try:
+                event = await self._relay.wait_for(_DigDoneEvent, timeout=60.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("dig timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"dig failed: {event.error}")
 
     async def place_block(
         self,
@@ -513,30 +382,43 @@ class Bot:
             item_name: If provided, equip this item before placing.
 
         Raises:
-            PyflayerConnectionError: If the bot is not connected.
-            InventoryError: If *item_name* is not found in inventory.
+            InventoryError: If *item_name* is not found in inventory
+                or equip times out.
+            BridgeError: If the JS place operation fails or times out.
         """
-        ctrl = self._ensure_connected()
-        if item_name is not None:
-            try:
-                ctrl.equip_item(item_name)
-            except ValueError as exc:
-                from pyflayer.models.errors import InventoryError
+        async with self._place_lock:
+            ctrl = self._ensure_connected()
+            if item_name is not None:
+                if not ctrl.start_equip(item_name):
+                    raise InventoryError(
+                        f"Item '{item_name}' not found in inventory"
+                    )
+                try:
+                    equip_event = await self._relay.wait_for(
+                        _EquipDoneEvent, timeout=10.0
+                    )
+                except asyncio.TimeoutError as exc:
+                    raise InventoryError("equip timed out") from exc
+                if equip_event.error is not None:
+                    raise InventoryError(f"equip failed: {equip_event.error}")
 
-                raise InventoryError(str(exc)) from exc
-        js_block = ctrl.block_at(
-            int(reference_block.position.x),
-            int(reference_block.position.y),
-            int(reference_block.position.z),
-        )
-        if js_block is None:
-            from pyflayer.models.errors import PyflayerError
-
-            raise PyflayerError(
-                f"Block at {reference_block.position} is no longer available "
-                "(chunk unloaded or block changed)"
+            js_block = ctrl.block_at(
+                int(reference_block.position.x),
+                int(reference_block.position.y),
+                int(reference_block.position.z),
             )
-        ctrl.place_block(js_block, face.x, face.y, face.z)
+            if js_block is None:
+                raise PyflayerError(
+                    f"Block at {reference_block.position} is no longer available "
+                    "(chunk unloaded or block changed)"
+                )
+            ctrl.start_place(js_block, face.x, face.y, face.z)
+            try:
+                event = await self._relay.wait_for(_PlaceDoneEvent, timeout=30.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("place timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"place failed: {event.error}")
 
     async def use_item(self) -> None:
         """Activate the currently held item."""
@@ -562,9 +444,8 @@ class Bot:
     ) -> None:
         """Move the bot to a position using A* pathfinding.
 
+        Convenience wrapper for ``bot.navigation.goto()``.
         Uses ``mineflayer-pathfinder`` for obstacle-aware navigation.
-        Resolves when the bot arrives within *radius* of the target,
-        or raises :class:`NavigationError` if no path is found.
 
         Args:
             x: Target X coordinate.
@@ -575,42 +456,10 @@ class Bot:
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
             NavigationError: If the pathfinder cannot reach the goal.
+            BridgeError: If a low-level bridge or pathfinding operation fails.
         """
-        ctrl = self._ensure_spawned()
-
-        # Create futures for both possible outcomes
-        reached_fut = self._relay.wait_for(GoalReachedEvent, timeout=300.0)
-        failed_fut = self._relay.wait_for(GoalFailedEvent, timeout=300.0)
-
-        ctrl.set_goal_near(x, y, z, radius)
-
-        done, pending = await asyncio.wait(
-            [asyncio.ensure_future(reached_fut), asyncio.ensure_future(failed_fut)],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-
-        for task in pending:
-            task.cancel()
-
-        # Inspect completed tasks — translate exceptions into NavigationError
-        events: list[object] = []
-        for task in done:
-            exc = task.exception()
-            if exc is not None:
-                ctrl.stop_pathfinder()
-                if isinstance(exc, asyncio.TimeoutError):
-                    raise NavigationError("Navigation timed out") from exc
-                raise NavigationError(f"Navigation failed: {exc}") from exc
-            events.append(task.result())
-
-        # Both futures may complete together (path_stop always fires after
-        # goal_reached).  Prioritize success.
-        if any(isinstance(e, GoalReachedEvent) for e in events):
-            return
-        failed = next((e for e in events if isinstance(e, GoalFailedEvent)), None)
-        if failed is not None:
-            ctrl.stop_pathfinder()
-            raise NavigationError(f"Navigation failed: {failed.reason}")
+        self._ensure_spawned()
+        await self.navigation.goto(x, y, z, radius=radius)
 
     async def look_at(self, x: float, y: float, z: float) -> None:
         """Rotate the bot to look at a position.
@@ -619,9 +468,19 @@ class Bot:
             x: Target X coordinate.
             y: Target Y coordinate.
             z: Target Z coordinate.
+
+        Raises:
+            BridgeError: If the look operation fails or times out.
         """
-        ctrl = self._ensure_connected()
-        ctrl.look_at(x, y, z)
+        async with self._look_at_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_look_at(x, y, z)
+            try:
+                event = await self._relay.wait_for(_LookAtDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("look_at timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"look_at failed: {event.error}")
 
     async def jump(self) -> None:
         """Make the bot jump once."""
@@ -633,10 +492,17 @@ class Bot:
     async def stop(self) -> None:
         """Stop all movement and cancel pathfinding."""
         ctrl = self._ensure_connected()
-        ctrl.stop_pathfinder()
+        await self.navigation.stop()
         ctrl.clear_control_states()
 
     # -- Sub-APIs --
+
+    @property
+    def navigation(self) -> NavigationAPI:
+        """Path-planning and movement control API."""
+        if self._navigation is None:
+            raise PyflayerConnectionError("Bot is not connected.")
+        return self._navigation
 
     @property
     def observe(self) -> ObserveAPI:

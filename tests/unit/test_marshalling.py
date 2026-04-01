@@ -106,6 +106,24 @@ class TestJsEntityToEntity:
         assert entity.velocity is None
         assert entity.health is None
 
+    def test_player_with_entity_name(self) -> None:
+        """Player entities in mineflayer have name='player' AND username='Steve'.
+
+        The marshaller must prefer username over the generic entity type name.
+        """
+        js_entity = SimpleNamespace(
+            id=1,
+            name="player",
+            username="Steve",
+            type="player",
+            position=_mock_vec3(0.0, 65.0, 0.0),
+            velocity=None,
+            health=None,
+        )
+        entity = js_entity_to_entity(js_entity)
+        assert entity.name == "Steve"
+        assert entity.kind is EntityKind.PLAYER
+
     def test_unknown_type(self) -> None:
         js_entity = SimpleNamespace(
             id=99,
@@ -133,6 +151,65 @@ class TestJsEntityToEntity:
         )
         entity = js_entity_to_entity(js_entity)
         assert entity.name is None
+
+    def test_metadata_dict(self) -> None:
+        """Entity with dict-like metadata should be populated."""
+        meta = SimpleNamespace()
+        meta.valueOf = lambda: {"key": "value"}
+
+        js_entity = SimpleNamespace(
+            id=20,
+            name="villager",
+            type="mob",
+            position=_mock_vec3(0.0, 0.0, 0.0),
+            metadata=meta,
+        )
+        entity = js_entity_to_entity(js_entity)
+        assert entity.metadata == {"key": "value"}
+
+    def test_metadata_dict_like_proxy(self) -> None:
+        """valueOf() returning a dict-like mapping (not a literal dict) should convert."""
+        from collections import OrderedDict
+
+        meta = SimpleNamespace()
+        meta.valueOf = lambda: OrderedDict([("a", 1), ("b", 2)])
+
+        js_entity = SimpleNamespace(
+            id=21,
+            name="cow",
+            type="animal",
+            position=_mock_vec3(0.0, 0.0, 0.0),
+            metadata=meta,
+        )
+        entity = js_entity_to_entity(js_entity)
+        assert entity.metadata == {"a": 1, "b": 2}
+
+    def test_metadata_non_mapping_ignored(self) -> None:
+        """Entity with non-mapping valueOf result should leave metadata as None."""
+        meta = SimpleNamespace()
+        meta.valueOf = lambda: [1, 2, 3]
+
+        js_entity = SimpleNamespace(
+            id=22,
+            name="cow",
+            type="animal",
+            position=_mock_vec3(0.0, 0.0, 0.0),
+            metadata=meta,
+        )
+        entity = js_entity_to_entity(js_entity)
+        assert entity.metadata is None
+
+    def test_metadata_no_valueof(self) -> None:
+        """Entity without valueOf on metadata should leave metadata as None."""
+        js_entity = SimpleNamespace(
+            id=22,
+            name="pig",
+            type="animal",
+            position=_mock_vec3(0.0, 0.0, 0.0),
+            metadata="not_a_proxy",
+        )
+        entity = js_entity_to_entity(js_entity)
+        assert entity.metadata is None
 
 
 class TestJsItemToItemStack:
