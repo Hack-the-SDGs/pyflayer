@@ -79,6 +79,8 @@ class NavigationAPI:
             # successful GoalReachedEvent over GoalFailedEvent when
             # both complete in the same tick.
             if reached_fut in done:
+                if reached_fut.cancelled():
+                    raise NavigationError("Navigation stopped")
                 exc = reached_fut.exception()
                 if exc is None:
                     return  # goal reached — success
@@ -90,6 +92,8 @@ class NavigationAPI:
                 ) from exc
 
             if failed_fut in done:
+                if failed_fut.cancelled():
+                    raise NavigationError("Navigation stopped")
                 exc = failed_fut.exception()
                 if exc is not None:
                     self._host.stop_pathfinder()

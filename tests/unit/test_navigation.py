@@ -104,6 +104,25 @@ class TestNavigationGoto:
         assert nav.is_navigating is False
 
     @pytest.mark.asyncio
+    async def test_goto_cancelled_futures_raise_navigation_error(self) -> None:
+        """stop() cancelling goto futures must produce NavigationError, not CancelledError."""
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+        host = MagicMock()
+        ctrl = MagicMock()
+        nav = NavigationAPI(host, ctrl, relay)
+
+        async def cancel_soon() -> None:
+            await asyncio.sleep(0.01)
+            await nav.stop()
+
+        asyncio.create_task(cancel_soon())
+        with pytest.raises(NavigationError, match="stopped"):
+            await nav.goto(10, 64, 20)
+
+        assert nav.is_navigating is False
+
+    @pytest.mark.asyncio
     async def test_goto_set_goal_near_error_cleans_up_futures(self) -> None:
         relay = EventRelay()
         relay.set_loop(asyncio.get_running_loop())
