@@ -382,8 +382,9 @@ class Bot:
             item_name: If provided, equip this item before placing.
 
         Raises:
-            InventoryError: If *item_name* is not found in inventory.
-            BridgeError: If the JS place operation fails.
+            InventoryError: If *item_name* is not found in inventory
+                or equip times out.
+            BridgeError: If the JS place operation fails or times out.
         """
         async with self._place_lock:
             ctrl = self._ensure_connected()
@@ -392,9 +393,12 @@ class Bot:
                     raise InventoryError(
                         f"Item '{item_name}' not found in inventory"
                     )
-                equip_event = await self._relay.wait_for(
-                    _EquipDoneEvent, timeout=10.0
-                )
+                try:
+                    equip_event = await self._relay.wait_for(
+                        _EquipDoneEvent, timeout=10.0
+                    )
+                except asyncio.TimeoutError as exc:
+                    raise InventoryError("equip timed out") from exc
                 if equip_event.error is not None:
                     raise InventoryError(f"equip failed: {equip_event.error}")
 
@@ -409,7 +413,10 @@ class Bot:
                     "(chunk unloaded or block changed)"
                 )
             ctrl.start_place(js_block, face.x, face.y, face.z)
-            event = await self._relay.wait_for(_PlaceDoneEvent, timeout=30.0)
+            try:
+                event = await self._relay.wait_for(_PlaceDoneEvent, timeout=30.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("place timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"place failed: {event.error}")
 
