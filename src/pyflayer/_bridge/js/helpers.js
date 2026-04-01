@@ -8,9 +8,10 @@
  * events on the bot EventEmitter so that the Python side can await them
  * with asyncio Futures.
  *
- * Event contract – each helper emits exactly ONE event:
- *   success → bot.emit('<name>Done')            // no args
- *   failure → bot.emit('<name>Done', errorMsg)   // one string arg
+ * Event contract – each helper emits exactly ONE event, namespaced for pyflayer:
+ *   success → bot.emit('_pyflayer:<name>Done')              // no args
+ *   failure → bot.emit('_pyflayer:<name>Done', errorMsg)    // one string arg
+ * where <name> is one of: "dig", "place", "equip", "lookAt".
  */
 
 module.exports = {
