@@ -1,18 +1,30 @@
-name: Publish to PyPI
+name: Release & Publish
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
 
 jobs:
-  publish:
-    name: Upload to PyPI
+  release:
+    name: Release & Publish to PyPI
     runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
     environment: pypi
     permissions:
       id-token: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag must be on the main branch"
+            exit 1
+          fi
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
@@ -28,6 +40,11 @@ jobs:
 
       - name: Build package
         run: uv build
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
