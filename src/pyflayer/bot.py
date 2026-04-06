@@ -171,7 +171,7 @@ class Bot:
             self._controller.js_bot,
             self._runtime.js_module.On,
         )
-        self._observe.bind_js(
+        self._observe._bind_js(
             self._controller.js_bot,
             self._runtime.js_module.On,
         )
@@ -206,7 +206,7 @@ class Bot:
                 pass  # Handler already gone
             self._on_end_handler = None
         self._relay.reset()
-        self._observe.reset_state()
+        self._observe._reset_state()
         if self._controller is not None:
             if self._connected:
                 self._controller.quit()
