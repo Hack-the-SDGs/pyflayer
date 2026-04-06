@@ -28,6 +28,9 @@ from pyflayer.models.vec3 import Vec3
 
 _log = logging.getLogger(__name__)
 
+_HIGH_FREQ_EVENTS: frozenset[str] = frozenset({"physicsTick", "entityMoved"})
+_SLOW_HANDLER_THRESHOLD: float = 0.5  # 500ms
+
 
 class EventRelay:
     """Receives JS events on the JSPyBridge callback thread and
@@ -46,6 +49,9 @@ class EventRelay:
         ] = defaultdict(list)
         # Strong refs to prevent GC (JSPyBridge uses WeakValueDictionary)
         self._js_handler_refs: list[Any] = []
+        # Move event throttle state
+        self._move_last_post: float = 0.0
+        self._move_throttle: float = 0.1  # 100ms
 
     def set_loop(self, loop: asyncio.AbstractEventLoop) -> None:
         """Bind to the running asyncio event loop."""
@@ -67,6 +73,7 @@ class EventRelay:
                 if not fut.done():
                     fut.cancel()
         self._waiters.clear()
+        self._move_last_post = 0.0
         self._loop = None
 
     def register_js_events(self, js_bot: Any, on_fn: Any) -> None:
@@ -189,6 +196,16 @@ class EventRelay:
             error = str(args[0]) if args and args[0] is not None else None
             self._post(_LookAtDoneEvent, _LookAtDoneEvent(error=error))
 
+        # -- Throttled high-frequency events --
+
+        @on_fn(js_bot, "move")
+        def _on_move(*_args: Any) -> None:
+            now = time.monotonic()
+            if now - self._move_last_post < self._move_throttle:
+                return
+            self._move_last_post = now
+            self._post_raw("move", {"args": []})
+
         self._js_handler_refs.extend([
             _on_spawn,
             _on_chat,
@@ -204,6 +221,7 @@ class EventRelay:
             _on_place_done,
             _on_equip_done,
             _on_look_at_done,
+            _on_move,
         ])
 
     # -- Handler management (called from ObserveAPI) --
@@ -242,6 +260,13 @@ class EventRelay:
             on_fn: The ``On`` decorator from JSPyBridge.
             event_name: The JS event name to listen for.
         """
+        if event_name in _HIGH_FREQ_EVENTS:
+            _log.warning(
+                "Subscribing to high-frequency event '%s'. "
+                "This may impact performance. Consider throttling "
+                "in your handler.",
+                event_name,
+            )
 
         @on_fn(js_bot, event_name)
         def _on_raw(*args: Any) -> None:
@@ -286,18 +311,31 @@ class EventRelay:
             except RuntimeError:
                 pass
 
-    @staticmethod
-    def _on_handler_done(task: asyncio.Task[None]) -> None:
-        """Log exceptions from user event handlers."""
-        if task.cancelled():
-            return
-        exc = task.exception()
-        if exc is not None:
-            _log.exception(
-                "Unhandled exception in event handler %s",
-                task.get_name(),
-                exc_info=exc,
-            )
+    def _make_done_callback(
+        self, handler_name: str, start_time: float
+    ) -> Callable[[asyncio.Task[None]], None]:
+        """Create a done-callback that logs slow handlers and exceptions."""
+
+        def _on_done(task: asyncio.Task[None]) -> None:
+            elapsed = time.monotonic() - start_time
+            if elapsed > _SLOW_HANDLER_THRESHOLD:
+                _log.warning(
+                    "Event handler '%s' took %.1fms (threshold: %.0fms)",
+                    handler_name,
+                    elapsed * 1000,
+                    _SLOW_HANDLER_THRESHOLD * 1000,
+                )
+            if task.cancelled():
+                return
+            exc = task.exception()
+            if exc is not None:
+                _log.exception(
+                    "Unhandled exception in event handler %s",
+                    task.get_name(),
+                    exc_info=exc,
+                )
+
+        return _on_done
 
     def _dispatch(self, event_type: type, event: object) -> None:
         """Runs on the asyncio event loop thread."""
@@ -306,12 +344,24 @@ class EventRelay:
                 fut.set_result(event)
         if self._loop is not None:
             for handler in self._handlers.get(event_type, []):
+                start = time.monotonic()
                 task = self._loop.create_task(handler(event))
-                task.add_done_callback(self._on_handler_done)
+                task.add_done_callback(
+                    self._make_done_callback(
+                        getattr(handler, "__qualname__", repr(handler)),
+                        start,
+                    )
+                )
 
     def _dispatch_raw(self, event_name: str, data: dict[str, Any]) -> None:
         """Dispatch raw events on the asyncio event loop thread."""
         if self._loop is not None:
             for handler in self._raw_handlers.get(event_name, []):
+                start = time.monotonic()
                 task = self._loop.create_task(handler(data))
-                task.add_done_callback(self._on_handler_done)
+                task.add_done_callback(
+                    self._make_done_callback(
+                        getattr(handler, "__qualname__", repr(handler)),
+                        start,
+                    )
+                )
