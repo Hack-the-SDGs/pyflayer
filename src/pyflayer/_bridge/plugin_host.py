@@ -126,4 +126,4 @@ class PluginHost:
         try:
             return self._runtime.require(name)
         except Exception as exc:
-            raise BridgeError(f"raw_plugin '{name}' failed: {exc}") from exc
+            raise BridgeError(f"raw_plugin '{name}' failed: {exc}", js_stack=extract_js_stack(exc)) from exc
