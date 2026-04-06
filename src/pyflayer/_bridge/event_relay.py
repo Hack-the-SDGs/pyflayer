@@ -46,7 +46,9 @@ class EventRelay:
     dispatches them to asyncio handlers via ``call_soon_threadsafe``.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self, event_throttle_ms: dict[str, int] | None = None
+    ) -> None:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._handlers: dict[type, list[Callable[..., Coroutine[Any, Any, None]]]] = (
             defaultdict(list)
@@ -58,9 +60,12 @@ class EventRelay:
         ] = defaultdict(list)
         # Strong refs to prevent GC (JSPyBridge uses WeakValueDictionary)
         self._js_handler_refs: list[Any] = []
-        # Move event throttle state
-        self._move_last_post: float = 0.0
-        self._move_throttle: float = 0.1  # 100ms
+        # Per-event throttle: event_name -> interval in seconds
+        throttle_cfg = event_throttle_ms or {"move": 50}
+        self._throttle_intervals: dict[str, float] = {
+            name: ms / 1000.0 for name, ms in throttle_cfg.items()
+        }
+        self._throttle_last_post: dict[str, float] = {}
         # Suppress GoalFailedEvent from path_stop after a successful goal_reached
         self._goal_just_reached: bool = False
 
@@ -84,7 +89,7 @@ class EventRelay:
                 if not fut.done():
                     fut.cancel()
         self._waiters.clear()
-        self._move_last_post = 0.0
+        self._throttle_last_post.clear()
         self._goal_just_reached = False
         self._loop = None
 
@@ -213,13 +218,25 @@ class EventRelay:
 
         # -- Throttled high-frequency events --
 
-        @on_fn(js_bot, "move")
-        def _on_move(*_args: Any) -> None:
-            now = time.monotonic()
-            if now - self._move_last_post < self._move_throttle:
-                return
-            self._move_last_post = now
-            self._post_raw("move", {"args": []})
+        throttled_handlers: list[object] = []
+        for event_name in self._throttle_intervals:
+            interval = self._throttle_intervals[event_name]
+            # Capture event_name and interval per-iteration
+            def _make_throttled(
+                evt: str, intv: float
+            ) -> Callable[..., None]:
+                def _handler(*_args: Any) -> None:
+                    now = time.monotonic()
+                    last = self._throttle_last_post.get(evt, 0.0)
+                    if now - last < intv:
+                        return
+                    self._throttle_last_post[evt] = now
+                    self._post_raw(evt, {"args": []})
+                return _handler
+
+            handler = _make_throttled(event_name, interval)
+            on_fn(js_bot, event_name)(handler)
+            throttled_handlers.append(handler)
 
         self._js_handler_refs.extend([
             _on_spawn,
@@ -236,7 +253,7 @@ class EventRelay:
             _on_place_done,
             _on_equip_done,
             _on_look_at_done,
-            _on_move,
+            *throttled_handlers,
         ])
 
     # -- Handler management (called from ObserveAPI) --

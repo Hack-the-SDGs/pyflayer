@@ -74,6 +74,7 @@ class Bot:
         skip_validation: bool | None = None,
         profiles_folder: str | None = None,
         load_internal_plugins: bool | None = None,
+        event_throttle_ms: dict[str, int] | None = None,
     ) -> None:
         self._config = BotConfig(
             host=host,
@@ -98,8 +99,9 @@ class Bot:
             skip_validation=skip_validation,
             profiles_folder=profiles_folder,
             load_internal_plugins=load_internal_plugins,
+            **({"event_throttle_ms": event_throttle_ms} if event_throttle_ms is not None else {}),
         )
-        self._relay = EventRelay()
+        self._relay = EventRelay(self._config.event_throttle_ms)
         self._observe = ObserveAPI(self._relay)
         self._runtime: BridgeRuntime | None = None
         self._controller: JSBotController | None = None

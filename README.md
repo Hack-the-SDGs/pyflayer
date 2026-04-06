@@ -1,12 +1,9 @@
 <div align="center">
 
-# pyflayer
-
-**Python-first 的 Mineflayer SDK**
-
-[![License](https://img.shields.io/github/license/xinshoutw/pyflayer?style=for-the-badge)](LICENSE)
+[![Banner](.github/assets/banner.png)](https://github.com/Hack-the-SDGs/pyflayer)
+[![License](https://img.shields.io/github/license/Hack-the-SDGs/pyflayer?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.14%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
 
 </div>
 
@@ -14,7 +11,7 @@
 
 pyflayer 讓你用 Python 寫 Minecraft bot，不需要碰 JavaScript。
 
-底層透過 [JSPyBridge](https://github.com/nicedouble/JSPyBridge) 驅動 [mineflayer](https://github.com/PrismarineJS/mineflayer)，但公開 API 是純 Python — 全 async/await、有完整型別提示、有 docstring。
+底層透過 [JSPyBridge](https://github.com/extremeheat/JSPyBridge) 驅動 [mineflayer](https://github.com/PrismarineJS/mineflayer)，但公開 API 是純 Python — 全 async/await、有完整型別提示、有 docstring。
 
 ### 特色
 
@@ -117,6 +114,17 @@ uv run ruff check src/
 uv run pyright
 ```
 
-## License
+## 貢獻
+歡迎 PR 與 Issue！
 
-[MIT](LICENSE)
+送出前請確認
+1. 遵循現有的程式碼風格與架構慣例
+2. 通過所有檢查測試 
+    - uv run pytest
+    - uv run ruff check src/
+    - uv run pyright
+3. 以 `feature/your-feature` 或 `fix/your-fix` 命名分支
+4. 發布 PR 時，目標分支為 `dev`
+
+## 授權
+本專案採用 [GNU Affero General Public License v3.0](LICENSE) 授權。

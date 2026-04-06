@@ -50,6 +50,11 @@ class BotConfig:
             ``None`` uses mineflayer's default.
         load_internal_plugins: Load mineflayer's built-in plugins.
             ``None`` uses mineflayer's default.
+        event_throttle_ms: Per-event throttle intervals in milliseconds.
+            Keys are JS event names, values are minimum intervals between
+            dispatches. Events arriving faster than the interval are
+            silently dropped.  Default: ``{"move": 50}`` (aligned with
+            Minecraft's 20 TPS = 50 ms/tick).
     """
 
     host: str
@@ -74,3 +79,6 @@ class BotConfig:
     skip_validation: bool | None = None
     profiles_folder: str | None = None
     load_internal_plugins: bool | None = None
+    event_throttle_ms: dict[str, int] = field(
+        default_factory=lambda: {"move": 50}
+    )
