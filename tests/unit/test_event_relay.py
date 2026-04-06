@@ -4,20 +4,20 @@ import asyncio
 
 import pytest
 
-from pyflayer._bridge._events import (
+from minethon._bridge._events import (
     DigDoneEvent,
     EquipDoneEvent,
     LookAtDoneEvent,
     PlaceDoneEvent,
 )
-from pyflayer._bridge.event_relay import EventRelay
-from pyflayer.models.events import (
+from minethon._bridge.event_relay import EventRelay
+from minethon.models.events import (
     ChatEvent,
     GoalFailedEvent,
     GoalReachedEvent,
     SpawnEvent,
 )
-from pyflayer.models.vec3 import Vec3
+from minethon.models.vec3 import Vec3
 
 
 class TestEventRelayBasic:

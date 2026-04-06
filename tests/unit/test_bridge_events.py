@@ -2,7 +2,7 @@
 
 import pytest
 
-from pyflayer._bridge._events import (
+from minethon._bridge._events import (
     DigDoneEvent,
     EquipDoneEvent,
     LookAtDoneEvent,

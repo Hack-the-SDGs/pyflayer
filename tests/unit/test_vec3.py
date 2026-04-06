@@ -1,5 +1,5 @@
 import pytest
-from pyflayer.models.vec3 import Vec3
+from minethon.models.vec3 import Vec3
 
 
 class TestVec3:

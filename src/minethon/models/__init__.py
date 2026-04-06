@@ -1,17 +1,17 @@
-"""pyflayer domain models."""
+"""minethon domain models."""
 
-from pyflayer.models.block import Block
-from pyflayer.models.entity import Entity, EntityKind
-from pyflayer.models.errors import (
+from minethon.models.block import Block
+from minethon.models.entity import Entity, EntityKind
+from minethon.models.errors import (
     BridgeError,
-    PyflayerConnectionError,
+    MinethonConnectionError,
     InventoryError,
     NavigationError,
     NotSpawnedError,
     PluginError,
-    PyflayerError,
+    MinethonError,
 )
-from pyflayer.models.events import (
+from minethon.models.events import (
     BlockBrokenEvent,
     ChatEvent,
     CollectCompletedEvent,
@@ -24,8 +24,8 @@ from pyflayer.models.events import (
     SpawnEvent,
     WhisperEvent,
 )
-from pyflayer.models.item import ItemStack
-from pyflayer.models.vec3 import Vec3
+from minethon.models.item import ItemStack
+from minethon.models.vec3 import Vec3
 
 __all__ = [
     "Block",
@@ -33,7 +33,7 @@ __all__ = [
     "BridgeError",
     "ChatEvent",
     "CollectCompletedEvent",
-    "PyflayerConnectionError",
+    "MinethonConnectionError",
     "DeathEvent",
     "EndEvent",
     "Entity",
@@ -47,7 +47,7 @@ __all__ = [
     "NavigationError",
     "NotSpawnedError",
     "PluginError",
-    "PyflayerError",
+    "MinethonError",
     "SpawnEvent",
     "Vec3",
     "WhisperEvent",

@@ -3,8 +3,8 @@
 from collections.abc import Awaitable, Coroutine
 from typing import Any, Callable, TypeVar, overload
 
-from pyflayer._bridge.event_relay import EventRelay
-from pyflayer.models.errors import PyflayerConnectionError
+from minethon._bridge.event_relay import EventRelay
+from minethon.models.errors import MinethonConnectionError
 
 E = TypeVar("E")
 
@@ -107,13 +107,13 @@ class ObserveAPI:
         """Wait for a single event occurrence.
 
         Raises:
-            PyflayerConnectionError: If called before ``Bot.connect()``.
+            MinethonConnectionError: If called before ``Bot.connect()``.
             asyncio.TimeoutError: If no event arrives within *timeout* seconds.
         """
         try:
             return await self._relay.wait_for(event_type, timeout=timeout)  # type: ignore[return-value]
         except RuntimeError as exc:
-            raise PyflayerConnectionError(
+            raise MinethonConnectionError(
                 "Bot is not connected; call Bot.connect() before wait_for()."
             ) from exc
 

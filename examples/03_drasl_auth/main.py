@@ -9,7 +9,7 @@ Run with:
 import asyncio
 import os
 
-from pyflayer import Bot
+from minethon import Bot
 
 
 async def main() -> None:
@@ -26,7 +26,7 @@ async def main() -> None:
     await bot.connect()
     await bot.wait_until_spawned()
     print(f"Bot spawned at {bot.position}")
-    await bot.chat("Hello from pyflayer!")
+    await bot.chat("Hello from minethon!")
 
     try:
         while bot.is_connected:

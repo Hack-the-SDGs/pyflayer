@@ -2,7 +2,7 @@
 
 import pytest
 
-from pyflayer import Bot
+from minethon import Bot
 
 
 @pytest.mark.integration

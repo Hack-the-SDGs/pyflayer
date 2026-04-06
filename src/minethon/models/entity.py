@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from pyflayer.models.vec3 import Vec3
+from minethon.models.vec3 import Vec3
 
 
 class EntityKind(Enum):

@@ -4,8 +4,8 @@ import asyncio
 
 import pytest
 
-from pyflayer import Bot
-from pyflayer.models.events import ChatEvent
+from minethon import Bot
+from minethon.models.events import ChatEvent
 
 
 @pytest.mark.integration

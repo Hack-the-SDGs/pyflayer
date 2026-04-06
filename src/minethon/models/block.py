@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from pyflayer.models.vec3 import Vec3
+from minethon.models.vec3 import Vec3
 
 
 @dataclass(frozen=True, slots=True)

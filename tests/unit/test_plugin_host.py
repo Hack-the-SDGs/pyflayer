@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pyflayer._bridge.plugin_host import PluginHost
-from pyflayer.models.errors import BridgeError
+from minethon._bridge.plugin_host import PluginHost
+from minethon.models.errors import BridgeError
 
 
 class TestPluginHostPathfinder:

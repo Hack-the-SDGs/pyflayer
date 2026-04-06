@@ -1,43 +1,43 @@
-"""Bot -- the public entry point for pyflayer."""
+"""Bot -- the public entry point for minethon."""
 
 import asyncio
 
-from pyflayer._bridge._events import (
+from minethon._bridge._events import (
     DigDoneEvent,
     EquipDoneEvent,
     LookAtDoneEvent,
     PlaceDoneEvent,
 )
-from pyflayer._bridge.event_relay import EventRelay
-from pyflayer._bridge.js_bot import JSBotController
-from pyflayer._bridge.marshalling import (
+from minethon._bridge.event_relay import EventRelay
+from minethon._bridge.js_bot import JSBotController
+from minethon._bridge.marshalling import (
     js_block_to_block,
     js_entity_to_entity,
 )
-from pyflayer._bridge.plugin_host import PluginHost
-from pyflayer._bridge.runtime import BridgeRuntime
-from pyflayer.api.navigation import NavigationAPI
-from pyflayer.api.observe import ObserveAPI
-from pyflayer.config import BotConfig
-from pyflayer.models.block import Block
-from pyflayer.models.entity import Entity, EntityKind
-from pyflayer.models.errors import (
+from minethon._bridge.plugin_host import PluginHost
+from minethon._bridge.runtime import BridgeRuntime
+from minethon.api.navigation import NavigationAPI
+from minethon.api.observe import ObserveAPI
+from minethon.config import BotConfig
+from minethon.models.block import Block
+from minethon.models.entity import Entity, EntityKind
+from minethon.models.errors import (
     BridgeError,
     InventoryError,
     NotSpawnedError,
-    PyflayerConnectionError,
-    PyflayerError,
+    MinethonConnectionError,
+    MinethonError,
 )
-from pyflayer.models.events import (
+from minethon.models.events import (
     EndEvent,
     SpawnEvent,
 )
-from pyflayer.models.vec3 import Vec3
-from pyflayer.raw import RawBotHandle
+from minethon.models.vec3 import Vec3
+from minethon.raw import RawBotHandle
 
 
 class Bot:
-    """pyflayer entry point.
+    """minethon entry point.
 
     Example::
 
@@ -53,7 +53,7 @@ class Bot:
         self,
         host: str,
         port: int = 25565,
-        username: str = "pyflayer",
+        username: str = "minethon",
         *,
         password: str | None = None,
         version: str | None = None,
@@ -120,13 +120,13 @@ class Bot:
     def _ensure_connected(self) -> JSBotController:
         """Return the controller or raise if not connected."""
         if self._controller is None or not self._connected:
-            raise PyflayerConnectionError("Bot is not connected.")
+            raise MinethonConnectionError("Bot is not connected.")
         return self._controller
 
     def _ensure_spawned(self) -> JSBotController:
         """Return the controller or raise if not spawned.
 
-        Implies connected -- raises ``PyflayerConnectionError`` first if
+        Implies connected -- raises ``MinethonConnectionError`` first if
         not connected, then ``NotSpawnedError`` if not yet spawned.
         """
         ctrl = self._ensure_connected()
@@ -379,7 +379,7 @@ class Bot:
                 :meth:`block_at` to obtain one.
 
         Raises:
-            PyflayerError: If the block is no longer present.
+            MinethonError: If the block is no longer present.
             BridgeError: If the JS dig operation fails or times out.
         """
         async with self._dig_lock:
@@ -390,7 +390,7 @@ class Bot:
                 int(block.position.z),
             )
             if js_block is None:
-                raise PyflayerError(
+                raise MinethonError(
                     f"Block at {block.position} is no longer available "
                     "(chunk unloaded or block changed)"
                 )
@@ -444,7 +444,7 @@ class Bot:
                 int(reference_block.position.z),
             )
             if js_block is None:
-                raise PyflayerError(
+                raise MinethonError(
                     f"Block at {reference_block.position} is no longer available "
                     "(chunk unloaded or block changed)"
                 )
@@ -537,7 +537,7 @@ class Bot:
     def navigation(self) -> NavigationAPI:
         """Path-planning and movement control API."""
         if self._navigation is None:
-            raise PyflayerConnectionError("Bot is not connected.")
+            raise MinethonConnectionError("Bot is not connected.")
         return self._navigation
 
     @property
@@ -565,5 +565,5 @@ class Bot:
         Includes ``raw_plugin(name)`` for loading arbitrary JS plugins.
         """
         if self._plugin_host is None:
-            raise PyflayerConnectionError("Bot is not connected.")
+            raise MinethonConnectionError("Bot is not connected.")
         return self._plugin_host

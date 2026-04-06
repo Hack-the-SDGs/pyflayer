@@ -1,7 +1,7 @@
 <div align="center">
 
-[![Banner](.github/assets/banner.png)](https://github.com/Hack-the-SDGs/pyflayer)
-[![License](https://img.shields.io/github/license/Hack-the-SDGs/pyflayer?style=for-the-badge)](LICENSE)
+[![Banner](.github/assets/banner.png)](https://github.com/Hack-the-SDGs/minethon)
+[![License](https://img.shields.io/github/license/Hack-the-SDGs/minethon?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.14%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
 
@@ -9,7 +9,7 @@
 
 ## 總覽
 
-pyflayer 讓你用 Python 寫 Minecraft bot，不需要碰 JavaScript。
+minethon 讓你用 Python 寫 Minecraft bot，不需要碰 JavaScript。
 
 底層透過 [JSPyBridge](https://github.com/extremeheat/JSPyBridge) 驅動 [mineflayer](https://github.com/PrismarineJS/mineflayer)，但公開 API 是純 Python — 全 async/await、有完整型別提示、有 docstring。
 
@@ -32,17 +32,17 @@ pyflayer 讓你用 Python 寫 Minecraft bot，不需要碰 JavaScript。
 ## 安裝
 
 ```bash
-uv add pyflayer
+uv add minethon
 ```
 
-> Node.js 必須在 PATH 中可用。pyflayer 啟動時會自動檢查。
+> Node.js 必須在 PATH 中可用。minethon 啟動時會自動檢查。
 
 ## 快速開始
 
 ```python
 import asyncio
-from pyflayer import Bot
-from pyflayer.models.events import ChatEvent
+from minethon import Bot
+from minethon.models.events import ChatEvent
 
 async def main():
     bot = Bot(host="localhost", port=25565, username="pybot")
@@ -55,7 +55,7 @@ async def main():
     await bot.connect()
     await bot.wait_until_spawned()
     print(f"Bot spawned at {bot.position}")
-    await bot.chat("Hello from pyflayer!")
+    await bot.chat("Hello from minethon!")
 
     try:
         while bot.is_connected:
@@ -77,7 +77,7 @@ asyncio.run(main())
 ## 專案結構
 
 ```
-src/pyflayer/
+src/minethon/
 ├── bot.py              # Bot 主類別（公開入口）
 ├── config.py           # BotConfig 設定
 ├── raw.py              # Raw escape hatch

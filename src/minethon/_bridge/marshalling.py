@@ -1,16 +1,16 @@
 """Convert JS proxy objects to Python domain models.
 
 All functions in this module accept a raw JSPyBridge proxy and return
-the corresponding :mod:`pyflayer.models` dataclass.  They are the sole
+the corresponding :mod:`minethon.models` dataclass.  They are the sole
 boundary between Layer 1 (bridge) and Layer 2 (domain model).
 """
 
 from typing import Any
 
-from pyflayer.models.block import Block
-from pyflayer.models.entity import Entity, EntityKind
-from pyflayer.models.item import ItemStack
-from pyflayer.models.vec3 import Vec3
+from minethon.models.block import Block
+from minethon.models.entity import Entity, EntityKind
+from minethon.models.item import ItemStack
+from minethon.models.vec3 import Vec3
 
 
 def js_vec3_to_vec3(js_obj: Any) -> Vec3:

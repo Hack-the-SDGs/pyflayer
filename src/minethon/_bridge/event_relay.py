@@ -7,13 +7,13 @@ from collections import defaultdict
 from collections.abc import Coroutine
 from typing import Any, Callable
 
-from pyflayer._bridge._events import (
+from minethon._bridge._events import (
     DigDoneEvent,
     EquipDoneEvent,
     LookAtDoneEvent,
     PlaceDoneEvent,
 )
-from pyflayer.models.events import (
+from minethon.models.events import (
     ChatEvent,
     DeathEvent,
     EndEvent,
@@ -24,7 +24,7 @@ from pyflayer.models.events import (
     SpawnEvent,
     WhisperEvent,
 )
-from pyflayer.models.vec3 import Vec3
+from minethon.models.vec3 import Vec3
 
 _log = logging.getLogger(__name__)
 
@@ -35,8 +35,8 @@ _SLOW_HANDLER_THRESHOLD: float = 0.5  # 500ms
 _STATIC_BRIDGED_EVENTS: frozenset[str] = frozenset({
     "spawn", "chat", "whisper", "health", "death",
     "kicked", "end", "goal_reached", "path_update", "path_stop",
-    "_pyflayer:digDone", "_pyflayer:placeDone",
-    "_pyflayer:equipDone", "_pyflayer:lookAtDone",
+    "_minethon:digDone", "_minethon:placeDone",
+    "_minethon:equipDone", "_minethon:lookAtDone",
 })
 
 
@@ -81,7 +81,7 @@ class EventRelay:
         Call on disconnect so that a subsequent ``connect()`` starts
         with a clean slate.  Clearing ``_loop`` ensures that
         ``wait_for()`` raises ``RuntimeError`` (surfaced as
-        ``PyflayerConnectionError`` by ``ObserveAPI``) when the bot
+        ``MinethonConnectionError`` by ``ObserveAPI``) when the bot
         is not connected, rather than silently timing out.
         """
         self._js_handler_refs.clear()
@@ -198,22 +198,22 @@ class EventRelay:
 
         # -- Internal async-operation completion events --
 
-        @on_fn(js_bot, "_pyflayer:digDone")
+        @on_fn(js_bot, "_minethon:digDone")
         def _on_dig_done(*args: Any) -> None:
             error = str(args[0]) if args and args[0] is not None else None
             self._post(DigDoneEvent, DigDoneEvent(error=error))
 
-        @on_fn(js_bot, "_pyflayer:placeDone")
+        @on_fn(js_bot, "_minethon:placeDone")
         def _on_place_done(*args: Any) -> None:
             error = str(args[0]) if args and args[0] is not None else None
             self._post(PlaceDoneEvent, PlaceDoneEvent(error=error))
 
-        @on_fn(js_bot, "_pyflayer:equipDone")
+        @on_fn(js_bot, "_minethon:equipDone")
         def _on_equip_done(*args: Any) -> None:
             error = str(args[0]) if args and args[0] is not None else None
             self._post(EquipDoneEvent, EquipDoneEvent(error=error))
 
-        @on_fn(js_bot, "_pyflayer:lookAtDone")
+        @on_fn(js_bot, "_minethon:lookAtDone")
         def _on_look_at_done(*args: Any) -> None:
             error = str(args[0]) if args and args[0] is not None else None
             self._post(LookAtDoneEvent, LookAtDoneEvent(error=error))

@@ -1,9 +1,9 @@
-"""01_hello_bot.py -- Basic pyflayer bot."""
+"""01_hello_bot.py -- Basic minethon bot."""
 
 import asyncio
 
-from pyflayer import Bot
-from pyflayer.models.events import ChatEvent
+from minethon import Bot
+from minethon.models.events import ChatEvent
 
 
 async def main() -> None:
@@ -17,7 +17,7 @@ async def main() -> None:
     await bot.connect()
     await bot.wait_until_spawned()
     print(f"Bot spawned at {bot.position}")
-    await bot.chat("Hello from pyflayer!")
+    await bot.chat("Hello from minethon!")
 
     try:
         while bot.is_connected:

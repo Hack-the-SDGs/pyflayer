@@ -2,14 +2,14 @@
 
 from types import SimpleNamespace
 
-from pyflayer._bridge.marshalling import (
+from minethon._bridge.marshalling import (
     js_block_to_block,
     js_entity_to_entity,
     js_item_to_item_stack,
     js_vec3_to_vec3,
 )
-from pyflayer.models.entity import EntityKind
-from pyflayer.models.vec3 import Vec3
+from minethon.models.entity import EntityKind
+from minethon.models.vec3 import Vec3
 
 
 def _mock_vec3(x: float, y: float, z: float) -> SimpleNamespace:
