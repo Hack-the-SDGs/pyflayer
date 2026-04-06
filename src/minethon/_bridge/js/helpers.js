@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Async operation wrappers for pyflayer.
+ * Async operation wrappers for minethon.
  *
  * These functions start mineflayer actions that return Promises without
  * blocking the caller.  Completion (or failure) is signalled via custom
