@@ -1,6 +1,6 @@
 # 01 — Hello Bot
 
-基本的 pyflayer bot，連線到 Minecraft 伺服器並回覆聊天訊息。
+基本的 minethon bot，連線到 Minecraft 伺服器並回覆聊天訊息。
 
 ## 功能
 

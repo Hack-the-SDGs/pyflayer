@@ -2,9 +2,9 @@
 
 from typing import Any
 
-from pyflayer._bridge._util import extract_js_stack
-from pyflayer._bridge.runtime import BridgeRuntime
-from pyflayer.models.errors import BridgeError
+from minethon._bridge._util import extract_js_stack
+from minethon._bridge.runtime import BridgeRuntime
+from minethon.models.errors import BridgeError
 
 
 class PluginHost:
@@ -111,7 +111,7 @@ class PluginHost:
     def raw_plugin(self, name: str) -> Any:
         """Load and return a raw JS plugin module.
 
-        This is an escape hatch for plugins not yet wrapped by pyflayer.
+        This is an escape hatch for plugins not yet wrapped by minethon.
 
         Args:
             name: npm package name of the plugin.

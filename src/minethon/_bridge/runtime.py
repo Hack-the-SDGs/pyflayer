@@ -5,14 +5,14 @@ import subprocess
 from types import ModuleType
 from typing import Any
 
-from pyflayer.models.errors import BridgeError
+from minethon.models.errors import BridgeError
 
 
 class BridgeRuntime:
     """Manages the JSPyBridge runtime lifecycle.
 
     Defers ``import javascript`` to :meth:`start` so that importing
-    pyflayer does not spawn a Node.js process.
+    minethon does not spawn a Node.js process.
     """
 
     def __init__(self) -> None:

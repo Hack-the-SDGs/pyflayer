@@ -4,27 +4,27 @@ import asyncio
 
 import pytest
 
-from pyflayer._bridge._events import (
+from minethon._bridge._events import (
     DigDoneEvent,
     EquipDoneEvent,
     LookAtDoneEvent,
     PlaceDoneEvent,
 )
-from pyflayer._bridge.event_relay import EventRelay
-from pyflayer.api.observe import ObserveAPI
-from pyflayer.bot import Bot
-from pyflayer.models.errors import (
+from minethon._bridge.event_relay import EventRelay
+from minethon.api.observe import ObserveAPI
+from minethon.bot import Bot
+from minethon.models.errors import (
     NotSpawnedError,
-    PyflayerConnectionError,
+    MinethonConnectionError,
 )
-from pyflayer.models.events import (
+from minethon.models.events import (
     ChatEvent,
     EndEvent,
     GoalFailedEvent,
     GoalReachedEvent,
     SpawnEvent,
 )
-from pyflayer.models.vec3 import Vec3
+from minethon.models.vec3 import Vec3
 
 
 class TestObserveAPI:
@@ -77,7 +77,7 @@ class TestObserveAPI:
         relay = EventRelay()
         api = ObserveAPI(relay)
 
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             await api.wait_for(SpawnEvent, timeout=0.01)
 
     def test_on_raw_direct_call(self) -> None:
@@ -107,27 +107,27 @@ class TestBotState:
 
     def test_not_connected_raises(self) -> None:
         bot = Bot(host="localhost")
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             _ = bot.position
 
     def test_not_connected_health_raises(self) -> None:
         bot = Bot(host="localhost")
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             _ = bot.health
 
     def test_not_connected_food_raises(self) -> None:
         bot = Bot(host="localhost")
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             _ = bot.food
 
     def test_not_connected_game_mode_raises(self) -> None:
         bot = Bot(host="localhost")
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             _ = bot.game_mode
 
     def test_not_connected_players_raises(self) -> None:
         bot = Bot(host="localhost")
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             _ = bot.players
 
     def test_is_connected_default(self) -> None:
@@ -148,7 +148,7 @@ class TestBotState:
 
     def test_navigation_not_connected_raises(self) -> None:
         bot = Bot(host="localhost")
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             _ = bot.navigation
 
     def test_not_spawned_is_alive_raises(self) -> None:
@@ -161,22 +161,22 @@ class TestBotState:
     @pytest.mark.asyncio
     async def test_chat_not_connected_raises(self) -> None:
         bot = Bot(host="localhost")
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             await bot.chat("hello")
 
     @pytest.mark.asyncio
     async def test_whisper_not_connected_raises(self) -> None:
         bot = Bot(host="localhost")
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             await bot.whisper("Steve", "hello")
 
     @pytest.mark.asyncio
     async def test_dig_not_connected_raises(self) -> None:
-        from pyflayer.models.block import Block
+        from minethon.models.block import Block
 
         bot = Bot(host="localhost")
         block = Block("stone", "Stone", Vec3(0, 0, 0), 1.5, True, False, "block")
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             await bot.dig(block)
 
     @pytest.mark.asyncio
@@ -190,7 +190,7 @@ class TestBotState:
     @pytest.mark.asyncio
     async def test_stop_not_connected_raises(self) -> None:
         bot = Bot(host="localhost")
-        with pytest.raises(PyflayerConnectionError):
+        with pytest.raises(MinethonConnectionError):
             await bot.stop()
 
     @pytest.mark.asyncio

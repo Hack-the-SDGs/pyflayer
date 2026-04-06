@@ -1,31 +1,31 @@
-"""Exception hierarchy for pyflayer."""
+"""Exception hierarchy for minethon."""
 
 
-class PyflayerError(Exception):
-    """Base exception for all pyflayer errors."""
+class MinethonError(Exception):
+    """Base exception for all minethon errors."""
 
 
-class PyflayerConnectionError(PyflayerError):
+class MinethonConnectionError(MinethonError):
     """Connection failed or disconnected."""
 
 
-class NotSpawnedError(PyflayerError):
+class NotSpawnedError(MinethonError):
     """Bot has not spawned yet."""
 
 
-class NavigationError(PyflayerError):
+class NavigationError(MinethonError):
     """Navigation failed."""
 
 
-class InventoryError(PyflayerError):
+class InventoryError(MinethonError):
     """Inventory operation failed."""
 
 
-class PluginError(PyflayerError):
+class PluginError(MinethonError):
     """Plugin loading or invocation failed."""
 
 
-class BridgeError(PyflayerError):
+class BridgeError(MinethonError):
     """Bridge communication error."""
 
     def __init__(self, message: str, js_stack: str | None = None) -> None:

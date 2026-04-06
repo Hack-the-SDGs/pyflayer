@@ -3,11 +3,11 @@
 import pathlib
 from typing import Any
 
-from pyflayer._bridge._util import extract_js_stack
-from pyflayer._bridge.runtime import BridgeRuntime
-from pyflayer.config import BotConfig
-from pyflayer.models.entity import EntityKind
-from pyflayer.models.errors import BridgeError
+from minethon._bridge._util import extract_js_stack
+from minethon._bridge.runtime import BridgeRuntime
+from minethon.config import BotConfig
+from minethon.models.entity import EntityKind
+from minethon.models.errors import BridgeError
 
 # Mapping from EntityKind to the JS entity type string used by mineflayer.
 # EntityKind.OTHER is intentionally omitted: mineflayer has no literal
@@ -292,7 +292,7 @@ class JSBotController:
     # -- Non-blocking actions (long-running, completion via events) --
 
     def start_dig(self, js_block: Any) -> None:
-        """Start digging without blocking. Completion via ``_pyflayer:digDone``."""
+        """Start digging without blocking. Completion via ``_minethon:digDone``."""
         try:
             self._helpers.startDig(self._js_bot, js_block)
         except Exception as exc:
@@ -305,7 +305,7 @@ class JSBotController:
         face_y: float,
         face_z: float,
     ) -> None:
-        """Start placing without blocking. Completion via ``_pyflayer:placeDone``."""
+        """Start placing without blocking. Completion via ``_minethon:placeDone``."""
         try:
             Vec3 = self._runtime.require("vec3").Vec3
             face_vec = Vec3(face_x, face_y, face_z)
@@ -314,7 +314,7 @@ class JSBotController:
             raise BridgeError(f"start_place failed: {exc}", js_stack=extract_js_stack(exc)) from exc
 
     def start_equip(self, item_name: str) -> bool:
-        """Start equipping without blocking. Completion via ``_pyflayer:equipDone``.
+        """Start equipping without blocking. Completion via ``_minethon:equipDone``.
 
         Returns:
             ``True`` if the item was found and equip started,
@@ -334,7 +334,7 @@ class JSBotController:
     def start_look_at(self, x: float, y: float, z: float) -> None:
         """Start looking at a position without blocking.
 
-        Completion via ``_pyflayer:lookAtDone``.
+        Completion via ``_minethon:lookAtDone``.
         """
         try:
             Vec3 = self._runtime.require("vec3").Vec3

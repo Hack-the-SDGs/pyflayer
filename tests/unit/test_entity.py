@@ -1,6 +1,6 @@
 import pytest
-from pyflayer.models.entity import Entity, EntityKind
-from pyflayer.models.vec3 import Vec3
+from minethon.models.entity import Entity, EntityKind
+from minethon.models.vec3 import Vec3
 
 
 class TestEntityKind:

@@ -2,12 +2,12 @@
 
 import asyncio
 
-from pyflayer._bridge.event_relay import EventRelay
-from pyflayer._bridge.js_bot import JSBotController
-from pyflayer._bridge.plugin_host import PluginHost
-from pyflayer.models.entity import EntityKind
-from pyflayer.models.errors import NavigationError
-from pyflayer.models.events import GoalFailedEvent, GoalReachedEvent
+from minethon._bridge.event_relay import EventRelay
+from minethon._bridge.js_bot import JSBotController
+from minethon._bridge.plugin_host import PluginHost
+from minethon.models.entity import EntityKind
+from minethon.models.errors import NavigationError
+from minethon.models.events import GoalFailedEvent, GoalReachedEvent
 
 
 class NavigationAPI:

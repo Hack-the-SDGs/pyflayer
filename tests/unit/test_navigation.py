@@ -5,12 +5,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pyflayer._bridge.event_relay import EventRelay
-from pyflayer.api.navigation import NavigationAPI
-from pyflayer.models.entity import EntityKind
-from pyflayer.models.errors import BridgeError, NavigationError
-from pyflayer.models.events import GoalFailedEvent, GoalReachedEvent
-from pyflayer.models.vec3 import Vec3
+from minethon._bridge.event_relay import EventRelay
+from minethon.api.navigation import NavigationAPI
+from minethon.models.entity import EntityKind
+from minethon.models.errors import BridgeError, NavigationError
+from minethon.models.events import GoalFailedEvent, GoalReachedEvent
+from minethon.models.vec3 import Vec3
 
 
 class TestNavigationGoto:

@@ -1,7 +1,7 @@
 """Tests for BotConfig."""
 
 import pytest
-from pyflayer.config import BotConfig
+from minethon.config import BotConfig
 
 
 class TestBotConfig:
@@ -9,7 +9,7 @@ class TestBotConfig:
         cfg = BotConfig(host="localhost")
         assert cfg.host == "localhost"
         assert cfg.port == 25565
-        assert cfg.username == "pyflayer"
+        assert cfg.username == "minethon"
         assert cfg.password is None
         assert cfg.version is None
         assert cfg.auth is None
@@ -50,7 +50,7 @@ class TestBotConfig:
             view_distance="far",
             default_chat_patterns=False,
             physics_enabled=False,
-            brand="pyflayer",
+            brand="minethon",
             skip_validation=True,
             profiles_folder="/tmp/profiles",
             load_internal_plugins=False,
@@ -73,7 +73,7 @@ class TestBotConfig:
         assert cfg.view_distance == "far"
         assert cfg.default_chat_patterns is False
         assert cfg.physics_enabled is False
-        assert cfg.brand == "pyflayer"
+        assert cfg.brand == "minethon"
         assert cfg.skip_validation is True
         assert cfg.profiles_folder == "/tmp/profiles"
         assert cfg.load_internal_plugins is False

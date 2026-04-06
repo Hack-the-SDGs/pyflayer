@@ -1,5 +1,5 @@
 import pytest
-from pyflayer.models.item import ItemStack
+from minethon.models.item import ItemStack
 
 
 class TestItemStack:

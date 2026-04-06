@@ -1,5 +1,5 @@
 import pytest
-from pyflayer.models.events import (
+from minethon.models.events import (
     BlockBrokenEvent,
     ChatEvent,
     CollectCompletedEvent,
@@ -12,7 +12,7 @@ from pyflayer.models.events import (
     SpawnEvent,
     WhisperEvent,
 )
-from pyflayer.models.vec3 import Vec3
+from minethon.models.vec3 import Vec3
 
 
 class TestSpawnEvent:

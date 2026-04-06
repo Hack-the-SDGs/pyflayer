@@ -59,7 +59,7 @@ class BotConfig:
 
     host: str
     port: int = 25565
-    username: str = "pyflayer"
+    username: str = "minethon"
     password: str | None = field(default=None, repr=False)
     version: str | None = None
     auth: str | None = None

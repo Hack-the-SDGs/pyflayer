@@ -3,8 +3,8 @@
 from collections.abc import Awaitable, Coroutine
 from typing import Any, Callable, TypeVar, overload
 
-from pyflayer._bridge.event_relay import EventRelay
-from pyflayer.models.errors import PyflayerConnectionError
+from minethon._bridge.event_relay import EventRelay
+from minethon.models.errors import MinethonConnectionError
 
 E = TypeVar("E")
 
@@ -27,8 +27,8 @@ class ObserveAPI:
         self._js_bot: Any = None
         self._on_fn: Any = None
 
-    def reset_state(self) -> None:
-        """Clear JS binding state so the next ``bind_js()`` starts clean.
+    def _reset_state(self) -> None:
+        """Clear JS binding state so the next ``_bind_js()`` starts clean.
 
         Called by ``Bot.disconnect()``.  User-registered handlers
         (via ``on``/``on_raw``) are preserved across reconnect.
@@ -39,7 +39,7 @@ class ObserveAPI:
         self._pending_raw_events.update(self._bound_raw_events)
         self._bound_raw_events.clear()
 
-    def bind_js(self, js_bot: Any, on_fn: Any) -> None:
+    def _bind_js(self, js_bot: Any, on_fn: Any) -> None:
         """Store JS references and bind any queued or previously bound raw events.
 
         On initial connect only events queued before ``Bot.connect()``
@@ -107,13 +107,13 @@ class ObserveAPI:
         """Wait for a single event occurrence.
 
         Raises:
-            PyflayerConnectionError: If called before ``Bot.connect()``.
+            MinethonConnectionError: If called before ``Bot.connect()``.
             asyncio.TimeoutError: If no event arrives within *timeout* seconds.
         """
         try:
             return await self._relay.wait_for(event_type, timeout=timeout)  # type: ignore[return-value]
         except RuntimeError as exc:
-            raise PyflayerConnectionError(
+            raise MinethonConnectionError(
                 "Bot is not connected; call Bot.connect() before wait_for()."
             ) from exc
 

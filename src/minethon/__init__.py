@@ -1,17 +1,20 @@
-"""pyflayer domain models."""
+"""minethon -- A Python-first Mineflayer SDK."""
 
-from pyflayer.models.block import Block
-from pyflayer.models.entity import Entity, EntityKind
-from pyflayer.models.errors import (
+from minethon.api.navigation import NavigationAPI
+from minethon.api.observe import ObserveAPI
+from minethon.bot import Bot
+from minethon.models.block import Block
+from minethon.models.entity import Entity, EntityKind
+from minethon.models.errors import (
     BridgeError,
-    PyflayerConnectionError,
     InventoryError,
     NavigationError,
     NotSpawnedError,
     PluginError,
-    PyflayerError,
+    MinethonConnectionError,
+    MinethonError,
 )
-from pyflayer.models.events import (
+from minethon.models.events import (
     BlockBrokenEvent,
     ChatEvent,
     CollectCompletedEvent,
@@ -24,16 +27,17 @@ from pyflayer.models.events import (
     SpawnEvent,
     WhisperEvent,
 )
-from pyflayer.models.item import ItemStack
-from pyflayer.models.vec3 import Vec3
+from minethon.models.item import ItemStack
+from minethon.models.vec3 import Vec3
+from minethon.raw import RawBotHandle
 
 __all__ = [
     "Block",
     "BlockBrokenEvent",
+    "Bot",
     "BridgeError",
     "ChatEvent",
     "CollectCompletedEvent",
-    "PyflayerConnectionError",
     "DeathEvent",
     "EndEvent",
     "Entity",
@@ -44,10 +48,14 @@ __all__ = [
     "InventoryError",
     "ItemStack",
     "KickedEvent",
+    "NavigationAPI",
     "NavigationError",
     "NotSpawnedError",
+    "ObserveAPI",
     "PluginError",
-    "PyflayerError",
+    "MinethonConnectionError",
+    "MinethonError",
+    "RawBotHandle",
     "SpawnEvent",
     "Vec3",
     "WhisperEvent",
