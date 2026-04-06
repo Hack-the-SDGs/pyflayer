@@ -3,7 +3,7 @@
 [![Banner](.github/assets/banner.png)](https://github.com/Hack-the-SDGs/minethon)
 [![License](https://img.shields.io/github/license/Hack-the-SDGs/minethon?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.14%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
 
 </div>
 
@@ -26,7 +26,7 @@ minethon 讓你用 Python 寫 Minecraft bot，不需要碰 JavaScript。
 | 項目 | 需求 |
 |------|------|
 | Python | 3.14+ |
-| Node.js | 24+ |
+| Node.js | 18+ |
 | Minecraft Server | Java Edition |
 
 ## 安裝
