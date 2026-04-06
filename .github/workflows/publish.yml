@@ -9,7 +9,6 @@ jobs:
   release:
     name: Release & Publish to PyPI
     runs-on: ubuntu-latest
-    if: github.ref_type == 'tag'
     environment: pypi
     permissions:
       id-token: write
@@ -41,10 +40,10 @@ jobs:
       - name: Build package
         run: uv build
 
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
