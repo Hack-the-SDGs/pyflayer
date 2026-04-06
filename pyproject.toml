@@ -40,7 +40,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["pyflayer"]
+source = ["src/pyflayer"]
 omit = ["src/pyflayer/_bridge/js/*"]
 
 [tool.coverage.report]

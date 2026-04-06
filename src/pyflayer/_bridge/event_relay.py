@@ -231,7 +231,7 @@ class EventRelay:
                     if now - last < intv:
                         return
                     self._throttle_last_post[evt] = now
-                    self._post_raw(evt, {"args": []})
+                    self._post_raw(evt, {"args": list(_args)})
                 return _handler
 
             handler = _make_throttled(event_name, interval)
