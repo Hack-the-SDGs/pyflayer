@@ -141,7 +141,7 @@ class HealthChangedEvent:
 class BreathEvent:
     """Bot oxygen level changed."""
 
-    oxygen_level: float
+    oxygen_level: int
 
 
 @dataclass(frozen=True, slots=True)

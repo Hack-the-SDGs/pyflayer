@@ -141,6 +141,7 @@ class Bot:
         self._look_lock = asyncio.Lock()
         self._sleep_lock = asyncio.Lock()
         self._consume_lock = asyncio.Lock()
+        self._fish_lock = asyncio.Lock()
 
     def _ensure_connected(self) -> JSBotController:
         """Return the controller or raise if not connected."""
@@ -939,7 +940,7 @@ class Bot:
             InventoryError: If the item is not found or equip fails.
         """
         ctrl = self._ensure_connected()
-        if not ctrl.start_equip(item_name):
+        if not ctrl.start_equip(item_name, destination):
             raise InventoryError(f"Item '{item_name}' not found in inventory")
         try:
             event = await self._relay.wait_for(EquipDoneEvent, timeout=10.0)
@@ -1034,14 +1035,15 @@ class Bot:
         Raises:
             BridgeError: If the fish operation fails or times out.
         """
-        ctrl = self._ensure_connected()
-        ctrl.start_fish()
-        try:
-            event = await self._relay.wait_for(FishDoneEvent, timeout=120.0)
-        except asyncio.TimeoutError as exc:
-            raise BridgeError("fish timed out") from exc
-        if event.error is not None:
-            raise BridgeError(f"fish failed: {event.error}")
+        async with self._fish_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_fish()
+            try:
+                event = await self._relay.wait_for(FishDoneEvent, timeout=120.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("fish timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"fish failed: {event.error}")
 
     async def activate_block(self, block: Block) -> None:
         """Activate a block (open door, punch note block, etc.).

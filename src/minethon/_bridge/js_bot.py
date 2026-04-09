@@ -507,7 +507,7 @@ class JSBotController:
         except Exception as exc:
             raise BridgeError(f"start_place failed: {exc}", js_stack=extract_js_stack(exc)) from exc
 
-    def start_equip(self, item_name: str) -> bool:
+    def start_equip(self, item_name: str, destination: str = "hand") -> bool:
         """Start equipping without blocking. Completion via ``_minethon:equipDone``.
 
         Returns:
@@ -519,7 +519,7 @@ class JSBotController:
             items = inv.items()
             for item in items:
                 if str(item.name) == item_name:
-                    self._helpers.startEquip(self._js_bot, item, "hand")
+                    self._helpers.startEquip(self._js_bot, item, destination)
                     return True
             return False
         except Exception as exc:
