@@ -15,6 +15,19 @@ from minethon.models.errors import (
     MinethonConnectionError,
     MinethonError,
 )
+from minethon.models.events import (
+    BlockBrokenEvent,
+    ChatEvent,
+    CollectCompletedEvent,
+    DeathEvent,
+    EndEvent,
+    GoalFailedEvent,
+    GoalReachedEvent,
+    HealthChangedEvent,
+    KickedEvent,
+    SpawnEvent,
+    WhisperEvent,
+)
 from minethon.models.experience import Experience
 from minethon.models.game_state import GameState
 from minethon.models.item import ItemStack
@@ -47,6 +60,18 @@ __all__ = [
     "Vec3",
     "VillagerSession",
     "WindowHandle",
+    # Events
+    "BlockBrokenEvent",
+    "ChatEvent",
+    "CollectCompletedEvent",
+    "DeathEvent",
+    "EndEvent",
+    "GoalFailedEvent",
+    "GoalReachedEvent",
+    "HealthChangedEvent",
+    "KickedEvent",
+    "SpawnEvent",
+    "WhisperEvent",
     # Errors
     "BridgeError",
     "InventoryError",

@@ -7,27 +7,39 @@ from typing import Any
 
 from minethon._bridge._events import (
     ActivateBlockDoneEvent,
+    ActivateEntityAtDoneEvent,
     ActivateEntityDoneEvent,
     ChunksLoadedDoneEvent,
+    ClickWindowDoneEvent,
     ConsumeDoneEvent,
     CraftDoneEvent,
+    CreativeClearInventoryDoneEvent,
+    CreativeClearSlotDoneEvent,
+    CreativeFlyToDoneEvent,
+    CreativeSetSlotDoneEvent,
     DigDoneEvent,
+    ElytraFlyDoneEvent,
     EquipDoneEvent,
     FishDoneEvent,
     LookAtDoneEvent,
     LookDoneEvent,
+    MoveSlotItemDoneEvent,
     OpenAnvilDoneEvent,
     OpenContainerDoneEvent,
     OpenEnchantmentTableDoneEvent,
     OpenFurnaceDoneEvent,
     OpenVillagerDoneEvent,
     PlaceDoneEvent,
+    PlaceEntityDoneEvent,
+    PutAwayDoneEvent,
     SleepDoneEvent,
     TabCompleteDoneEvent,
     TradeDoneEvent,
     TossDoneEvent,
     TossStackDoneEvent,
+    TransferDoneEvent,
     UnequipDoneEvent,
+    WriteBookDoneEvent,
     WaitForTicksDoneEvent,
     WakeDoneEvent,
 )
@@ -201,6 +213,15 @@ class Bot:
         self._wait_ticks_lock = asyncio.Lock()
         self._window_lock = asyncio.Lock()
         self._trade_lock = asyncio.Lock()
+        self._elytra_fly_lock = asyncio.Lock()
+        self._activate_entity_at_lock = asyncio.Lock()
+        self._write_book_lock = asyncio.Lock()
+        self._place_entity_lock = asyncio.Lock()
+        self._move_slot_item_lock = asyncio.Lock()
+        self._put_away_lock = asyncio.Lock()
+        self._click_window_lock = asyncio.Lock()
+        self._transfer_lock = asyncio.Lock()
+        self._creative_lock = asyncio.Lock()
         self._register_internal_state_handlers()
 
     def _reset_state_cache(self) -> None:
@@ -1001,6 +1022,30 @@ class Bot:
             if event.error is not None:
                 raise BridgeError(f"place failed: {event.error}")
 
+    async def place_entity(self, reference_block: Block, face: Vec3) -> None:
+        """Place an entity (e.g. a boat or minecart) against a block face.
+
+        Args:
+            reference_block: The block to place against.
+            face: Direction vector for the face (e.g. ``Vec3(0, 1, 0)``).
+
+        Raises:
+            MinethonError: If the block is not found.
+            BridgeError: If the place operation fails or times out.
+        """
+        async with self._place_entity_lock:
+            ctrl = self._ensure_connected()
+            js_block = self._resolve_js_block(reference_block)
+            if js_block is None:
+                raise MinethonError(f"Block at {reference_block.position} not found")
+            ctrl.start_place_entity(js_block, face.x, face.y, face.z)
+            try:
+                event = await self._relay.wait_for(PlaceEntityDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("place_entity timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"place_entity failed: {event.error}")
+
     async def use_item(self) -> None:
         """Activate the currently held item."""
         ctrl = self._ensure_connected()
@@ -1089,7 +1134,7 @@ class Bot:
         ctrl = self._ensure_connected()
         ctrl.set_control_state("jump", True)
         try:
-            await self.wait_for_ticks(1)
+            await asyncio.sleep(0.05)  # ~1 game tick (50 ms)
         finally:
             ctrl.set_control_state("jump", False)
 
@@ -1362,6 +1407,45 @@ class Bot:
             if event.error is not None:
                 raise BridgeError(f"activate_entity failed: {event.error}")
 
+    async def activate_entity_at(self, entity: Entity, position: Vec3) -> None:
+        """Activate an entity at a specific position (e.g. armor stand).
+
+        Args:
+            entity: The :class:`Entity` to activate.
+            position: World position to click at.
+
+        Raises:
+            BridgeError: If the activation fails or times out.
+        """
+        async with self._activate_entity_at_lock:
+            ctrl = self._ensure_connected()
+            js_entity = ctrl.get_entity_by_id(entity.id)
+            if js_entity is None:
+                return
+            ctrl.start_activate_entity_at(js_entity, position.x, position.y, position.z)
+            try:
+                event = await self._relay.wait_for(ActivateEntityAtDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("activate_entity_at timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"activate_entity_at failed: {event.error}")
+
+    async def elytra_fly(self) -> None:
+        """Activate elytra flight.
+
+        Raises:
+            BridgeError: If the elytra fly activation fails or times out.
+        """
+        async with self._elytra_fly_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_elytra_fly()
+            try:
+                event = await self._relay.wait_for(ElytraFlyDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("elytra_fly timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"elytra_fly failed: {event.error}")
+
     async def swing_arm(self, hand: str = "right") -> None:
         """Swing the bot arm.
 
@@ -1596,6 +1680,213 @@ class Bot:
             if event.error is not None:
                 raise BridgeError(f"craft failed: {event.error}")
 
+    async def write_book(self, slot: int, pages: list[str]) -> None:
+        """Write text to a book and quill.
+
+        Args:
+            slot: Inventory window slot containing the book
+                (36 = first quickbar slot).
+            pages: List of strings, one per page.
+
+        Raises:
+            BridgeError: If the write operation fails or times out.
+        """
+        async with self._write_book_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_write_book(slot, pages)
+            try:
+                event = await self._relay.wait_for(WriteBookDoneEvent, timeout=30.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("write_book timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"write_book failed: {event.error}")
+
+    # -- Lower-level inventory --
+
+    async def click_window(self, slot: int, mouse_button: int, mode: int) -> None:
+        """Perform a raw window click.
+
+        Args:
+            slot: The slot index to click.
+            mouse_button: Mouse button (0 = left, 1 = right).
+            mode: Click mode (0 = normal click, 1 = shift-click, etc.).
+
+        Raises:
+            BridgeError: If the click operation fails or times out.
+        """
+        async with self._click_window_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_click_window(slot, mouse_button, mode)
+            try:
+                event = await self._relay.wait_for(ClickWindowDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("click_window timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"click_window failed: {event.error}")
+
+    async def put_away(self, slot: int) -> None:
+        """Put the item at the given slot back into the inventory.
+
+        Args:
+            slot: The slot index to put away.
+
+        Raises:
+            BridgeError: If the operation fails or times out.
+        """
+        async with self._put_away_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_put_away(slot)
+            try:
+                event = await self._relay.wait_for(PutAwayDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("put_away timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"put_away failed: {event.error}")
+
+    async def transfer(
+        self,
+        item_type: int,
+        *,
+        source_start: int,
+        source_end: int,
+        dest_start: int,
+        dest_end: int | None = None,
+        count: int = 1,
+    ) -> None:
+        """Transfer items between slot ranges in the current window.
+
+        Args:
+            item_type: Numeric item type ID.
+            source_start: Start of the source slot range.
+            source_end: End of the source slot range.
+            dest_start: Start of the destination slot range.
+            dest_end: End of the destination range (defaults to
+                ``dest_start + 1``).
+            count: Number of items to transfer.
+
+        Raises:
+            BridgeError: If the transfer fails or times out.
+        """
+        async with self._transfer_lock:
+            ctrl = self._ensure_connected()
+            options: dict[str, Any] = {
+                "itemType": item_type,
+                "sourceStart": source_start,
+                "sourceEnd": source_end,
+                "destStart": dest_start,
+                "count": count,
+            }
+            if dest_end is not None:
+                options["destEnd"] = dest_end
+            ctrl.start_transfer(options)
+            try:
+                event = await self._relay.wait_for(TransferDoneEvent, timeout=30.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("transfer timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"transfer failed: {event.error}")
+
+    async def move_slot_item(self, source_slot: int, dest_slot: int) -> None:
+        """Move an item from one slot to another in the current window.
+
+        Args:
+            source_slot: Source slot index.
+            dest_slot: Destination slot index.
+
+        Raises:
+            BridgeError: If the move fails or times out.
+        """
+        async with self._move_slot_item_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_move_slot_item(source_slot, dest_slot)
+            try:
+                event = await self._relay.wait_for(MoveSlotItemDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("move_slot_item timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"move_slot_item failed: {event.error}")
+
+    # -- Creative mode --
+
+    async def creative_fly_to(self, destination: Vec3) -> None:
+        """Fly to a destination in creative mode.
+
+        Calls ``startFlying()`` internally and moves in a straight line.
+        Will not avoid obstacles.
+
+        Args:
+            destination: Target position (tip: use ``.5`` for x/z).
+
+        Raises:
+            BridgeError: If the fly operation fails or times out.
+        """
+        async with self._creative_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_creative_fly_to(destination.x, destination.y, destination.z)
+            try:
+                event = await self._relay.wait_for(CreativeFlyToDoneEvent, timeout=30.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("creative_fly_to timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"creative_fly_to failed: {event.error}")
+
+    async def creative_set_inventory_slot(self, slot: int, item: Any) -> None:
+        """Set an inventory slot to a specific item in creative mode.
+
+        Args:
+            slot: Inventory window slot (36 = first quickbar slot).
+            item: A prismarine-item instance, or ``None`` to delete.
+
+        Raises:
+            BridgeError: If the operation fails or times out.
+        """
+        async with self._creative_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_creative_set_inventory_slot(slot, item)
+            try:
+                event = await self._relay.wait_for(CreativeSetSlotDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("creative_set_inventory_slot timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"creative_set_inventory_slot failed: {event.error}")
+
+    async def creative_clear_slot(self, slot: int) -> None:
+        """Clear an inventory slot in creative mode.
+
+        Args:
+            slot: Inventory window slot to clear.
+
+        Raises:
+            BridgeError: If the operation fails or times out.
+        """
+        async with self._creative_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_creative_clear_slot(slot)
+            try:
+                event = await self._relay.wait_for(CreativeClearSlotDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("creative_clear_slot timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"creative_clear_slot failed: {event.error}")
+
+    async def creative_clear_inventory(self) -> None:
+        """Clear the entire inventory in creative mode.
+
+        Raises:
+            BridgeError: If the operation fails or times out.
+        """
+        async with self._creative_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_creative_clear_inventory()
+            try:
+                event = await self._relay.wait_for(
+                    CreativeClearInventoryDoneEvent, timeout=30.0
+                )
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("creative_clear_inventory timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"creative_clear_inventory failed: {event.error}")
+
     # -- World queries (extended) --
 
     async def block_at_cursor(self, max_distance: float = 256) -> Block | None:
@@ -1787,7 +2078,9 @@ class Bot:
             if event.error is not None:
                 raise BridgeError(f"tab_complete failed: {event.error}")
             try:
-                return list(event.result) if event.result is not None else []
+                if event.result is not None:
+                    return [str(item) for item in event.result]
+                return []
             except (TypeError, ValueError):
                 return []
 
