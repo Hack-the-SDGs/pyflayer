@@ -168,6 +168,214 @@ class JSBotController:
         except (TypeError, AttributeError):
             return False
 
+    # -- Additional state queries --
+
+    def get_food_saturation(self) -> float:
+        """Read bot food saturation."""
+        try:
+            return float(self._js_bot.foodSaturation)
+        except Exception as exc:
+            raise BridgeError(f"get_food_saturation failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_oxygen_level(self) -> int:
+        """Read bot oxygen level (0-20)."""
+        try:
+            val = getattr(self._js_bot, "oxygenLevel", None)
+            return int(val) if val is not None else 20
+        except Exception as exc:
+            raise BridgeError(f"get_oxygen_level failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_experience(self) -> dict[str, object]:
+        """Read experience as ``{level, points, progress}``."""
+        try:
+            exp = self._js_bot.experience
+            return {
+                "level": int(exp.level) if exp.level is not None else 0,
+                "points": int(exp.points) if exp.points is not None else 0,
+                "progress": float(exp.progress) if exp.progress is not None else 0.0,
+            }
+        except Exception as exc:
+            raise BridgeError(f"get_experience failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_game_state(self) -> dict[str, object]:
+        """Read game state as a plain dict."""
+        try:
+            g = self._js_bot.game
+            return {
+                "game_mode": str(g.gameMode) if getattr(g, "gameMode", None) is not None else "unknown",
+                "dimension": str(g.dimension) if getattr(g, "dimension", None) is not None else "unknown",
+                "difficulty": str(g.difficulty) if getattr(g, "difficulty", None) is not None else "unknown",
+                "hardcore": bool(getattr(g, "hardcore", False)),
+                "max_players": int(getattr(g, "maxPlayers", 0)),
+                "server_brand": str(getattr(g, "serverBrand", "")),
+                "min_y": int(getattr(g, "minY", 0)),
+                "height": int(getattr(g, "height", 256)),
+            }
+        except Exception as exc:
+            raise BridgeError(f"get_game_state failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_is_raining(self) -> bool:
+        """Whether it is currently raining."""
+        try:
+            return bool(self._js_bot.isRaining)
+        except Exception as exc:
+            raise BridgeError(f"get_is_raining failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_thunder_state(self) -> float:
+        """Thunder intensity (0 = no thunder)."""
+        try:
+            return float(self._js_bot.thunderState)
+        except Exception as exc:
+            raise BridgeError(f"get_thunder_state failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_time(self) -> dict[str, object]:
+        """Read world time as a plain dict."""
+        try:
+            t = self._js_bot.time
+            return {
+                "time_of_day": int(t.timeOfDay) if t.timeOfDay is not None else 0,
+                "day": int(t.day) if t.day is not None else 0,
+                "is_day": bool(t.isDay) if t.isDay is not None else True,
+                "moon_phase": int(t.moonPhase) if t.moonPhase is not None else 0,
+                "age": int(t.age) if t.age is not None else 0,
+                "do_daylight_cycle": bool(t.doDaylightCycle) if t.doDaylightCycle is not None else True,
+            }
+        except Exception as exc:
+            raise BridgeError(f"get_time failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_held_item(self) -> Any | None:
+        """Return the raw JS item in the bot's main hand, or ``None``."""
+        try:
+            item = self._js_bot.heldItem
+            return item if item is not None else None
+        except Exception as exc:
+            raise BridgeError(f"get_held_item failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_quick_bar_slot(self) -> int:
+        """Currently selected quick bar slot (0-8)."""
+        try:
+            slot = self._js_bot.quickBarSlot
+            return int(slot) if slot is not None else 0
+        except Exception as exc:
+            raise BridgeError(f"get_quick_bar_slot failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def set_quick_bar_slot(self, slot: int) -> None:
+        """Select a quick bar slot (0-8)."""
+        try:
+            self._js_bot.setQuickBarSlot(slot)
+        except Exception as exc:
+            raise BridgeError(f"set_quick_bar_slot failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_spawn_point(self) -> dict[str, float]:
+        """Read spawn point as ``{x, y, z}``."""
+        try:
+            sp = self._js_bot.spawnPoint
+            return {"x": float(sp.x), "y": float(sp.y), "z": float(sp.z)}
+        except Exception as exc:
+            raise BridgeError(f"get_spawn_point failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_is_sleeping(self) -> bool:
+        """Whether the bot is sleeping in a bed."""
+        try:
+            return bool(self._js_bot.isSleeping)
+        except Exception as exc:
+            raise BridgeError(f"get_is_sleeping failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_target_dig_block(self) -> Any | None:
+        """Return the JS block currently being dug, or ``None``."""
+        try:
+            return self._js_bot.targetDigBlock
+        except Exception as exc:
+            raise BridgeError(f"get_target_dig_block failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_bot_entity(self) -> Any:
+        """Return the bot's own JS entity proxy."""
+        try:
+            return self._js_bot.entity
+        except Exception as exc:
+            raise BridgeError(f"get_bot_entity failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_entities(self) -> Any:
+        """Return the raw JS entities dict proxy."""
+        try:
+            return self._js_bot.entities
+        except Exception as exc:
+            raise BridgeError(f"get_entities failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_version(self) -> str:
+        """Minecraft version string (e.g. ``"1.20.4"``)."""
+        try:
+            return str(self._js_bot.version)
+        except Exception as exc:
+            raise BridgeError(f"get_version failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_physics_enabled(self) -> bool:
+        """Whether the physics simulation is enabled."""
+        try:
+            return bool(self._js_bot.physicsEnabled)
+        except Exception as exc:
+            raise BridgeError(f"get_physics_enabled failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def set_physics_enabled(self, enabled: bool) -> None:
+        """Enable or disable the physics simulation."""
+        try:
+            self._js_bot.physicsEnabled = enabled
+        except Exception as exc:
+            raise BridgeError(f"set_physics_enabled failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_firework_rocket_duration(self) -> int:
+        """Duration of current firework rocket boost (0 if not boosting)."""
+        try:
+            val = self._js_bot.fireworkRocketDuration
+            return int(val) if val is not None else 0
+        except Exception as exc:
+            raise BridgeError(f"get_firework_rocket_duration failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_tablist(self) -> dict[str, str]:
+        """Read tab list header and footer as plain strings."""
+        try:
+            tl = self._js_bot.tablist
+            header = str(tl.header) if tl.header is not None else ""
+            footer = str(tl.footer) if tl.footer is not None else ""
+            return {"header": header, "footer": footer}
+        except Exception as exc:
+            raise BridgeError(f"get_tablist failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_is_alive_js(self) -> bool:
+        """Read the JS ``bot.isAlive`` property directly."""
+        try:
+            return bool(self._js_bot.isAlive)
+        except (TypeError, AttributeError):
+            return False
+
+    def get_username_js(self) -> str:
+        """Read the bot username from the JS bot (may differ from config after auth)."""
+        try:
+            return str(self._js_bot.username)
+        except Exception as exc:
+            raise BridgeError(f"get_username_js failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def get_players_full(self) -> dict[str, dict[str, object]]:
+        """Return online players with full details (no JS proxy leaking)."""
+        try:
+            js_players = self._js_bot.players
+            result: dict[str, dict[str, object]] = {}
+            for key in js_players:
+                p = js_players[key]
+                uuid_val = getattr(p, "uuid", None)
+                display_name = getattr(p, "displayName", None)
+                game_mode = getattr(p, "gamemode", None)
+                result[str(key)] = {
+                    "username": str(p.username),
+                    "uuid": str(uuid_val) if uuid_val is not None else "",
+                    "ping": int(p.ping) if hasattr(p, "ping") else 0,
+                    "game_mode": int(game_mode) if game_mode is not None else 0,
+                    "display_name": str(display_name) if display_name is not None else None,
+                }
+            return result
+        except Exception as exc:
+            raise BridgeError(f"get_players_full failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
     # -- World queries --
 
     def block_at(self, x: int, y: int, z: int) -> Any | None:
