@@ -1,4 +1,4 @@
-# CLAUDE.md — Minethon 開發指引
+# AGENTS.md — Minethon 開發指引
 
 ## 本文件的維護規則
 
