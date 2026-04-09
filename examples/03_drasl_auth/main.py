@@ -14,7 +14,7 @@ from minethon import Bot
 
 async def main() -> None:
     bot = Bot(
-        host="localhost",
+        host=os.environ["MC_HOST"],
         port=25565,
         username=os.environ["MC_USERNAME"],
         password=os.environ["MC_PASSWORD"],
