@@ -27,7 +27,11 @@ from minethon.models.events import (
     SpawnEvent,
     WhisperEvent,
 )
+from minethon.models.experience import Experience
+from minethon.models.game_state import GameState
 from minethon.models.item import ItemStack
+from minethon.models.player_info import PlayerInfo
+from minethon.models.time_state import TimeState
 from minethon.models.vec3 import Vec3
 from minethon.raw import RawBotHandle
 
@@ -42,6 +46,8 @@ __all__ = [
     "EndEvent",
     "Entity",
     "EntityKind",
+    "Experience",
+    "GameState",
     "GoalFailedEvent",
     "GoalReachedEvent",
     "HealthChangedEvent",
@@ -52,11 +58,13 @@ __all__ = [
     "NavigationError",
     "NotSpawnedError",
     "ObserveAPI",
+    "PlayerInfo",
     "PluginError",
     "MinethonConnectionError",
     "MinethonError",
     "RawBotHandle",
     "SpawnEvent",
+    "TimeState",
     "Vec3",
     "WhisperEvent",
 ]

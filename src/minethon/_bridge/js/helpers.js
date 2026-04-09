@@ -38,4 +38,34 @@ module.exports = {
             .then(() => bot.emit("_minethon:lookAtDone"))
             .catch(err => bot.emit("_minethon:lookAtDone", err?.message ?? String(err)));
     },
+
+    /**
+     * Serialise all tracked entities into a plain array in one JS call,
+     * avoiding per-entity bridge round-trips from Python.
+     *
+     * @returns {Array<{id:number, name:string|null, username:string|null,
+     *   type:string|null, position:{x:number,y:number,z:number},
+     *   velocity:{x:number,y:number,z:number}|null,
+     *   health:number|null}>}
+     */
+    snapshotEntities(bot) {
+        const result = [];
+        const entities = bot.entities;
+        for (const eid in entities) {
+            const e = entities[eid];
+            if (!e || !e.position) continue;
+            const pos = e.position;
+            const vel = e.velocity;
+            result.push({
+                id: e.id,
+                name: e.name ?? null,
+                username: e.username ?? null,
+                type: e.type ?? null,
+                position: { x: pos.x, y: pos.y, z: pos.z },
+                velocity: vel ? { x: vel.x, y: vel.y, z: vel.z } : null,
+                health: e.health ?? null,
+            });
+        }
+        return result;
+    },
 };
