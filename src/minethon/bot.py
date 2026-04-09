@@ -113,6 +113,7 @@ class Bot:
         self._controller: JSBotController | None = None
         self._connected = False
         self._spawned = False
+        self._resolved_username: str | None = None
         self._plugin_host: PluginHost | None = None
         self._navigation: NavigationAPI | None = None
         self._on_end_handler: object | None = None
@@ -224,6 +225,7 @@ class Bot:
             self._runtime = None
         self._connected = False
         self._spawned = False
+        self._resolved_username = None
 
     async def wait_until_spawned(self, timeout: float = 30.0) -> None:
         """Block until the bot has spawned in the world."""
@@ -288,11 +290,12 @@ class Bot:
 
         After authentication the server may assign a different name
         (e.g. Microsoft auth).  This reads the live value from the JS
-        bot when connected, falling back to the config value before
-        connection.
+        bot on first access after connecting, then caches it.
         """
         if self._controller is not None and self._connected:
-            return self._controller.get_username_js()
+            if self._resolved_username is None:
+                self._resolved_username = self._controller.get_username_js()
+            return self._resolved_username
         return self._config.username
 
     @property
@@ -437,6 +440,8 @@ class Bot:
 
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
+            BridgeError: If the server has not yet sent a ``spawn_position``
+                packet (``bot.spawnPoint`` is ``null``).
         """
         ctrl = self._ensure_spawned()
         data = ctrl.get_spawn_point()

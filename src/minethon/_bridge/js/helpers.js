@@ -53,7 +53,7 @@ module.exports = {
         const entities = bot.entities;
         for (const eid in entities) {
             const e = entities[eid];
-            if (!e) continue;
+            if (!e || !e.position) continue;
             const pos = e.position;
             const vel = e.velocity;
             result.push({
