@@ -75,6 +75,7 @@ from minethon.models.events import (
     MoveEvent,
     NoteHeardEvent,
     ParticleEvent,
+    PhysicsTickEvent,
     PistonMoveEvent,
     PlayerCollectEvent,
     PlayerJoinedEvent,
@@ -113,8 +114,10 @@ from minethon.models.experience import Experience
 from minethon.models.game_state import GameState
 from minethon.models.item import ItemStack
 from minethon.models.player_info import PlayerInfo
+from minethon.models.recipe import Recipe
 from minethon.models.time_state import TimeState
 from minethon.models.vec3 import Vec3
+from minethon.models.window import TradeOffer, VillagerSession, WindowHandle
 
 __all__ = [
     # Core types
@@ -125,8 +128,12 @@ __all__ = [
     "GameState",
     "ItemStack",
     "PlayerInfo",
+    "Recipe",
     "TimeState",
+    "TradeOffer",
     "Vec3",
+    "VillagerSession",
+    "WindowHandle",
     # Errors
     "BridgeError",
     "InventoryError",
@@ -225,6 +232,7 @@ __all__ = [
     "ForcedMoveEvent",
     "MountEvent",
     "MoveEvent",
+    "PhysicsTickEvent",
     # Window events
     "WindowCloseEvent",
     "WindowOpenEvent",

@@ -782,6 +782,16 @@ class JSBotController:
         except Exception as exc:
             raise BridgeError(f"recipes_all failed: {exc}", js_stack=extract_js_stack(exc)) from exc
 
+    def get_item_type(self, item_name: str) -> int | None:
+        """Resolve a registry item name to its numeric item id."""
+        try:
+            item_type = getattr(self._js_bot.registry.itemsByName, item_name, None)
+            if item_type is None:
+                return None
+            return int(item_type.id)
+        except Exception as exc:
+            raise BridgeError(f"get_item_type failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
     def creative_start_flying(self) -> None:
         """Set gravity to 0 for creative flight."""
         try:

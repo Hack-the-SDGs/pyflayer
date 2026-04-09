@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from minethon.models.entity import Entity
+from minethon.models.item import ItemStack
 from minethon.models.vec3 import Vec3
 
 
@@ -80,6 +82,7 @@ class ActionBarEvent:
     """An action bar message was received."""
 
     message: str
+    verified: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +92,7 @@ class MessageEvent:
     message: str
     position: str
     sender: str | None
+    verified: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +102,7 @@ class MessageStrEvent:
     message: str
     position: str
     sender: str | None
+    verified: bool | None = None
 
 
 # -- Title --
@@ -177,6 +182,8 @@ class WakeEvent:
 class HeldItemChangedEvent:
     """Bot held item changed."""
 
+    item: ItemStack | None
+
 
 # -- Movement --
 
@@ -184,6 +191,8 @@ class HeldItemChangedEvent:
 @dataclass(frozen=True, slots=True)
 class MoveEvent:
     """Bot position changed."""
+
+    position: Vec3
 
 
 @dataclass(frozen=True, slots=True)
@@ -228,6 +237,7 @@ class EntitySpawnEvent:
     """A new entity spawned in the world."""
 
     entity_id: int
+    entity: Entity | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -250,6 +260,7 @@ class EntityUpdateEvent:
     """An entity was updated."""
 
     entity_id: int
+    entity: Entity | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -16,8 +16,8 @@ _RawHandler = Callable[[dict[str, Any]], Awaitable[None]]
 class ObserveAPI:
     """Event subscription API.
 
-    Supports decorator-style and method-style registration, plus
-    one-shot ``wait_for`` and raw JS event access.
+    Supports decorator-style and method-style registration plus
+    one-shot ``wait_for`` for typed events.
     """
 
     def __init__(self, relay: EventRelay) -> None:
@@ -30,8 +30,8 @@ class ObserveAPI:
     def _reset_state(self) -> None:
         """Clear JS binding state so the next ``_bind_js()`` starts clean.
 
-        Called by ``Bot.disconnect()``.  User-registered handlers
-        (via ``on``/``on_raw``) are preserved across reconnect.
+        Called by ``Bot.disconnect()``. User-registered handlers are
+        preserved across reconnect.
         """
         self._js_bot = None
         self._on_fn = None
@@ -117,64 +117,22 @@ class ObserveAPI:
                 "Bot is not connected; call Bot.connect() before wait_for()."
             ) from exc
 
-    @overload
-    def on_raw(
-        self, event_name: str
-    ) -> Callable[[_RawHandler], _RawHandler]: ...
-
-    @overload
-    def on_raw(
-        self, event_name: str, handler: _RawHandler
-    ) -> None: ...
-
-    def on_raw(
+    def _on_raw(
         self,
         event_name: str,
-        handler: _RawHandler | None = None,
-    ) -> Callable[[_RawHandler], _RawHandler] | None:
-        """Subscribe to a raw JS event by name.
-
-        This is an escape hatch for events not covered by the typed API.
-        The handler receives a ``dict`` with an ``"args"`` key containing
-        the raw JS callback arguments.
-
-        Can be used as a decorator::
-
-            @bot.observe.on_raw("entityMoved")
-            async def on_entity_moved(data: dict[str, Any]):
-                ...
-
-        Or called directly::
-
-            bot.observe.on_raw("entityMoved", handler)
-
-        Warning:
-            Raw event data is not typed or validated.
-        """
-        def _register(fn: _RawHandler) -> None:
-            if event_name not in self._bound_raw_events:
-                if self._js_bot is not None and self._on_fn is not None:
-                    self._relay.bind_raw_js_event(
-                        self._js_bot, self._on_fn, event_name
-                    )
-                    self._bound_raw_events.add(event_name)
-                else:
-                    # Queue for binding once connect() provides JS refs
-                    self._pending_raw_events.add(event_name)
-            self._relay.add_raw_handler(event_name, fn)  # type: ignore[arg-type]
-
-        if handler is not None:
-            _register(handler)
-            return None
-
-        def decorator(fn: _RawHandler) -> _RawHandler:
-            _register(fn)
-            return fn
-
-        return decorator
-
-    def off_raw(
-        self, event_name: str, handler: _RawHandler
+        handler: _RawHandler,
     ) -> None:
-        """Unsubscribe a raw event handler."""
+        """Subscribe to a raw JS event by name for ``bot.raw``."""
+        if event_name not in self._bound_raw_events:
+            if self._js_bot is not None and self._on_fn is not None:
+                self._relay.bind_raw_js_event(
+                    self._js_bot, self._on_fn, event_name
+                )
+                self._bound_raw_events.add(event_name)
+            else:
+                self._pending_raw_events.add(event_name)
+        self._relay.add_raw_handler(event_name, handler)  # type: ignore[arg-type]
+
+    def _off_raw(self, event_name: str, handler: _RawHandler) -> None:
+        """Unsubscribe a raw event handler for ``bot.raw``."""
         self._relay.remove_raw_handler(event_name, handler)  # type: ignore[arg-type]

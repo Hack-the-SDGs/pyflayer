@@ -25,6 +25,7 @@ from minethon.models.events import (
     SpawnEvent,
 )
 from minethon.models.vec3 import Vec3
+from minethon.raw import RawBotHandle
 
 
 class TestObserveAPI:
@@ -64,11 +65,12 @@ class TestObserveAPI:
     def test_on_raw_queues_before_bind(self) -> None:
         relay = EventRelay()
         api = ObserveAPI(relay)
+        raw = RawBotHandle(object(), raw_subscribe=api._on_raw, raw_unsubscribe=api._off_raw)
 
-        @api.on_raw("entityMoved")
         async def handler(data: dict) -> None:
             pass
 
+        raw.on("entityMoved", handler)
         assert "entityMoved" in api._pending_raw_events
         assert "entityMoved" not in api._bound_raw_events
 
@@ -83,22 +85,24 @@ class TestObserveAPI:
     def test_on_raw_direct_call(self) -> None:
         relay = EventRelay()
         api = ObserveAPI(relay)
+        raw = RawBotHandle(object(), raw_subscribe=api._on_raw, raw_unsubscribe=api._off_raw)
 
         async def handler(data: dict) -> None:
             pass
 
-        api.on_raw("test_event", handler)
+        raw.on("test_event", handler)
         assert "test_event" in api._pending_raw_events
 
     def test_off_raw(self) -> None:
         relay = EventRelay()
         api = ObserveAPI(relay)
+        raw = RawBotHandle(object(), raw_subscribe=api._on_raw, raw_unsubscribe=api._off_raw)
 
         async def handler(data: dict) -> None:
             pass
 
-        api.on_raw("test_event", handler)
-        api.off_raw("test_event", handler)
+        raw.on("test_event", handler)
+        raw.off("test_event", handler)
         assert handler not in relay._raw_handlers.get("test_event", [])
 
 

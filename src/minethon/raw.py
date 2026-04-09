@@ -10,7 +10,10 @@
     for available properties and methods.
 """
 
+from collections.abc import Awaitable, Callable
 from typing import Any
+
+_RawHandler = Callable[[dict[str, Any]], Awaitable[None]]
 
 
 class RawBotHandle:
@@ -30,8 +33,18 @@ class RawBotHandle:
           (the same thread that called ``Bot.connect()``).
     """
 
-    def __init__(self, js_bot: Any) -> None:
+    def __init__(
+        self,
+        js_bot: Any,
+        *,
+        raw_subscribe: Callable[[str, _RawHandler], None] | None = None,
+        raw_unsubscribe: Callable[[str, _RawHandler], None] | None = None,
+        plugin_loader: Callable[[str], Any] | None = None,
+    ) -> None:
         self._js_bot = js_bot
+        self._raw_subscribe = raw_subscribe
+        self._raw_unsubscribe = raw_unsubscribe
+        self._plugin_loader = plugin_loader
 
     @property
     def js_bot(self) -> Any:
@@ -42,3 +55,21 @@ class RawBotHandle:
             is guaranteed. Use at your own risk.
         """
         return self._js_bot
+
+    def on(self, event_name: str, handler: _RawHandler) -> None:
+        """Subscribe to a raw JS event by name."""
+        if self._raw_subscribe is None:
+            raise RuntimeError("Raw event binding is not available on this handle.")
+        self._raw_subscribe(event_name, handler)
+
+    def off(self, event_name: str, handler: _RawHandler) -> None:
+        """Unsubscribe a raw JS event handler."""
+        if self._raw_unsubscribe is None:
+            raise RuntimeError("Raw event binding is not available on this handle.")
+        self._raw_unsubscribe(event_name, handler)
+
+    def plugin(self, name: str) -> Any:
+        """Load and return a raw JS plugin module."""
+        if self._plugin_loader is None:
+            raise RuntimeError("Raw plugin loading is not available on this handle.")
+        return self._plugin_loader(name)

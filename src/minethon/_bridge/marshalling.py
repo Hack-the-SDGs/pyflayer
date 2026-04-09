@@ -10,7 +10,9 @@ from typing import Any
 from minethon.models.block import Block
 from minethon.models.entity import Entity, EntityKind
 from minethon.models.item import ItemStack
+from minethon.models.recipe import Recipe
 from minethon.models.vec3 import Vec3
+from minethon.models.window import TradeOffer, VillagerSession, WindowHandle
 
 
 def js_vec3_to_vec3(js_obj: Any) -> Vec3:
@@ -152,4 +154,46 @@ def js_item_to_item_stack(js_obj: Any) -> ItemStack:
         max_stack_size=int(js_obj.stackSize),
         enchantments=enchants,
         nbt=nbt,
+    )
+
+
+def js_recipe_to_recipe(js_obj: Any) -> Recipe:
+    """Wrap a JS ``Recipe`` proxy in an opaque typed handle."""
+    return Recipe(_raw=js_obj)
+
+
+def js_window_to_window_handle(js_obj: Any) -> WindowHandle:
+    """Convert a JS ``Window`` proxy to a lightweight session handle."""
+    return WindowHandle(
+        id=int(js_obj.id),
+        title=str(js_obj.title),
+        kind=str(js_obj.type),
+        _raw=js_obj,
+    )
+
+
+def js_villager_to_session(js_obj: Any) -> VillagerSession:
+    """Convert a JS ``Villager`` trading window to a typed session."""
+    trades: list[TradeOffer] = []
+    for trade in getattr(js_obj, "trades", []) or []:
+        secondary_input = getattr(trade, "inputItem2", None)
+        trades.append(
+            TradeOffer(
+                first_input=js_item_to_item_stack(trade.inputItem1),
+                output=js_item_to_item_stack(trade.outputItem),
+                secondary_input=(
+                    js_item_to_item_stack(secondary_input)
+                    if secondary_input is not None
+                    else None
+                ),
+                disabled=bool(getattr(trade, "tradeDisabled", False)),
+                uses=int(getattr(trade, "nbTradeUses", 0)),
+                max_uses=int(getattr(trade, "maximumNbTradeUses", 0)),
+            )
+        )
+    return VillagerSession(
+        id=int(js_obj.id),
+        title=str(js_obj.title),
+        trades=tuple(trades),
+        _raw=js_obj,
     )

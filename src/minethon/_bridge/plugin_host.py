@@ -108,6 +108,10 @@ class PluginHost:
         except (AttributeError, TypeError):
             return False
 
+    def is_pathfinder_loaded(self) -> bool:
+        """Whether the pathfinder plugin has been loaded."""
+        return self._pf_loaded
+
     def raw_plugin(self, name: str) -> Any:
         """Load and return a raw JS plugin module.
 

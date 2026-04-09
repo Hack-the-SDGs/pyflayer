@@ -7,6 +7,7 @@ from collections import defaultdict
 from collections.abc import Coroutine
 from typing import Any, Callable
 
+from minethon._bridge.marshalling import js_entity_to_entity, js_item_to_item_stack
 from minethon._bridge._events import (
     ActivateBlockDoneEvent,
     ActivateEntityAtDoneEvent,
@@ -97,6 +98,7 @@ from minethon.models.events import (
     EntityHandSwapEvent,
     EntityHurtEvent,
     EntityMagicCriticalEffectEvent,
+    EntityMovedEvent,
     EntityShakingOffWaterEvent,
     EntitySleepEvent,
     EntitySpawnEvent,
@@ -158,13 +160,14 @@ from minethon.models.events import (
     BossBarUpdatedEvent,
     # Physics & Particles
     ParticleEvent,
+    PhysicsTickEvent,
 )
 from minethon.models.vec3 import Vec3
 
 _log = logging.getLogger(__name__)
 
 _HIGH_FREQ_EVENTS: frozenset[str] = frozenset({
-    "physicsTick", "entityMoved", "move",
+    "physicsTick", "entityMoved", "entityUpdate", "move",
 })
 _SLOW_HANDLER_THRESHOLD: float = 0.5  # 500ms
 
@@ -193,7 +196,7 @@ _STATIC_BRIDGED_EVENTS: frozenset[str] = frozenset({
     "entityCrouch", "entityUncrouch",
     "entityEquip", "entitySleep",
     "entitySpawn", "entityElytraFlew",
-    "entityGone", "entityUpdate",
+    "entityGone",
     "entityAttach", "entityDetach",
     "entityAttributes",
     "entityEffect", "entityEffectEnd",
@@ -270,7 +273,11 @@ class EventRelay:
         # Strong refs to prevent GC (JSPyBridge uses WeakValueDictionary)
         self._js_handler_refs: list[Any] = []
         # Per-event throttle: event_name -> interval in seconds
-        throttle_cfg = event_throttle_ms if event_throttle_ms is not None else {"move": 50}
+        throttle_cfg = (
+            event_throttle_ms
+            if event_throttle_ms is not None
+            else {"move": 50, "entityMoved": 50, "entityUpdate": 50, "physicsTick": 50}
+        )
         self._throttle_intervals: dict[str, float] = {
             name: ms / 1000.0 for name, ms in throttle_cfg.items()
         }
@@ -313,6 +320,70 @@ class EventRelay:
             on_fn: The ``On`` decorator from JSPyBridge.
         """
 
+        def _stringify_message(value: Any) -> str:
+            to_string = getattr(value, "toString", None)
+            if callable(to_string):
+                return str(to_string())
+            return str(value)
+
+        def _vec3_from_js(value: Any) -> Vec3:
+            return Vec3(float(value.x), float(value.y), float(value.z))
+
+        def _post_entity_event(
+            event_type: type,
+            *args: Any,
+            include_entity: bool = False,
+        ) -> None:
+            normalized = self._normalize_js_args(js_bot, args)
+            entity = normalized[0] if normalized else None
+            if entity is None:
+                return
+            try:
+                payload: dict[str, Any] = {"entity_id": int(entity.id)}
+                if include_entity:
+                    payload["entity"] = js_entity_to_entity(entity)
+                self._post(event_type, event_type(**payload))
+            except Exception:
+                _log.debug(
+                    "Failed to snapshot %s from JS entity payload",
+                    event_type.__name__,
+                    exc_info=True,
+                )
+
+        def _post_player_event(event_type: type, *args: Any) -> None:
+            normalized = self._normalize_js_args(js_bot, args)
+            player = normalized[0] if normalized else None
+            if player is None:
+                return
+            try:
+                self._post(event_type, event_type(username=str(player.username)))
+            except Exception:
+                _log.debug(
+                    "Failed to snapshot %s from JS player payload",
+                    event_type.__name__,
+                    exc_info=True,
+                )
+
+        def _name_from_proxy(value: Any) -> str:
+            return str(value.name) if hasattr(value, "name") else str(value)
+
+        def _post_named_event(event_type: type, field_name: str, *args: Any) -> None:
+            normalized = self._normalize_js_args(js_bot, args)
+            value = normalized[0] if normalized else None
+            if value is None:
+                return
+            try:
+                self._post(
+                    event_type,
+                    event_type(**{field_name: _name_from_proxy(value)}),
+                )
+            except Exception:
+                _log.debug(
+                    "Failed to snapshot %s from JS named payload",
+                    event_type.__name__,
+                    exc_info=True,
+                )
+
         # ================================================================
         # Lifecycle
         # ================================================================
@@ -339,8 +410,10 @@ class EventRelay:
 
         @on_fn(js_bot, "error")
         def _on_error(*args: Any) -> None:
-            message = str(args[0]) if args else "unknown"
-            self._post(ErrorEvent, ErrorEvent(message=message))
+            def builder(err: Any | None = None) -> ErrorEvent:
+                return ErrorEvent(message=str(err) if err is not None else "unknown")
+
+            self._post_built(js_bot, ErrorEvent, builder, *args)
 
         @on_fn(js_bot, "death")
         def _on_death(*_args: Any) -> None:
@@ -348,14 +421,20 @@ class EventRelay:
 
         @on_fn(js_bot, "kicked")
         def _on_kicked(*args: Any) -> None:
-            reason = str(args[0]) if len(args) > 0 else "unknown"
-            logged_in = bool(args[1]) if len(args) > 1 else False
-            self._post(KickedEvent, KickedEvent(reason=reason, logged_in=logged_in))
+            def builder(reason: Any | None = None, logged_in: Any = False) -> KickedEvent:
+                return KickedEvent(
+                    reason=str(reason) if reason is not None else "unknown",
+                    logged_in=bool(logged_in),
+                )
+
+            self._post_built(js_bot, KickedEvent, builder, *args)
 
         @on_fn(js_bot, "end")
         def _on_end(*args: Any) -> None:
-            reason = str(args[0]) if len(args) > 0 else "unknown"
-            self._post(EndEvent, EndEvent(reason=reason))
+            def builder(reason: Any | None = None) -> EndEvent:
+                return EndEvent(reason=str(reason) if reason is not None else "unknown")
+
+            self._post_built(js_bot, EndEvent, builder, *args)
 
         # ================================================================
         # Chat & Messages
@@ -363,69 +442,70 @@ class EventRelay:
 
         @on_fn(js_bot, "chat")
         def _on_chat(*args: Any) -> None:
-            if len(args) < 2:
-                return
-            username = str(args[0])
-            message = str(args[1])
-            event = ChatEvent(
-                sender=username,
-                message=message,
-                timestamp=time.time(),
-            )
-            self._post(ChatEvent, event)
+            def builder(username: Any, message: Any, *_extra: Any) -> ChatEvent:
+                return ChatEvent(
+                    sender=str(username),
+                    message=str(message),
+                    timestamp=time.time(),
+                )
+
+            self._post_built(js_bot, ChatEvent, builder, *args)
 
         @on_fn(js_bot, "whisper")
         def _on_whisper(*args: Any) -> None:
-            if len(args) < 2:
-                return
-            username = str(args[0])
-            message = str(args[1])
-            event = WhisperEvent(
-                sender=username,
-                message=message,
-                timestamp=time.time(),
-            )
-            self._post(WhisperEvent, event)
+            def builder(username: Any, message: Any, *_extra: Any) -> WhisperEvent:
+                return WhisperEvent(
+                    sender=str(username),
+                    message=str(message),
+                    timestamp=time.time(),
+                )
+
+            self._post_built(js_bot, WhisperEvent, builder, *args)
 
         @on_fn(js_bot, "actionBar")
         def _on_action_bar(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(ActionBarEvent, ActionBarEvent(
-                        message=str(args[0]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(json_msg: Any, verified: Any | None = None) -> ActionBarEvent:
+                return ActionBarEvent(
+                    message=_stringify_message(json_msg),
+                    verified=None if verified is None else bool(verified),
+                )
+
+            self._post_built(js_bot, ActionBarEvent, builder, *args)
 
         @on_fn(js_bot, "message")
         def _on_message(*args: Any) -> None:
-            if args:
-                try:
-                    json_msg = args[0]
-                    position = str(args[1]) if len(args) > 1 else "chat"
-                    sender = str(args[2]) if len(args) > 2 and args[2] is not None else None
-                    self._post(MessageEvent, MessageEvent(
-                        message=str(json_msg),
-                        position=position,
-                        sender=sender,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(
+                json_msg: Any,
+                position: Any = "chat",
+                sender: Any | None = None,
+                verified: Any | None = None,
+            ) -> MessageEvent:
+                return MessageEvent(
+                    message=_stringify_message(json_msg),
+                    position=str(position),
+                    sender=str(sender) if sender is not None else None,
+                    verified=None if verified is None else bool(verified),
+                )
+
+            self._post_built(js_bot, MessageEvent, builder, *args)
 
         @on_fn(js_bot, "messagestr")
         def _on_messagestr(*args: Any) -> None:
-            if args:
-                try:
-                    message = str(args[0])
-                    position = str(args[1]) if len(args) > 1 else "chat"
-                    sender = str(args[2]) if len(args) > 2 and args[2] is not None else None
-                    self._post(MessageStrEvent, MessageStrEvent(
-                        message=message,
-                        position=position,
-                        sender=sender,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(
+                message: Any,
+                position: Any = "chat",
+                _json_msg: Any | None = None,
+                sender: Any | None = None,
+                verified: Any | None = None,
+            ) -> MessageStrEvent:
+                return MessageStrEvent(
+                    message=str(message),
+                    position=str(position),
+                    sender=str(sender) if sender is not None else None,
+                    verified=None if verified is None else bool(verified),
+                )
+
+            self._post_built(js_bot, MessageStrEvent, builder, *args)
 
         # ================================================================
         # Title
@@ -433,26 +513,21 @@ class EventRelay:
 
         @on_fn(js_bot, "title")
         def _on_title(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(TitleEvent, TitleEvent(
-                        text=str(args[0]),
-                        type=str(args[1]) if len(args) > 1 else "title",
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(text: Any, title_type: Any = "title") -> TitleEvent:
+                return TitleEvent(text=_stringify_message(text), type=str(title_type))
+
+            self._post_built(js_bot, TitleEvent, builder, *args)
 
         @on_fn(js_bot, "title_times")
         def _on_title_times(*args: Any) -> None:
-            if len(args) >= 3:
-                try:
-                    self._post(TitleTimesEvent, TitleTimesEvent(
-                        fade_in=int(args[0]),
-                        stay=int(args[1]),
-                        fade_out=int(args[2]),
-                    ))
-                except (AttributeError, TypeError, ValueError):
-                    pass
+            def builder(fade_in: Any, stay: Any, fade_out: Any) -> TitleTimesEvent:
+                return TitleTimesEvent(
+                    fade_in=int(fade_in),
+                    stay=int(stay),
+                    fade_out=int(fade_out),
+                )
+
+            self._post_built(js_bot, TitleTimesEvent, builder, *args)
 
         @on_fn(js_bot, "title_clear")
         def _on_title_clear(*_args: Any) -> None:
@@ -464,36 +539,33 @@ class EventRelay:
 
         @on_fn(js_bot, "health")
         def _on_health(*_args: Any) -> None:
-            try:
-                event = HealthChangedEvent(
+            def builder(*_unused: Any) -> HealthChangedEvent:
+                return HealthChangedEvent(
                     health=float(js_bot.health),
                     food=float(js_bot.food),
                     saturation=float(js_bot.foodSaturation),
                 )
-                self._post(HealthChangedEvent, event)
-            except (AttributeError, TypeError):
-                _log.debug("Failed to read health data", exc_info=True)
+
+            self._post_built(js_bot, HealthChangedEvent, builder, *_args)
 
         @on_fn(js_bot, "breath")
         def _on_breath(*_args: Any) -> None:
-            try:
-                self._post(BreathEvent, BreathEvent(
-                    oxygen_level=int(js_bot.oxygenLevel),
-                ))
-            except (AttributeError, TypeError):
-                _log.debug("Failed to read oxygen level", exc_info=True)
+            def builder(*_unused: Any) -> BreathEvent:
+                return BreathEvent(oxygen_level=int(js_bot.oxygenLevel))
+
+            self._post_built(js_bot, BreathEvent, builder, *_args)
 
         @on_fn(js_bot, "experience")
         def _on_experience(*_args: Any) -> None:
-            try:
+            def builder(*_unused: Any) -> ExperienceEvent:
                 exp = js_bot.experience
-                self._post(ExperienceEvent, ExperienceEvent(
+                return ExperienceEvent(
                     level=int(exp.level),
                     points=int(exp.points),
                     progress=float(exp.progress),
-                ))
-            except (AttributeError, TypeError):
-                _log.debug("Failed to read experience data", exc_info=True)
+                )
+
+            self._post_built(js_bot, ExperienceEvent, builder, *_args)
 
         @on_fn(js_bot, "sleep")
         def _on_sleep(*_args: Any) -> None:
@@ -504,8 +576,17 @@ class EventRelay:
             self._post(WakeEvent, WakeEvent())
 
         @on_fn(js_bot, "heldItemChanged")
-        def _on_held_item_changed(*_args: Any) -> None:
-            self._post(HeldItemChangedEvent, HeldItemChangedEvent())
+        def _on_held_item_changed(*args: Any) -> None:
+            normalized = self._normalize_js_args(js_bot, args)
+            held_item = normalized[0] if normalized else None
+            try:
+                item = None if held_item is None else js_item_to_item_stack(held_item)
+                self._post(HeldItemChangedEvent, HeldItemChangedEvent(item=item))
+            except Exception:
+                _log.debug(
+                    "Failed to snapshot HeldItemChangedEvent from JS payload",
+                    exc_info=True,
+                )
 
         # ================================================================
         # Movement
@@ -521,12 +602,11 @@ class EventRelay:
 
         @on_fn(js_bot, "dismount")
         def _on_dismount(*args: Any) -> None:
-            try:
-                vehicle = args[0] if args else None
+            def builder(vehicle: Any | None = None) -> DismountEvent:
                 vehicle_id = int(vehicle.id) if vehicle is not None else -1
-                self._post(DismountEvent, DismountEvent(vehicle_id=vehicle_id))
-            except (AttributeError, TypeError):
-                self._post(DismountEvent, DismountEvent(vehicle_id=-1))
+                return DismountEvent(vehicle_id=vehicle_id)
+
+            self._post_built(js_bot, DismountEvent, builder, *args)
 
         # ================================================================
         # Navigation
@@ -535,29 +615,20 @@ class EventRelay:
         @on_fn(js_bot, "goal_reached")
         def _on_goal_reached(*_args: Any) -> None:
             self._goal_just_reached = True
-            try:
-                pos = js_bot.entity.position
-                event = GoalReachedEvent(
-                    position=Vec3(float(pos.x), float(pos.y), float(pos.z))
-                )
-                self._post(GoalReachedEvent, event)
-            except (AttributeError, TypeError):
-                self._post(
-                    GoalReachedEvent,
-                    GoalReachedEvent(position=Vec3(0.0, 0.0, 0.0)),
-                )
+            def builder(*_unused: Any) -> GoalReachedEvent:
+                return GoalReachedEvent(position=_vec3_from_js(js_bot.entity.position))
+
+            self._post_built(js_bot, GoalReachedEvent, builder, *_args)
 
         @on_fn(js_bot, "path_update")
         def _on_path_update(*args: Any) -> None:
-            if not args:
-                return
-            result = args[0]
-            status = getattr(result, "status", None)
-            if status is not None and str(status) == "noPath":
-                self._post(
-                    GoalFailedEvent,
-                    GoalFailedEvent(reason="noPath"),
-                )
+            def builder(result: Any) -> GoalFailedEvent | None:
+                status = getattr(result, "status", None)
+                if status is not None and str(status) == "noPath":
+                    return GoalFailedEvent(reason="noPath")
+                return None
+
+            self._post_built(js_bot, GoalFailedEvent, builder, *args)
 
         @on_fn(js_bot, "path_stop")
         def _on_path_stop(*_args: Any) -> None:
@@ -574,284 +645,139 @@ class EventRelay:
 
         @on_fn(js_bot, "entitySwingArm")
         def _on_entity_swing_arm(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntitySwingArmEvent, EntitySwingArmEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntitySwingArmEvent, *args)
 
         @on_fn(js_bot, "entityHurt")
         def _on_entity_hurt(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityHurtEvent, EntityHurtEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityHurtEvent, *args)
 
         @on_fn(js_bot, "entityDead")
         def _on_entity_dead(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityDeadEvent, EntityDeadEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityDeadEvent, *args)
 
         @on_fn(js_bot, "entityTaming")
         def _on_entity_taming(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityTamingEvent, EntityTamingEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityTamingEvent, *args)
 
         @on_fn(js_bot, "entityTamed")
         def _on_entity_tamed(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityTamedEvent, EntityTamedEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityTamedEvent, *args)
 
         @on_fn(js_bot, "entityShakingOffWater")
         def _on_entity_shaking_off_water(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityShakingOffWaterEvent, EntityShakingOffWaterEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityShakingOffWaterEvent, *args)
 
         @on_fn(js_bot, "entityEatingGrass")
         def _on_entity_eating_grass(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityEatingGrassEvent, EntityEatingGrassEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityEatingGrassEvent, *args)
 
         @on_fn(js_bot, "entityHandSwap")
         def _on_entity_hand_swap(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityHandSwapEvent, EntityHandSwapEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityHandSwapEvent, *args)
 
         @on_fn(js_bot, "entityWake")
         def _on_entity_wake(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityWakeEvent, EntityWakeEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityWakeEvent, *args)
 
         @on_fn(js_bot, "entityEat")
         def _on_entity_eat(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityEatEvent, EntityEatEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityEatEvent, *args)
 
         @on_fn(js_bot, "entityCriticalEffect")
         def _on_entity_critical_effect(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityCriticalEffectEvent, EntityCriticalEffectEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityCriticalEffectEvent, *args)
 
         @on_fn(js_bot, "entityMagicCriticalEffect")
         def _on_entity_magic_critical_effect(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityMagicCriticalEffectEvent, EntityMagicCriticalEffectEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityMagicCriticalEffectEvent, *args)
 
         @on_fn(js_bot, "entityCrouch")
         def _on_entity_crouch(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityCrouchEvent, EntityCrouchEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityCrouchEvent, *args)
 
         @on_fn(js_bot, "entityUncrouch")
         def _on_entity_uncrouch(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityUncrouchEvent, EntityUncrouchEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityUncrouchEvent, *args)
 
         @on_fn(js_bot, "entityEquip")
         def _on_entity_equip(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityEquipEvent, EntityEquipEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityEquipEvent, *args)
 
         @on_fn(js_bot, "entitySleep")
         def _on_entity_sleep(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntitySleepEvent, EntitySleepEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntitySleepEvent, *args)
 
         @on_fn(js_bot, "entitySpawn")
         def _on_entity_spawn(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntitySpawnEvent, EntitySpawnEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntitySpawnEvent, *args, include_entity=True)
 
         @on_fn(js_bot, "entityElytraFlew")
         def _on_entity_elytra_flew(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityElytraFlewEvent, EntityElytraFlewEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityElytraFlewEvent, *args)
 
         @on_fn(js_bot, "entityGone")
         def _on_entity_gone(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityGoneEvent, EntityGoneEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
-
-        @on_fn(js_bot, "entityUpdate")
-        def _on_entity_update(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityUpdateEvent, EntityUpdateEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityGoneEvent, *args)
 
         @on_fn(js_bot, "entityAttach")
         def _on_entity_attach(*args: Any) -> None:
-            if len(args) >= 2:
-                try:
-                    self._post(EntityAttachEvent, EntityAttachEvent(
-                        entity_id=int(args[0].id),
-                        vehicle_id=int(args[1].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(entity: Any, vehicle: Any) -> EntityAttachEvent:
+                return EntityAttachEvent(
+                    entity_id=int(entity.id),
+                    vehicle_id=int(vehicle.id),
+                )
+
+            self._post_built(js_bot, EntityAttachEvent, builder, *args)
 
         @on_fn(js_bot, "entityDetach")
         def _on_entity_detach(*args: Any) -> None:
-            if len(args) >= 2:
-                try:
-                    self._post(EntityDetachEvent, EntityDetachEvent(
-                        entity_id=int(args[0].id),
-                        vehicle_id=int(args[1].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(entity: Any, vehicle: Any) -> EntityDetachEvent:
+                return EntityDetachEvent(
+                    entity_id=int(entity.id),
+                    vehicle_id=int(vehicle.id),
+                )
+
+            self._post_built(js_bot, EntityDetachEvent, builder, *args)
 
         @on_fn(js_bot, "entityAttributes")
         def _on_entity_attributes(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(EntityAttributesEvent, EntityAttributesEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(EntityAttributesEvent, *args)
 
         @on_fn(js_bot, "entityEffect")
         def _on_entity_effect(*args: Any) -> None:
-            if args:
-                try:
-                    entity = args[0]
-                    effect = args[1] if len(args) > 1 else None
-                    self._post(EntityEffectEvent, EntityEffectEvent(
-                        entity_id=int(entity.id),
-                        effect_id=int(effect.id) if effect is not None else -1,
-                        amplifier=int(effect.amplifier) if effect is not None else 0,
-                        duration=int(effect.duration) if effect is not None else 0,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(entity: Any, effect: Any | None = None) -> EntityEffectEvent:
+                return EntityEffectEvent(
+                    entity_id=int(entity.id),
+                    effect_id=int(effect.id) if effect is not None else -1,
+                    amplifier=int(effect.amplifier) if effect is not None else 0,
+                    duration=int(effect.duration) if effect is not None else 0,
+                )
+
+            self._post_built(js_bot, EntityEffectEvent, builder, *args)
 
         @on_fn(js_bot, "entityEffectEnd")
         def _on_entity_effect_end(*args: Any) -> None:
-            if args:
-                try:
-                    entity = args[0]
-                    effect = args[1] if len(args) > 1 else None
-                    self._post(EntityEffectEndEvent, EntityEffectEndEvent(
-                        entity_id=int(entity.id),
-                        effect_id=int(effect.id) if effect is not None else -1,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(entity: Any, effect: Any | None = None) -> EntityEffectEndEvent:
+                return EntityEffectEndEvent(
+                    entity_id=int(entity.id),
+                    effect_id=int(effect.id) if effect is not None else -1,
+                )
+
+            self._post_built(js_bot, EntityEffectEndEvent, builder, *args)
 
         @on_fn(js_bot, "itemDrop")
         def _on_item_drop(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(ItemDropEvent, ItemDropEvent(
-                        entity_id=int(args[0].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_entity_event(ItemDropEvent, *args)
 
         @on_fn(js_bot, "playerCollect")
         def _on_player_collect(*args: Any) -> None:
-            if len(args) >= 2:
-                try:
-                    self._post(PlayerCollectEvent, PlayerCollectEvent(
-                        collector_id=int(args[0].id),
-                        collected_id=int(args[1].id),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(collector: Any, collected: Any) -> PlayerCollectEvent:
+                return PlayerCollectEvent(
+                    collector_id=int(collector.id),
+                    collected_id=int(collected.id),
+                )
+
+            self._post_built(js_bot, PlayerCollectEvent, builder, *args)
 
         # ================================================================
         # Player events
@@ -859,33 +785,15 @@ class EventRelay:
 
         @on_fn(js_bot, "playerJoined")
         def _on_player_joined(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(PlayerJoinedEvent, PlayerJoinedEvent(
-                        username=str(args[0].username),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_player_event(PlayerJoinedEvent, *args)
 
         @on_fn(js_bot, "playerUpdated")
         def _on_player_updated(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(PlayerUpdatedEvent, PlayerUpdatedEvent(
-                        username=str(args[0].username),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_player_event(PlayerUpdatedEvent, *args)
 
         @on_fn(js_bot, "playerLeft")
         def _on_player_left(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(PlayerLeftEvent, PlayerLeftEvent(
-                        username=str(args[0].username),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_player_event(PlayerLeftEvent, *args)
 
         # ================================================================
         # Block events
@@ -893,65 +801,57 @@ class EventRelay:
 
         @on_fn(js_bot, "blockUpdate")
         def _on_block_update(*args: Any) -> None:
-            if len(args) >= 2:
-                try:
-                    old_b = args[0]
-                    new_b = args[1]
-                    pos = (
-                        new_b.position
-                        if new_b is not None
-                        else (old_b.position if old_b is not None else None)
-                    )
-                    if pos is not None:
-                        self._post(BlockUpdateEvent, BlockUpdateEvent(
-                            position=Vec3(float(pos.x), float(pos.y), float(pos.z)),
-                            old_block_name=str(old_b.name) if old_b is not None else None,
-                            new_block_name=str(new_b.name) if new_b is not None else None,
-                        ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(old_b: Any | None, new_b: Any | None) -> BlockUpdateEvent | None:
+                pos = (
+                    new_b.position
+                    if new_b is not None
+                    else (old_b.position if old_b is not None else None)
+                )
+                if pos is None:
+                    return None
+                return BlockUpdateEvent(
+                    position=_vec3_from_js(pos),
+                    old_block_name=str(old_b.name) if old_b is not None else None,
+                    new_block_name=str(new_b.name) if new_b is not None else None,
+                )
+
+            self._post_built(js_bot, BlockUpdateEvent, builder, *args)
 
         @on_fn(js_bot, "blockPlaced")
         def _on_block_placed(*args: Any) -> None:
-            if len(args) >= 2:
-                try:
-                    old_b = args[0]
-                    new_b = args[1]
-                    pos = (
-                        new_b.position
-                        if new_b is not None
-                        else (old_b.position if old_b is not None else None)
-                    )
-                    if pos is not None:
-                        self._post(BlockPlacedEvent, BlockPlacedEvent(
-                            position=Vec3(float(pos.x), float(pos.y), float(pos.z)),
-                            old_block_name=str(old_b.name) if old_b is not None else None,
-                            new_block_name=str(new_b.name) if new_b is not None else None,
-                        ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(old_b: Any | None, new_b: Any | None) -> BlockPlacedEvent | None:
+                pos = (
+                    new_b.position
+                    if new_b is not None
+                    else (old_b.position if old_b is not None else None)
+                )
+                if pos is None:
+                    return None
+                return BlockPlacedEvent(
+                    position=_vec3_from_js(pos),
+                    old_block_name=str(old_b.name) if old_b is not None else None,
+                    new_block_name=str(new_b.name) if new_b is not None else None,
+                )
+
+            self._post_built(js_bot, BlockPlacedEvent, builder, *args)
 
         @on_fn(js_bot, "chunkColumnLoad")
         def _on_chunk_column_load(*args: Any) -> None:
-            if args:
-                try:
-                    point = args[0]
-                    self._post(ChunkColumnLoadEvent, ChunkColumnLoadEvent(
-                        position=Vec3(float(point.x), 0.0, float(point.z)),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(point: Any) -> ChunkColumnLoadEvent:
+                return ChunkColumnLoadEvent(
+                    position=Vec3(float(point.x), 0.0, float(point.z)),
+                )
+
+            self._post_built(js_bot, ChunkColumnLoadEvent, builder, *args)
 
         @on_fn(js_bot, "chunkColumnUnload")
         def _on_chunk_column_unload(*args: Any) -> None:
-            if args:
-                try:
-                    point = args[0]
-                    self._post(ChunkColumnUnloadEvent, ChunkColumnUnloadEvent(
-                        position=Vec3(float(point.x), 0.0, float(point.z)),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(point: Any) -> ChunkColumnUnloadEvent:
+                return ChunkColumnUnloadEvent(
+                    position=Vec3(float(point.x), 0.0, float(point.z)),
+                )
+
+            self._post_built(js_bot, ChunkColumnUnloadEvent, builder, *args)
 
         # ================================================================
         # Digging
@@ -959,61 +859,48 @@ class EventRelay:
 
         @on_fn(js_bot, "diggingCompleted")
         def _on_digging_completed(*args: Any) -> None:
-            if args:
-                try:
-                    block = args[0]
-                    pos = block.position
-                    self._post(DiggingCompletedEvent, DiggingCompletedEvent(
-                        position=Vec3(float(pos.x), float(pos.y), float(pos.z)),
-                        block_name=str(block.name),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(block: Any) -> DiggingCompletedEvent:
+                return DiggingCompletedEvent(
+                    position=_vec3_from_js(block.position),
+                    block_name=str(block.name),
+                )
+
+            self._post_built(js_bot, DiggingCompletedEvent, builder, *args)
 
         @on_fn(js_bot, "diggingAborted")
         def _on_digging_aborted(*args: Any) -> None:
-            if args:
-                try:
-                    block = args[0]
-                    pos = block.position
-                    self._post(DiggingAbortedEvent, DiggingAbortedEvent(
-                        position=Vec3(float(pos.x), float(pos.y), float(pos.z)),
-                        block_name=str(block.name),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(block: Any) -> DiggingAbortedEvent:
+                return DiggingAbortedEvent(
+                    position=_vec3_from_js(block.position),
+                    block_name=str(block.name),
+                )
+
+            self._post_built(js_bot, DiggingAbortedEvent, builder, *args)
 
         @on_fn(js_bot, "blockBreakProgressObserved")
         def _on_block_break_progress_observed(*args: Any) -> None:
-            if len(args) >= 2:
-                try:
-                    block = args[0]
-                    pos = block.position
-                    destroy_stage = int(args[1])
-                    entity = args[2] if len(args) > 2 else None
-                    entity_id = int(entity.id) if entity is not None else -1
-                    self._post(BlockBreakProgressObservedEvent, BlockBreakProgressObservedEvent(
-                        position=Vec3(float(pos.x), float(pos.y), float(pos.z)),
-                        destroy_stage=destroy_stage,
-                        entity_id=entity_id,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(
+                block: Any,
+                destroy_stage: Any,
+                entity: Any | None = None,
+            ) -> BlockBreakProgressObservedEvent:
+                return BlockBreakProgressObservedEvent(
+                    position=_vec3_from_js(block.position),
+                    destroy_stage=int(destroy_stage),
+                    entity_id=int(entity.id) if entity is not None else -1,
+                )
+
+            self._post_built(js_bot, BlockBreakProgressObservedEvent, builder, *args)
 
         @on_fn(js_bot, "blockBreakProgressEnd")
         def _on_block_break_progress_end(*args: Any) -> None:
-            if args:
-                try:
-                    block = args[0]
-                    pos = block.position
-                    entity = args[1] if len(args) > 1 else None
-                    entity_id = int(entity.id) if entity is not None else -1
-                    self._post(BlockBreakProgressEndEvent, BlockBreakProgressEndEvent(
-                        position=Vec3(float(pos.x), float(pos.y), float(pos.z)),
-                        entity_id=entity_id,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(block: Any, entity: Any | None = None) -> BlockBreakProgressEndEvent:
+                return BlockBreakProgressEndEvent(
+                    position=_vec3_from_js(block.position),
+                    entity_id=int(entity.id) if entity is not None else -1,
+                )
+
+            self._post_built(js_bot, BlockBreakProgressEndEvent, builder, *args)
 
         # ================================================================
         # Sound
@@ -1021,46 +908,51 @@ class EventRelay:
 
         @on_fn(js_bot, "soundEffectHeard")
         def _on_sound_effect_heard(*args: Any) -> None:
-            if len(args) >= 5:
-                try:
-                    self._post(SoundEffectHeardEvent, SoundEffectHeardEvent(
-                        sound_name=str(args[0]),
-                        position=Vec3(float(args[1]), float(args[2]), float(args[3])),
-                        volume=float(args[4]),
-                        pitch=float(args[5]) if len(args) > 5 else 1.0,
-                    ))
-                except (AttributeError, TypeError, ValueError):
-                    pass
+            def builder(
+                sound_name: Any,
+                position: Any,
+                volume: Any,
+                pitch: Any,
+            ) -> SoundEffectHeardEvent:
+                return SoundEffectHeardEvent(
+                    sound_name=str(sound_name),
+                    position=_vec3_from_js(position),
+                    volume=float(volume),
+                    pitch=float(pitch),
+                )
+
+            self._post_built(js_bot, SoundEffectHeardEvent, builder, *args)
 
         @on_fn(js_bot, "hardcodedSoundEffectHeard")
         def _on_hardcoded_sound_effect_heard(*args: Any) -> None:
-            if len(args) >= 6:
-                try:
-                    self._post(HardcodedSoundEffectHeardEvent, HardcodedSoundEffectHeardEvent(
-                        sound_id=int(args[0]),
-                        sound_category=int(args[1]),
-                        position=Vec3(float(args[2]), float(args[3]), float(args[4])),
-                        volume=float(args[5]),
-                        pitch=float(args[6]) if len(args) > 6 else 1.0,
-                    ))
-                except (AttributeError, TypeError, ValueError):
-                    pass
+            def builder(
+                sound_id: Any,
+                sound_category: Any,
+                position: Any,
+                volume: Any,
+                pitch: Any,
+            ) -> HardcodedSoundEffectHeardEvent:
+                return HardcodedSoundEffectHeardEvent(
+                    sound_id=int(sound_id),
+                    sound_category=int(sound_category),
+                    position=_vec3_from_js(position),
+                    volume=float(volume),
+                    pitch=float(pitch),
+                )
+
+            self._post_built(js_bot, HardcodedSoundEffectHeardEvent, builder, *args)
 
         @on_fn(js_bot, "noteHeard")
         def _on_note_heard(*args: Any) -> None:
-            if len(args) >= 2:
-                try:
-                    block = args[0]
-                    pos = block.position
-                    instrument = args[1]
-                    pitch = int(args[2]) if len(args) > 2 else 0
-                    self._post(NoteHeardEvent, NoteHeardEvent(
-                        position=Vec3(float(pos.x), float(pos.y), float(pos.z)),
-                        instrument_id=int(instrument.id) if hasattr(instrument, "id") else int(instrument),
-                        pitch=pitch,
-                    ))
-                except (AttributeError, TypeError, ValueError):
-                    pass
+            def builder(block: Any, instrument: Any, pitch: Any = 0) -> NoteHeardEvent:
+                instrument_id = int(instrument.id) if hasattr(instrument, "id") else int(instrument)
+                return NoteHeardEvent(
+                    position=_vec3_from_js(block.position),
+                    instrument_id=instrument_id,
+                    pitch=int(pitch),
+                )
+
+            self._post_built(js_bot, NoteHeardEvent, builder, *args)
 
         # ================================================================
         # Weather & Time
@@ -1072,23 +964,23 @@ class EventRelay:
 
         @on_fn(js_bot, "weatherUpdate")
         def _on_weather_update(*_args: Any) -> None:
-            try:
-                self._post(WeatherUpdateEvent, WeatherUpdateEvent(
+            def builder(*_unused: Any) -> WeatherUpdateEvent:
+                return WeatherUpdateEvent(
                     rain_state=float(js_bot.rainState),
                     thunder_state=float(js_bot.thunderState),
-                ))
-            except (AttributeError, TypeError):
-                _log.debug("Failed to read weather state", exc_info=True)
+                )
+
+            self._post_built(js_bot, WeatherUpdateEvent, builder, *_args)
 
         @on_fn(js_bot, "time")
         def _on_time(*_args: Any) -> None:
-            try:
-                self._post(TimeEvent, TimeEvent(
+            def builder(*_unused: Any) -> TimeEvent:
+                return TimeEvent(
                     time_of_day=int(js_bot.time.timeOfDay),
                     age=int(js_bot.time.age),
-                ))
-            except (AttributeError, TypeError):
-                _log.debug("Failed to read time data", exc_info=True)
+                )
+
+            self._post_built(js_bot, TimeEvent, builder, *_args)
 
         # ================================================================
         # World events
@@ -1096,40 +988,32 @@ class EventRelay:
 
         @on_fn(js_bot, "pistonMove")
         def _on_piston_move(*args: Any) -> None:
-            if len(args) >= 3:
-                try:
-                    block = args[0]
-                    pos = block.position
-                    self._post(PistonMoveEvent, PistonMoveEvent(
-                        position=Vec3(float(pos.x), float(pos.y), float(pos.z)),
-                        is_pulling=bool(args[1]),
-                        direction=int(args[2]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(block: Any, is_pulling: Any, direction: Any) -> PistonMoveEvent:
+                return PistonMoveEvent(
+                    position=_vec3_from_js(block.position),
+                    is_pulling=bool(is_pulling),
+                    direction=int(direction),
+                )
+
+            self._post_built(js_bot, PistonMoveEvent, builder, *args)
 
         @on_fn(js_bot, "chestLidMove")
         def _on_chest_lid_move(*args: Any) -> None:
-            if len(args) >= 2:
-                try:
-                    block = args[0]
-                    pos = block.position
-                    self._post(ChestLidMoveEvent, ChestLidMoveEvent(
-                        position=Vec3(float(pos.x), float(pos.y), float(pos.z)),
-                        is_open=int(args[1]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(block: Any, is_open: Any, *_extra: Any) -> ChestLidMoveEvent:
+                return ChestLidMoveEvent(
+                    position=_vec3_from_js(block.position),
+                    is_open=int(is_open),
+                )
+
+            self._post_built(js_bot, ChestLidMoveEvent, builder, *args)
 
         @on_fn(js_bot, "usedFirework")
         def _on_used_firework(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(UsedFireworkEvent, UsedFireworkEvent(
-                        firework_entity_id=int(args[0].id) if hasattr(args[0], "id") else int(args[0]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(firework: Any) -> UsedFireworkEvent:
+                firework_id = int(firework.id) if hasattr(firework, "id") else int(firework)
+                return UsedFireworkEvent(firework_entity_id=firework_id)
+
+            self._post_built(js_bot, UsedFireworkEvent, builder, *args)
 
         # ================================================================
         # Window
@@ -1137,25 +1021,21 @@ class EventRelay:
 
         @on_fn(js_bot, "windowOpen")
         def _on_window_open(*args: Any) -> None:
-            if args:
-                try:
-                    window = args[0]
-                    self._post(WindowOpenEvent, WindowOpenEvent(
-                        window_id=int(window.id) if hasattr(window, "id") else 0,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(window: Any) -> WindowOpenEvent:
+                return WindowOpenEvent(
+                    window_id=int(window.id) if hasattr(window, "id") else 0,
+                )
+
+            self._post_built(js_bot, WindowOpenEvent, builder, *args)
 
         @on_fn(js_bot, "windowClose")
         def _on_window_close(*args: Any) -> None:
-            if args:
-                try:
-                    window = args[0]
-                    self._post(WindowCloseEvent, WindowCloseEvent(
-                        window_id=int(window.id) if hasattr(window, "id") else 0,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(window: Any) -> WindowCloseEvent:
+                return WindowCloseEvent(
+                    window_id=int(window.id) if hasattr(window, "id") else 0,
+                )
+
+            self._post_built(js_bot, WindowCloseEvent, builder, *args)
 
         # ================================================================
         # Resource pack
@@ -1163,14 +1043,10 @@ class EventRelay:
 
         @on_fn(js_bot, "resourcePack")
         def _on_resource_pack(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(ResourcePackEvent, ResourcePackEvent(
-                        url=str(args[0]),
-                        hash=str(args[1]) if len(args) > 1 else "",
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(url: Any, hash_value: Any = "") -> ResourcePackEvent:
+                return ResourcePackEvent(url=str(url), hash=str(hash_value))
+
+            self._post_built(js_bot, ResourcePackEvent, builder, *args)
 
         # ================================================================
         # Scoreboard
@@ -1178,69 +1054,46 @@ class EventRelay:
 
         @on_fn(js_bot, "scoreboardCreated")
         def _on_scoreboard_created(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(ScoreboardCreatedEvent, ScoreboardCreatedEvent(
-                        name=str(args[0].name) if hasattr(args[0], "name") else str(args[0]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_named_event(ScoreboardCreatedEvent, "name", *args)
 
         @on_fn(js_bot, "scoreboardDeleted")
         def _on_scoreboard_deleted(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(ScoreboardDeletedEvent, ScoreboardDeletedEvent(
-                        name=str(args[0].name) if hasattr(args[0], "name") else str(args[0]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_named_event(ScoreboardDeletedEvent, "name", *args)
 
         @on_fn(js_bot, "scoreboardTitleChanged")
         def _on_scoreboard_title_changed(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(ScoreboardTitleChangedEvent, ScoreboardTitleChangedEvent(
-                        name=str(args[0].name) if hasattr(args[0], "name") else str(args[0]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_named_event(ScoreboardTitleChangedEvent, "name", *args)
 
         @on_fn(js_bot, "scoreUpdated")
         def _on_score_updated(*args: Any) -> None:
-            if args:
-                try:
-                    score = args[0]
-                    self._post(ScoreUpdatedEvent, ScoreUpdatedEvent(
-                        scoreboard_name=str(score.scoreName) if hasattr(score, "scoreName") else "",
-                        item_name=str(score.itemName) if hasattr(score, "itemName") else str(score),
-                        value=int(score.value) if hasattr(score, "value") else 0,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(scoreboard: Any, item: Any) -> ScoreUpdatedEvent:
+                return ScoreUpdatedEvent(
+                    scoreboard_name=_name_from_proxy(scoreboard),
+                    item_name=_name_from_proxy(item),
+                    value=int(item.value) if hasattr(item, "value") else 0,
+                )
+
+            self._post_built(js_bot, ScoreUpdatedEvent, builder, *args)
 
         @on_fn(js_bot, "scoreRemoved")
         def _on_score_removed(*args: Any) -> None:
-            if args:
-                try:
-                    score = args[0]
-                    self._post(ScoreRemovedEvent, ScoreRemovedEvent(
-                        scoreboard_name=str(score.scoreName) if hasattr(score, "scoreName") else "",
-                        item_name=str(score.itemName) if hasattr(score, "itemName") else str(score),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(scoreboard: Any, item: Any) -> ScoreRemovedEvent:
+                return ScoreRemovedEvent(
+                    scoreboard_name=_name_from_proxy(scoreboard),
+                    item_name=_name_from_proxy(item),
+                )
+
+            self._post_built(js_bot, ScoreRemovedEvent, builder, *args)
 
         @on_fn(js_bot, "scoreboardPosition")
         def _on_scoreboard_position(*args: Any) -> None:
-            if len(args) >= 2:
-                try:
-                    self._post(ScoreboardPositionEvent, ScoreboardPositionEvent(
-                        position=int(args[0]),
-                        scoreboard_name=str(args[1].name) if hasattr(args[1], "name") else str(args[1]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(position: Any, scoreboard: Any) -> ScoreboardPositionEvent:
+                return ScoreboardPositionEvent(
+                    position=int(position),
+                    scoreboard_name=_name_from_proxy(scoreboard),
+                )
+
+            self._post_built(js_bot, ScoreboardPositionEvent, builder, *args)
 
         # ================================================================
         # Team
@@ -1248,53 +1101,23 @@ class EventRelay:
 
         @on_fn(js_bot, "teamCreated")
         def _on_team_created(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(TeamCreatedEvent, TeamCreatedEvent(
-                        name=str(args[0].name) if hasattr(args[0], "name") else str(args[0]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_named_event(TeamCreatedEvent, "name", *args)
 
         @on_fn(js_bot, "teamRemoved")
         def _on_team_removed(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(TeamRemovedEvent, TeamRemovedEvent(
-                        name=str(args[0].name) if hasattr(args[0], "name") else str(args[0]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_named_event(TeamRemovedEvent, "name", *args)
 
         @on_fn(js_bot, "teamUpdated")
         def _on_team_updated(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(TeamUpdatedEvent, TeamUpdatedEvent(
-                        name=str(args[0].name) if hasattr(args[0], "name") else str(args[0]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_named_event(TeamUpdatedEvent, "name", *args)
 
         @on_fn(js_bot, "teamMemberAdded")
         def _on_team_member_added(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(TeamMemberAddedEvent, TeamMemberAddedEvent(
-                        team_name=str(args[0].name) if hasattr(args[0], "name") else str(args[0]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_named_event(TeamMemberAddedEvent, "team_name", *args)
 
         @on_fn(js_bot, "teamMemberRemoved")
         def _on_team_member_removed(*args: Any) -> None:
-            if args:
-                try:
-                    self._post(TeamMemberRemovedEvent, TeamMemberRemovedEvent(
-                        team_name=str(args[0].name) if hasattr(args[0], "name") else str(args[0]),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            _post_named_event(TeamMemberRemovedEvent, "team_name", *args)
 
         # ================================================================
         # Boss bar
@@ -1302,40 +1125,34 @@ class EventRelay:
 
         @on_fn(js_bot, "bossBarCreated")
         def _on_boss_bar_created(*args: Any) -> None:
-            if args:
-                try:
-                    bar = args[0]
-                    self._post(BossBarCreatedEvent, BossBarCreatedEvent(
-                        entity_uuid=str(bar.entityUUID) if hasattr(bar, "entityUUID") else str(bar),
-                        title=str(bar.title) if hasattr(bar, "title") else "",
-                        health=float(bar.health) if hasattr(bar, "health") else 0.0,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(bar: Any) -> BossBarCreatedEvent:
+                return BossBarCreatedEvent(
+                    entity_uuid=str(bar.entityUUID) if hasattr(bar, "entityUUID") else str(bar),
+                    title=_stringify_message(bar.title) if hasattr(bar, "title") else "",
+                    health=float(bar.health) if hasattr(bar, "health") else 0.0,
+                )
+
+            self._post_built(js_bot, BossBarCreatedEvent, builder, *args)
 
         @on_fn(js_bot, "bossBarDeleted")
         def _on_boss_bar_deleted(*args: Any) -> None:
-            if args:
-                try:
-                    bar = args[0]
-                    self._post(BossBarDeletedEvent, BossBarDeletedEvent(
-                        entity_uuid=str(bar.entityUUID) if hasattr(bar, "entityUUID") else str(bar),
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(bar: Any) -> BossBarDeletedEvent:
+                return BossBarDeletedEvent(
+                    entity_uuid=str(bar.entityUUID) if hasattr(bar, "entityUUID") else str(bar),
+                )
+
+            self._post_built(js_bot, BossBarDeletedEvent, builder, *args)
 
         @on_fn(js_bot, "bossBarUpdated")
         def _on_boss_bar_updated(*args: Any) -> None:
-            if args:
-                try:
-                    bar = args[0]
-                    self._post(BossBarUpdatedEvent, BossBarUpdatedEvent(
-                        entity_uuid=str(bar.entityUUID) if hasattr(bar, "entityUUID") else str(bar),
-                        title=str(bar.title) if hasattr(bar, "title") else "",
-                        health=float(bar.health) if hasattr(bar, "health") else 0.0,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(bar: Any) -> BossBarUpdatedEvent:
+                return BossBarUpdatedEvent(
+                    entity_uuid=str(bar.entityUUID) if hasattr(bar, "entityUUID") else str(bar),
+                    title=_stringify_message(bar.title) if hasattr(bar, "title") else "",
+                    health=float(bar.health) if hasattr(bar, "health") else 0.0,
+                )
+
+            self._post_built(js_bot, BossBarUpdatedEvent, builder, *args)
 
         # ================================================================
         # Physics & Particles
@@ -1343,18 +1160,16 @@ class EventRelay:
 
         @on_fn(js_bot, "particle")
         def _on_particle(*args: Any) -> None:
-            if args:
-                try:
-                    p = args[0]
-                    pos = p.position if hasattr(p, "position") else p
-                    self._post(ParticleEvent, ParticleEvent(
-                        particle_id=int(p.id) if hasattr(p, "id") else 0,
-                        particle_name=str(p.name) if hasattr(p, "name") else "",
-                        position=Vec3(float(pos.x), float(pos.y), float(pos.z)),
-                        count=int(p.amount) if hasattr(p, "amount") else 1,
-                    ))
-                except (AttributeError, TypeError):
-                    pass
+            def builder(particle: Any) -> ParticleEvent:
+                position = particle.position if hasattr(particle, "position") else particle
+                return ParticleEvent(
+                    particle_id=int(particle.id) if hasattr(particle, "id") else 0,
+                    particle_name=str(particle.name) if hasattr(particle, "name") else "",
+                    position=_vec3_from_js(position),
+                    count=int(particle.count) if hasattr(particle, "count") else 1,
+                )
+
+            self._post_built(js_bot, ParticleEvent, builder, *args)
 
         # ================================================================
         # Internal async-operation completion events (void pattern)
@@ -1362,194 +1177,281 @@ class EventRelay:
 
         @on_fn(js_bot, "_minethon:digDone")
         def _on_dig_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(DigDoneEvent, DigDoneEvent(error=error))
+            def builder(error: Any | None = None) -> DigDoneEvent:
+                return DigDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, DigDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:placeDone")
         def _on_place_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(PlaceDoneEvent, PlaceDoneEvent(error=error))
+            def builder(error: Any | None = None) -> PlaceDoneEvent:
+                return PlaceDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, PlaceDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:equipDone")
         def _on_equip_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(EquipDoneEvent, EquipDoneEvent(error=error))
+            def builder(error: Any | None = None) -> EquipDoneEvent:
+                return EquipDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, EquipDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:lookAtDone")
         def _on_look_at_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(LookAtDoneEvent, LookAtDoneEvent(error=error))
+            def builder(error: Any | None = None) -> LookAtDoneEvent:
+                return LookAtDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, LookAtDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:lookDone")
         def _on_look_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(LookDoneEvent, LookDoneEvent(error=error))
+            def builder(error: Any | None = None) -> LookDoneEvent:
+                return LookDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, LookDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:sleepDone")
         def _on_sleep_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(SleepDoneEvent, SleepDoneEvent(error=error))
+            def builder(error: Any | None = None) -> SleepDoneEvent:
+                return SleepDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, SleepDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:wakeDone")
         def _on_wake_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(WakeDoneEvent, WakeDoneEvent(error=error))
+            def builder(error: Any | None = None) -> WakeDoneEvent:
+                return WakeDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, WakeDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:unequipDone")
         def _on_unequip_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(UnequipDoneEvent, UnequipDoneEvent(error=error))
+            def builder(error: Any | None = None) -> UnequipDoneEvent:
+                return UnequipDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, UnequipDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:tossStackDone")
         def _on_toss_stack_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(TossStackDoneEvent, TossStackDoneEvent(error=error))
+            def builder(error: Any | None = None) -> TossStackDoneEvent:
+                return TossStackDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, TossStackDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:tossDone")
         def _on_toss_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(TossDoneEvent, TossDoneEvent(error=error))
+            def builder(error: Any | None = None) -> TossDoneEvent:
+                return TossDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, TossDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:consumeDone")
         def _on_consume_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(ConsumeDoneEvent, ConsumeDoneEvent(error=error))
+            def builder(error: Any | None = None) -> ConsumeDoneEvent:
+                return ConsumeDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, ConsumeDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:fishDone")
         def _on_fish_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(FishDoneEvent, FishDoneEvent(error=error))
+            def builder(error: Any | None = None) -> FishDoneEvent:
+                return FishDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, FishDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:elytraFlyDone")
         def _on_elytra_fly_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(ElytraFlyDoneEvent, ElytraFlyDoneEvent(error=error))
+            def builder(error: Any | None = None) -> ElytraFlyDoneEvent:
+                return ElytraFlyDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, ElytraFlyDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:craftDone")
         def _on_craft_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(CraftDoneEvent, CraftDoneEvent(error=error))
+            def builder(error: Any | None = None) -> CraftDoneEvent:
+                return CraftDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, CraftDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:activateBlockDone")
         def _on_activate_block_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(ActivateBlockDoneEvent, ActivateBlockDoneEvent(error=error))
+            def builder(error: Any | None = None) -> ActivateBlockDoneEvent:
+                return ActivateBlockDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, ActivateBlockDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:activateEntityDone")
         def _on_activate_entity_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(ActivateEntityDoneEvent, ActivateEntityDoneEvent(error=error))
+            def builder(error: Any | None = None) -> ActivateEntityDoneEvent:
+                return ActivateEntityDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, ActivateEntityDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:activateEntityAtDone")
         def _on_activate_entity_at_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(ActivateEntityAtDoneEvent, ActivateEntityAtDoneEvent(error=error))
+            def builder(error: Any | None = None) -> ActivateEntityAtDoneEvent:
+                return ActivateEntityAtDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, ActivateEntityAtDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:tradeDone")
         def _on_trade_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(TradeDoneEvent, TradeDoneEvent(error=error))
+            def builder(error: Any | None = None) -> TradeDoneEvent:
+                return TradeDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, TradeDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:writeBookDone")
         def _on_write_book_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(WriteBookDoneEvent, WriteBookDoneEvent(error=error))
+            def builder(error: Any | None = None) -> WriteBookDoneEvent:
+                return WriteBookDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, WriteBookDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:chunksLoadedDone")
         def _on_chunks_loaded_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(ChunksLoadedDoneEvent, ChunksLoadedDoneEvent(error=error))
+            def builder(error: Any | None = None) -> ChunksLoadedDoneEvent:
+                return ChunksLoadedDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, ChunksLoadedDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:waitForTicksDone")
         def _on_wait_for_ticks_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(WaitForTicksDoneEvent, WaitForTicksDoneEvent(error=error))
+            def builder(error: Any | None = None) -> WaitForTicksDoneEvent:
+                return WaitForTicksDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, WaitForTicksDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:clickWindowDone")
         def _on_click_window_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(ClickWindowDoneEvent, ClickWindowDoneEvent(error=error))
+            def builder(error: Any | None = None) -> ClickWindowDoneEvent:
+                return ClickWindowDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, ClickWindowDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:transferDone")
         def _on_transfer_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(TransferDoneEvent, TransferDoneEvent(error=error))
+            def builder(error: Any | None = None) -> TransferDoneEvent:
+                return TransferDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, TransferDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:moveSlotItemDone")
         def _on_move_slot_item_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(MoveSlotItemDoneEvent, MoveSlotItemDoneEvent(error=error))
+            def builder(error: Any | None = None) -> MoveSlotItemDoneEvent:
+                return MoveSlotItemDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, MoveSlotItemDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:putAwayDone")
         def _on_put_away_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(PutAwayDoneEvent, PutAwayDoneEvent(error=error))
+            def builder(error: Any | None = None) -> PutAwayDoneEvent:
+                return PutAwayDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, PutAwayDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:creativeFlyToDone")
         def _on_creative_fly_to_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(CreativeFlyToDoneEvent, CreativeFlyToDoneEvent(error=error))
+            def builder(error: Any | None = None) -> CreativeFlyToDoneEvent:
+                return CreativeFlyToDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, CreativeFlyToDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:creativeSetSlotDone")
         def _on_creative_set_slot_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(CreativeSetSlotDoneEvent, CreativeSetSlotDoneEvent(error=error))
+            def builder(error: Any | None = None) -> CreativeSetSlotDoneEvent:
+                return CreativeSetSlotDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, CreativeSetSlotDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:creativeClearSlotDone")
         def _on_creative_clear_slot_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(CreativeClearSlotDoneEvent, CreativeClearSlotDoneEvent(error=error))
+            def builder(error: Any | None = None) -> CreativeClearSlotDoneEvent:
+                return CreativeClearSlotDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, CreativeClearSlotDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:creativeClearInventoryDone")
         def _on_creative_clear_inventory_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            self._post(CreativeClearInventoryDoneEvent, CreativeClearInventoryDoneEvent(error=error))
+            def builder(error: Any | None = None) -> CreativeClearInventoryDoneEvent:
+                return CreativeClearInventoryDoneEvent(error=str(error) if error is not None else None)
+
+            self._post_built(js_bot, CreativeClearInventoryDoneEvent, builder, *args)
 
         # -- Internal done events with return value --
 
         @on_fn(js_bot, "_minethon:openContainerDone")
         def _on_open_container_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            result = args[1] if len(args) > 1 else None
-            self._post(OpenContainerDoneEvent, OpenContainerDoneEvent(error=error, result=result))
+            def builder(error: Any | None = None, result: Any | None = None) -> OpenContainerDoneEvent:
+                return OpenContainerDoneEvent(
+                    error=str(error) if error is not None else None,
+                    result=result,
+                )
+
+            self._post_built(js_bot, OpenContainerDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:openFurnaceDone")
         def _on_open_furnace_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            result = args[1] if len(args) > 1 else None
-            self._post(OpenFurnaceDoneEvent, OpenFurnaceDoneEvent(error=error, result=result))
+            def builder(error: Any | None = None, result: Any | None = None) -> OpenFurnaceDoneEvent:
+                return OpenFurnaceDoneEvent(
+                    error=str(error) if error is not None else None,
+                    result=result,
+                )
+
+            self._post_built(js_bot, OpenFurnaceDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:openEnchantmentTableDone")
         def _on_open_enchantment_table_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            result = args[1] if len(args) > 1 else None
-            self._post(OpenEnchantmentTableDoneEvent, OpenEnchantmentTableDoneEvent(
-                error=error, result=result,
-            ))
+            def builder(
+                error: Any | None = None,
+                result: Any | None = None,
+            ) -> OpenEnchantmentTableDoneEvent:
+                return OpenEnchantmentTableDoneEvent(
+                    error=str(error) if error is not None else None,
+                    result=result,
+                )
+
+            self._post_built(js_bot, OpenEnchantmentTableDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:openAnvilDone")
         def _on_open_anvil_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            result = args[1] if len(args) > 1 else None
-            self._post(OpenAnvilDoneEvent, OpenAnvilDoneEvent(error=error, result=result))
+            def builder(error: Any | None = None, result: Any | None = None) -> OpenAnvilDoneEvent:
+                return OpenAnvilDoneEvent(
+                    error=str(error) if error is not None else None,
+                    result=result,
+                )
+
+            self._post_built(js_bot, OpenAnvilDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:openVillagerDone")
         def _on_open_villager_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            result = args[1] if len(args) > 1 else None
-            self._post(OpenVillagerDoneEvent, OpenVillagerDoneEvent(error=error, result=result))
+            def builder(error: Any | None = None, result: Any | None = None) -> OpenVillagerDoneEvent:
+                return OpenVillagerDoneEvent(
+                    error=str(error) if error is not None else None,
+                    result=result,
+                )
+
+            self._post_built(js_bot, OpenVillagerDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:tabCompleteDone")
         def _on_tab_complete_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            result = args[1] if len(args) > 1 else None
-            self._post(TabCompleteDoneEvent, TabCompleteDoneEvent(error=error, result=result))
+            def builder(error: Any | None = None, result: Any | None = None) -> TabCompleteDoneEvent:
+                return TabCompleteDoneEvent(
+                    error=str(error) if error is not None else None,
+                    result=result,
+                )
+
+            self._post_built(js_bot, TabCompleteDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:placeEntityDone")
         def _on_place_entity_done(*args: Any) -> None:
-            error = str(args[0]) if args and args[0] is not None else None
-            result = args[1] if len(args) > 1 else None
-            self._post(PlaceEntityDoneEvent, PlaceEntityDoneEvent(error=error, result=result))
+            def builder(error: Any | None = None, result: Any | None = None) -> PlaceEntityDoneEvent:
+                return PlaceEntityDoneEvent(
+                    error=str(error) if error is not None else None,
+                    result=result,
+                )
+
+            self._post_built(js_bot, PlaceEntityDoneEvent, builder, *args)
 
         # ================================================================
         # Throttled high-frequency events (raw dispatch only)
@@ -1569,9 +1471,47 @@ class EventRelay:
                         return
                     self._throttle_last_post[evt] = now
                     if evt == "move":
-                        self._post(MoveEvent, MoveEvent())
+                        normalized = self._normalize_js_args(js_bot, _args)
+                        position = normalized[0] if normalized else js_bot.entity.position
+                        try:
+                            self._post(
+                                MoveEvent,
+                                MoveEvent(position=_vec3_from_js(position)),
+                            )
+                        except Exception:
+                            _log.debug("Failed to snapshot move payload", exc_info=True)
+                    elif evt == "entityMoved":
+                        normalized = self._normalize_js_args(js_bot, _args)
+                        entity = normalized[0] if normalized else None
+                        if entity is not None:
+                            try:
+                                self._post(
+                                    EntityMovedEvent,
+                                    EntityMovedEvent(
+                                        entity_id=int(entity.id),
+                                        position=_vec3_from_js(entity.position),
+                                    ),
+                                )
+                            except Exception:
+                                _log.debug(
+                                    "Failed to snapshot entityMoved payload",
+                                    exc_info=True,
+                                )
+                        self._post_raw(evt, {"args": list(normalized)})
+                    elif evt == "entityUpdate":
+                        _post_entity_event(EntityUpdateEvent, *_args, include_entity=True)
+                        self._post_raw(
+                            evt,
+                            {"args": list(self._normalize_js_args(js_bot, _args))},
+                        )
+                    elif evt == "physicsTick":
+                        def build_physics_tick(*_unused: Any) -> PhysicsTickEvent:
+                            return PhysicsTickEvent()
+
+                        self._post_built(js_bot, PhysicsTickEvent, build_physics_tick, *_args)
+                        self._post_raw(evt, {"args": list(self._normalize_js_args(js_bot, _args))})
                     else:
-                        self._post_raw(evt, {"args": list(_args)})
+                        self._post_raw(evt, {"args": list(self._normalize_js_args(js_bot, _args))})
                 return _handler
 
             handler = _make_throttled(event_name, interval)
@@ -1608,7 +1548,7 @@ class EventRelay:
             _on_entity_crouch, _on_entity_uncrouch,
             _on_entity_equip, _on_entity_sleep,
             _on_entity_spawn, _on_entity_elytra_flew,
-            _on_entity_gone, _on_entity_update,
+            _on_entity_gone,
             _on_entity_attach, _on_entity_detach,
             _on_entity_attributes,
             _on_entity_effect, _on_entity_effect_end,
@@ -1718,7 +1658,9 @@ class EventRelay:
 
         @on_fn(js_bot, event_name)
         def _on_raw(*args: Any) -> None:
-            data: dict[str, Any] = {"args": list(args)}
+            data: dict[str, Any] = {
+                "args": list(self._normalize_js_args(js_bot, args)),
+            }
             self._post_raw(event_name, data)
 
         self._js_handler_refs.append(_on_raw)
@@ -1748,6 +1690,49 @@ class EventRelay:
                 self._loop.call_soon_threadsafe(self._dispatch, event_type, event)
             except RuntimeError:
                 pass  # Event loop closed during shutdown
+
+    @staticmethod
+    def _normalize_js_args(js_bot: Any, args: tuple[Any, ...]) -> tuple[Any, ...]:
+        """Drop the synthetic emitter arg inserted by legacy JSPyBridge patches."""
+        if args and args[0] is js_bot:
+            return args[1:]
+        return args
+
+    def _post_built(
+        self,
+        js_bot: Any,
+        event_type: type,
+        builder: Callable[..., object | None],
+        *args: Any,
+    ) -> None:
+        """Defer JS payload parsing to the asyncio loop thread."""
+        normalized = self._normalize_js_args(js_bot, args)
+        if self._loop is not None and self._loop.is_running():
+            try:
+                self._loop.call_soon_threadsafe(
+                    self._dispatch_built, event_type, builder, normalized
+                )
+            except RuntimeError:
+                pass
+
+    def _dispatch_built(
+        self,
+        event_type: type,
+        builder: Callable[..., object | None],
+        args: tuple[Any, ...],
+    ) -> None:
+        """Build and dispatch an event on the asyncio loop thread."""
+        try:
+            event = builder(*args)
+        except Exception:
+            _log.debug(
+                "Failed to build %s from JS callback payload",
+                event_type.__name__,
+                exc_info=True,
+            )
+            return
+        if event is not None:
+            self._dispatch(event_type, event)
 
     def _post_raw(self, event_name: str, data: dict[str, Any]) -> None:
         """Thread-safe post for raw events."""

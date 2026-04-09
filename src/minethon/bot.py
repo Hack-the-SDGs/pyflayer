@@ -1,6 +1,8 @@
 """Bot -- the public entry point for minethon."""
 
 import asyncio
+import re
+from dataclasses import dataclass
 from typing import Any
 
 from minethon._bridge._events import (
@@ -14,9 +16,15 @@ from minethon._bridge._events import (
     FishDoneEvent,
     LookAtDoneEvent,
     LookDoneEvent,
+    OpenAnvilDoneEvent,
+    OpenContainerDoneEvent,
+    OpenEnchantmentTableDoneEvent,
+    OpenFurnaceDoneEvent,
+    OpenVillagerDoneEvent,
     PlaceDoneEvent,
     SleepDoneEvent,
     TabCompleteDoneEvent,
+    TradeDoneEvent,
     TossDoneEvent,
     TossStackDoneEvent,
     UnequipDoneEvent,
@@ -29,12 +37,17 @@ from minethon._bridge.marshalling import (
     js_block_to_block,
     js_entity_to_entity,
     js_item_to_item_stack,
+    js_recipe_to_recipe,
+    js_villager_to_session,
+    js_window_to_window_handle,
 )
 from minethon._bridge.plugin_host import PluginHost
 from minethon._bridge.runtime import BridgeRuntime
 from minethon.api.navigation import NavigationAPI
 from minethon.api.observe import ObserveAPI
+from minethon.api.plugins import PluginAPI
 from minethon.config import BotConfig
+from minethon.models import Recipe, VillagerSession, WindowHandle
 from minethon.models.block import Block
 from minethon.models.entity import Entity, EntityKind
 from minethon.models.errors import (
@@ -45,8 +58,22 @@ from minethon.models.errors import (
     MinethonError,
 )
 from minethon.models.events import (
+    BreathEvent,
     EndEvent,
+    ExperienceEvent,
+    GameEvent,
+    GoalReachedEvent,
+    HealthChangedEvent,
+    HeldItemChangedEvent,
+    MessageStrEvent,
+    MoveEvent,
+    RainEvent,
+    RespawnEvent,
+    SleepEvent,
     SpawnEvent,
+    TimeEvent,
+    WakeEvent,
+    WeatherUpdateEvent,
 )
 from minethon.models.experience import Experience
 from minethon.models.game_state import GameState
@@ -55,6 +82,26 @@ from minethon.models.player_info import PlayerInfo
 from minethon.models.time_state import TimeState
 from minethon.models.vec3 import Vec3
 from minethon.raw import RawBotHandle
+
+
+@dataclass(slots=True)
+class _BotStateCache:
+    """Mutable snapshot store for sync Bot properties."""
+
+    position: Vec3 | None = None
+    health: float | None = None
+    food: float | None = None
+    food_saturation: float | None = None
+    oxygen_level: int | None = None
+    experience: Experience | None = None
+    game: GameState | None = None
+    time: TimeState | None = None
+    held_item: ItemStack | None = None
+    held_item_known: bool = False
+    rain_state: float | None = None
+    thunder_state: float | None = None
+    is_sleeping: bool = False
+    is_sleeping_known: bool = False
 
 
 class Bot:
@@ -128,6 +175,7 @@ class Bot:
         self._controller: JSBotController | None = None
         self._connected = False
         self._spawned = False
+        self._state = _BotStateCache()
         self._resolved_username: str | None = None
         self._plugin_host: PluginHost | None = None
         self._navigation: NavigationAPI | None = None
@@ -151,6 +199,218 @@ class Bot:
         self._tab_complete_lock = asyncio.Lock()
         self._wait_chunks_lock = asyncio.Lock()
         self._wait_ticks_lock = asyncio.Lock()
+        self._window_lock = asyncio.Lock()
+        self._trade_lock = asyncio.Lock()
+        self._register_internal_state_handlers()
+
+    def _reset_state_cache(self) -> None:
+        """Discard all cached snapshot values."""
+        self._state = _BotStateCache()
+
+    @staticmethod
+    def _vec3_from_raw(data: dict[str, float]) -> Vec3:
+        return Vec3(x=float(data["x"]), y=float(data["y"]), z=float(data["z"]))
+
+    @staticmethod
+    def _experience_from_raw(data: dict[str, object]) -> Experience:
+        return Experience(
+            level=int(data["level"]),  # type: ignore[arg-type]
+            points=int(data["points"]),  # type: ignore[arg-type]
+            progress=float(data["progress"]),  # type: ignore[arg-type]
+        )
+
+    @staticmethod
+    def _game_state_from_raw(data: dict[str, object]) -> GameState:
+        return GameState(
+            game_mode=str(data["game_mode"]),
+            dimension=str(data["dimension"]),
+            difficulty=str(data["difficulty"]),
+            hardcore=bool(data["hardcore"]),
+            max_players=int(data["max_players"]),  # type: ignore[arg-type]
+            server_brand=str(data["server_brand"]),
+            min_y=int(data["min_y"]),  # type: ignore[arg-type]
+            height=int(data["height"]),  # type: ignore[arg-type]
+        )
+
+    @staticmethod
+    def _time_state_from_raw(data: dict[str, object]) -> TimeState:
+        return TimeState(
+            time_of_day=int(data["time_of_day"]),  # type: ignore[arg-type]
+            day=int(data["day"]),  # type: ignore[arg-type]
+            is_day=bool(data["is_day"]),
+            moon_phase=int(data["moon_phase"]),  # type: ignore[arg-type]
+            age=int(data["age"]),  # type: ignore[arg-type]
+            do_daylight_cycle=bool(data["do_daylight_cycle"]),
+        )
+
+    def _refresh_connected_state_cache(self) -> None:
+        """Refresh connected-state snapshots on the event-loop thread."""
+        ctrl = self._controller
+        if ctrl is None:
+            return
+        try:
+            self._state.game = self._game_state_from_raw(ctrl.get_game_state())
+        except BridgeError:
+            pass
+        try:
+            self._state.time = self._time_state_from_raw(ctrl.get_time())
+        except BridgeError:
+            pass
+        try:
+            self._state.rain_state = ctrl.get_rain_state()
+        except BridgeError:
+            pass
+        try:
+            self._state.thunder_state = ctrl.get_thunder_state()
+        except BridgeError:
+            pass
+        try:
+            self._state.is_sleeping = ctrl.get_is_sleeping()
+            self._state.is_sleeping_known = True
+        except BridgeError:
+            pass
+
+    def _refresh_spawn_state_cache(self) -> None:
+        """Refresh spawned-state snapshots on the event-loop thread."""
+        ctrl = self._controller
+        if ctrl is None or not self._spawned:
+            return
+        self._refresh_connected_state_cache()
+        try:
+            self._state.position = self._vec3_from_raw(ctrl.get_position())
+        except BridgeError:
+            pass
+        try:
+            self._state.health = ctrl.get_health()
+            self._state.food = ctrl.get_food()
+            self._state.food_saturation = ctrl.get_food_saturation()
+        except BridgeError:
+            pass
+        try:
+            self._state.oxygen_level = ctrl.get_oxygen_level()
+        except BridgeError:
+            pass
+        try:
+            self._state.experience = self._experience_from_raw(ctrl.get_experience())
+        except BridgeError:
+            pass
+        try:
+            js_item = ctrl.get_held_item()
+            self._state.held_item = (
+                js_item_to_item_stack(js_item) if js_item is not None else None
+            )
+            self._state.held_item_known = True
+        except BridgeError:
+            pass
+
+    @staticmethod
+    def _require_snapshot(value: Any, name: str) -> Any:
+        if value is None:
+            raise BridgeError(f"{name} snapshot is not available yet")
+        return value
+
+    def _resolve_js_block(self, block: Block) -> Any | None:
+        ctrl = self._ensure_connected()
+        return ctrl.block_at(
+            int(block.position.x),
+            int(block.position.y),
+            int(block.position.z),
+        )
+
+    def _resolve_js_entity(self, entity: Entity) -> Any | None:
+        ctrl = self._ensure_connected()
+        return ctrl.get_entity_by_id(entity.id)
+
+    def _resolve_item_type(self, item_name: str) -> int:
+        ctrl = self._ensure_connected()
+        item_type = ctrl.get_item_type(item_name)
+        if item_type is None:
+            raise ValueError(f"Unknown item name '{item_name}'")
+        return item_type
+
+    def _register_internal_state_handlers(self) -> None:
+        """Keep sync properties backed by Python-side snapshots."""
+
+        async def _on_spawn(_event: SpawnEvent) -> None:
+            self._spawned = True
+            if self._controller is not None and self._connected:
+                self._refresh_spawn_state_cache()
+
+        async def _on_respawn(_event: RespawnEvent) -> None:
+            self._spawned = False
+
+        async def _on_move(event: MoveEvent) -> None:
+            self._state.position = event.position
+
+        async def _on_goal_reached(event: GoalReachedEvent) -> None:
+            self._state.position = event.position
+
+        async def _on_health(event: HealthChangedEvent) -> None:
+            self._state.health = event.health
+            self._state.food = event.food
+            self._state.food_saturation = event.saturation
+
+        async def _on_breath(event: BreathEvent) -> None:
+            self._state.oxygen_level = event.oxygen_level
+
+        async def _on_experience(event: ExperienceEvent) -> None:
+            self._state.experience = Experience(
+                level=event.level,
+                points=event.points,
+                progress=event.progress,
+            )
+
+        async def _on_held_item(event: HeldItemChangedEvent) -> None:
+            self._state.held_item = event.item
+            self._state.held_item_known = True
+
+        async def _on_weather(event: WeatherUpdateEvent) -> None:
+            self._state.rain_state = event.rain_state
+            self._state.thunder_state = event.thunder_state
+
+        async def _on_rain(_event: RainEvent) -> None:
+            if self._controller is not None and self._connected:
+                try:
+                    self._state.rain_state = self._controller.get_rain_state()
+                except BridgeError:
+                    pass
+
+        async def _on_time(_event: TimeEvent) -> None:
+            if self._controller is not None and self._connected:
+                try:
+                    self._state.time = self._time_state_from_raw(self._controller.get_time())
+                except BridgeError:
+                    pass
+
+        async def _on_game(_event: GameEvent) -> None:
+            if self._controller is not None and self._connected:
+                try:
+                    self._state.game = self._game_state_from_raw(self._controller.get_game_state())
+                except BridgeError:
+                    pass
+
+        async def _on_sleep(_event: SleepEvent) -> None:
+            self._state.is_sleeping = True
+            self._state.is_sleeping_known = True
+
+        async def _on_wake(_event: WakeEvent) -> None:
+            self._state.is_sleeping = False
+            self._state.is_sleeping_known = True
+
+        self._relay.add_handler(SpawnEvent, _on_spawn)  # type: ignore[arg-type]
+        self._relay.add_handler(RespawnEvent, _on_respawn)  # type: ignore[arg-type]
+        self._relay.add_handler(MoveEvent, _on_move)  # type: ignore[arg-type]
+        self._relay.add_handler(GoalReachedEvent, _on_goal_reached)  # type: ignore[arg-type]
+        self._relay.add_handler(HealthChangedEvent, _on_health)  # type: ignore[arg-type]
+        self._relay.add_handler(BreathEvent, _on_breath)  # type: ignore[arg-type]
+        self._relay.add_handler(ExperienceEvent, _on_experience)  # type: ignore[arg-type]
+        self._relay.add_handler(HeldItemChangedEvent, _on_held_item)  # type: ignore[arg-type]
+        self._relay.add_handler(WeatherUpdateEvent, _on_weather)  # type: ignore[arg-type]
+        self._relay.add_handler(RainEvent, _on_rain)  # type: ignore[arg-type]
+        self._relay.add_handler(TimeEvent, _on_time)  # type: ignore[arg-type]
+        self._relay.add_handler(GameEvent, _on_game)  # type: ignore[arg-type]
+        self._relay.add_handler(SleepEvent, _on_sleep)  # type: ignore[arg-type]
+        self._relay.add_handler(WakeEvent, _on_wake)  # type: ignore[arg-type]
 
     def _ensure_connected(self) -> JSBotController:
         """Return the controller or raise if not connected."""
@@ -223,10 +483,12 @@ class Bot:
         async def _on_end(_event: EndEvent) -> None:
             self._connected = False
             self._spawned = False
+            self._reset_state_cache()
 
         self._on_end_handler = _on_end
         self._relay.add_handler(EndEvent, _on_end)  # type: ignore[arg-type]
         self._connected = True
+        self._refresh_connected_state_cache()
 
     async def disconnect(self) -> None:
         """Disconnect from the server and clean up resources.
@@ -254,6 +516,7 @@ class Bot:
         self._connected = False
         self._spawned = False
         self._resolved_username = None
+        self._reset_state_cache()
 
     async def wait_until_spawned(self, timeout: float = 30.0) -> None:
         """Block until the bot has spawned in the world."""
@@ -261,6 +524,7 @@ class Bot:
             return
         await self._observe.wait_for(SpawnEvent, timeout=timeout)
         self._spawned = True
+        self._refresh_spawn_state_cache()
         if self._plugin_host is not None:
             self._plugin_host.setup_pathfinder_movements()
 
@@ -288,9 +552,8 @@ class Bot:
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
         """
-        ctrl = self._ensure_spawned()
-        data = ctrl.get_position()
-        return Vec3(x=data["x"], y=data["y"], z=data["z"])
+        self._ensure_spawned()
+        return self._require_snapshot(self._state.position, "position")
 
     @property
     def health(self) -> float:
@@ -299,8 +562,8 @@ class Bot:
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
         """
-        ctrl = self._ensure_spawned()
-        return ctrl.get_health()
+        self._ensure_spawned()
+        return self._require_snapshot(self._state.health, "health")
 
     @property
     def food(self) -> float:
@@ -309,8 +572,8 @@ class Bot:
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
         """
-        ctrl = self._ensure_spawned()
-        return ctrl.get_food()
+        self._ensure_spawned()
+        return self._require_snapshot(self._state.food, "food")
 
     @property
     def username(self) -> str:
@@ -329,8 +592,7 @@ class Bot:
     @property
     def game_mode(self) -> str:
         """Current game mode (``"survival"``, ``"creative"``, etc.)."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_game_mode()
+        return self.game.game_mode
 
     @property
     def players(self) -> dict[str, PlayerInfo]:
@@ -355,8 +617,11 @@ class Bot:
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
         """
-        ctrl = self._ensure_spawned()
-        return ctrl.get_food_saturation()
+        self._ensure_spawned()
+        return self._require_snapshot(
+            self._state.food_saturation,
+            "food_saturation",
+        )
 
     @property
     def oxygen_level(self) -> int:
@@ -367,8 +632,8 @@ class Bot:
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
         """
-        ctrl = self._ensure_spawned()
-        return ctrl.get_oxygen_level()
+        self._ensure_spawned()
+        return self._require_snapshot(self._state.oxygen_level, "oxygen_level")
 
     @property
     def experience(self) -> Experience:
@@ -377,29 +642,14 @@ class Bot:
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
         """
-        ctrl = self._ensure_spawned()
-        data = ctrl.get_experience()
-        return Experience(
-            level=int(data["level"]),  # type: ignore[arg-type]
-            points=int(data["points"]),  # type: ignore[arg-type]
-            progress=float(data["progress"]),  # type: ignore[arg-type]
-        )
+        self._ensure_spawned()
+        return self._require_snapshot(self._state.experience, "experience")
 
     @property
     def game(self) -> GameState:
         """Server game state snapshot."""
-        ctrl = self._ensure_connected()
-        data = ctrl.get_game_state()
-        return GameState(
-            game_mode=str(data["game_mode"]),
-            dimension=str(data["dimension"]),
-            difficulty=str(data["difficulty"]),
-            hardcore=bool(data["hardcore"]),
-            max_players=int(data["max_players"]),  # type: ignore[arg-type]
-            server_brand=str(data["server_brand"]),
-            min_y=int(data["min_y"]),  # type: ignore[arg-type]
-            height=int(data["height"]),  # type: ignore[arg-type]
-        )
+        self._ensure_connected()
+        return self._require_snapshot(self._state.game, "game")
 
     @property
     def difficulty(self) -> str:
@@ -409,28 +659,19 @@ class Bot:
     @property
     def is_raining(self) -> bool:
         """Whether it is currently raining."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_is_raining()
+        return self.rain_state > 0.0
 
     @property
     def thunder_state(self) -> float:
         """Thunder intensity level (0 means no thunder)."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_thunder_state()
+        self._ensure_connected()
+        return self._require_snapshot(self._state.thunder_state, "thunder_state")
 
     @property
     def time(self) -> TimeState:
         """World time state snapshot."""
-        ctrl = self._ensure_connected()
-        data = ctrl.get_time()
-        return TimeState(
-            time_of_day=int(data["time_of_day"]),  # type: ignore[arg-type]
-            day=int(data["day"]),  # type: ignore[arg-type]
-            is_day=bool(data["is_day"]),
-            moon_phase=int(data["moon_phase"]),  # type: ignore[arg-type]
-            age=int(data["age"]),  # type: ignore[arg-type]
-            do_daylight_cycle=bool(data["do_daylight_cycle"]),
-        )
+        self._ensure_connected()
+        return self._require_snapshot(self._state.time, "time")
 
     @property
     def held_item(self) -> ItemStack | None:
@@ -439,11 +680,10 @@ class Bot:
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
         """
-        ctrl = self._ensure_spawned()
-        js_item = ctrl.get_held_item()
-        if js_item is None:
-            return None
-        return js_item_to_item_stack(js_item)
+        self._ensure_spawned()
+        if not self._state.held_item_known:
+            raise BridgeError("held_item snapshot is not available yet")
+        return self._state.held_item
 
     @property
     def quick_bar_slot(self) -> int:
@@ -478,8 +718,10 @@ class Bot:
     @property
     def is_sleeping(self) -> bool:
         """Whether the bot is currently sleeping in a bed."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_is_sleeping()
+        self._ensure_connected()
+        if not self._state.is_sleeping_known:
+            raise BridgeError("is_sleeping snapshot is not available yet")
+        return self._state.is_sleeping
 
     @property
     def target_dig_block(self) -> Block | None:
@@ -582,8 +824,8 @@ class Bot:
     @property
     def rain_state(self) -> float:
         """Rain intensity (0.0 = clear, 1.0 = full rain)."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_rain_state()
+        self._ensure_connected()
+        return self._require_snapshot(self._state.rain_state, "rain_state")
 
     @property
     def inventory_items(self) -> list[ItemStack]:
@@ -846,8 +1088,10 @@ class Bot:
         """Make the bot jump once."""
         ctrl = self._ensure_connected()
         ctrl.set_control_state("jump", True)
-        await asyncio.sleep(0.1)
-        ctrl.set_control_state("jump", False)
+        try:
+            await self.wait_for_ticks(1)
+        finally:
+            ctrl.set_control_state("jump", False)
 
     async def stop(self) -> None:
         """Stop all movement and cancel pathfinding."""
@@ -880,17 +1124,25 @@ class Bot:
             JS docs for usage.
         """
         ctrl = self._ensure_connected()
-        return RawBotHandle(ctrl.js_bot)
+        plugin_loader = (
+            self._plugin_host.raw_plugin if self._plugin_host is not None else None
+        )
+        return RawBotHandle(
+            ctrl.js_bot,
+            raw_subscribe=self._observe._on_raw,
+            raw_unsubscribe=self._observe._off_raw,
+            plugin_loader=plugin_loader,
+        )
 
     @property
-    def plugins(self) -> PluginHost:
+    def plugins(self) -> PluginAPI:
         """Plugin management API.
 
-        Includes ``raw_plugin(name)`` for loading arbitrary JS plugins.
+        Exposes only typed, supported plugin operations.
         """
         if self._plugin_host is None:
             raise MinethonConnectionError("Bot is not connected.")
-        return self._plugin_host
+        return PluginAPI(self._plugin_host)
 
     # -- Sleep / Wake --
 
@@ -1163,18 +1415,167 @@ class Bot:
 
     # -- Crafting --
 
+    async def recipes_for(
+        self,
+        item_name: str,
+        *,
+        metadata: int | None = None,
+        min_result_count: int | None = None,
+        crafting_table: Block | None = None,
+    ) -> list[Recipe]:
+        """Return craftable recipes for an item name."""
+        ctrl = self._ensure_connected()
+        item_type = self._resolve_item_type(item_name)
+        js_table = self._resolve_js_block(crafting_table) if crafting_table else None
+        recipes = ctrl.recipes_for(item_type, metadata, min_result_count, js_table)
+        return [js_recipe_to_recipe(recipe) for recipe in recipes]
+
+    async def recipes_all(
+        self,
+        item_name: str,
+        *,
+        metadata: int | None = None,
+        crafting_table: Block | None = None,
+    ) -> list[Recipe]:
+        """Return all known recipes for an item name regardless of inventory."""
+        ctrl = self._ensure_connected()
+        item_type = self._resolve_item_type(item_name)
+        js_table = self._resolve_js_block(crafting_table) if crafting_table else None
+        recipes = ctrl.recipes_all(item_type, metadata, js_table)
+        return [js_recipe_to_recipe(recipe) for recipe in recipes]
+
+    async def open_container(self, target: Block | Entity) -> WindowHandle:
+        """Open a generic container and return a typed session handle."""
+        async with self._window_lock:
+            ctrl = self._ensure_connected()
+            js_target = (
+                self._resolve_js_block(target)
+                if isinstance(target, Block)
+                else self._resolve_js_entity(target)
+            )
+            if js_target is None:
+                raise MinethonError("Container target is no longer available")
+            ctrl.start_open_container(js_target)
+            try:
+                event = await self._relay.wait_for(OpenContainerDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("open_container timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"open_container failed: {event.error}")
+            if event.result is None:
+                raise BridgeError("open_container returned no window")
+            return js_window_to_window_handle(event.result)
+
+    async def open_furnace(self, block: Block) -> WindowHandle:
+        """Open a furnace-like block and return a typed session handle."""
+        async with self._window_lock:
+            ctrl = self._ensure_connected()
+            js_block = self._resolve_js_block(block)
+            if js_block is None:
+                raise MinethonError(f"Block at {block.position} not found")
+            ctrl.start_open_furnace(js_block)
+            try:
+                event = await self._relay.wait_for(OpenFurnaceDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("open_furnace timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"open_furnace failed: {event.error}")
+            if event.result is None:
+                raise BridgeError("open_furnace returned no window")
+            return js_window_to_window_handle(event.result)
+
+    async def open_enchantment_table(self, block: Block) -> WindowHandle:
+        """Open an enchantment table and return a typed session handle."""
+        async with self._window_lock:
+            ctrl = self._ensure_connected()
+            js_block = self._resolve_js_block(block)
+            if js_block is None:
+                raise MinethonError(f"Block at {block.position} not found")
+            ctrl.start_open_enchantment_table(js_block)
+            try:
+                event = await self._relay.wait_for(
+                    OpenEnchantmentTableDoneEvent,
+                    timeout=10.0,
+                )
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("open_enchantment_table timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"open_enchantment_table failed: {event.error}")
+            if event.result is None:
+                raise BridgeError("open_enchantment_table returned no window")
+            return js_window_to_window_handle(event.result)
+
+    async def open_anvil(self, block: Block) -> WindowHandle:
+        """Open an anvil and return a typed session handle."""
+        async with self._window_lock:
+            ctrl = self._ensure_connected()
+            js_block = self._resolve_js_block(block)
+            if js_block is None:
+                raise MinethonError(f"Block at {block.position} not found")
+            ctrl.start_open_anvil(js_block)
+            try:
+                event = await self._relay.wait_for(OpenAnvilDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("open_anvil timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"open_anvil failed: {event.error}")
+            if event.result is None:
+                raise BridgeError("open_anvil returned no window")
+            return js_window_to_window_handle(event.result)
+
+    async def open_villager(self, villager: Entity) -> VillagerSession:
+        """Open a villager trading window and return a typed session."""
+        async with self._window_lock:
+            ctrl = self._ensure_connected()
+            js_villager = self._resolve_js_entity(villager)
+            if js_villager is None:
+                raise MinethonError(f"Entity {villager.id} not found")
+            ctrl.start_open_villager(js_villager)
+            try:
+                event = await self._relay.wait_for(OpenVillagerDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("open_villager timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"open_villager failed: {event.error}")
+            if event.result is None:
+                raise BridgeError("open_villager returned no session")
+            return js_villager_to_session(event.result)
+
+    async def close_window(self, window: WindowHandle | VillagerSession) -> None:
+        """Close an open window or villager session."""
+        ctrl = self._ensure_connected()
+        ctrl.close_window(window._raw)
+
+    async def trade(
+        self,
+        villager: VillagerSession,
+        trade_index: int,
+        *,
+        times: int = 1,
+    ) -> VillagerSession:
+        """Execute a villager trade and return the updated session snapshot."""
+        async with self._trade_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_trade(villager._raw, trade_index, times)
+            try:
+                event = await self._relay.wait_for(TradeDoneEvent, timeout=30.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("trade timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"trade failed: {event.error}")
+            return js_villager_to_session(villager._raw)
+
     async def craft(
         self,
-        recipe: Any,
+        recipe: Recipe,
         count: int = 1,
         crafting_table: Block | None = None,
     ) -> None:
         """Craft items using a recipe.
 
-        Use ``bot.raw`` to look up recipes from the mineflayer API.
-
         Args:
-            recipe: A mineflayer recipe object (obtained via ``bot.raw``).
+            recipe: A typed recipe handle from :meth:`recipes_for` or
+                :meth:`recipes_all`.
             count: Number of times to craft.
             crafting_table: Optional crafting table :class:`Block` for
                 3x3 recipes.
@@ -1186,12 +1587,8 @@ class Bot:
             ctrl = self._ensure_connected()
             js_table = None
             if crafting_table is not None:
-                js_table = ctrl.block_at(
-                    int(crafting_table.position.x),
-                    int(crafting_table.position.y),
-                    int(crafting_table.position.z),
-                )
-            ctrl.start_craft(recipe, count, js_table)
+                js_table = self._resolve_js_block(crafting_table)
+            ctrl.start_craft(recipe._raw, count, js_table)
             try:
                 event = await self._relay.wait_for(CraftDoneEvent, timeout=30.0)
             except asyncio.TimeoutError as exc:
@@ -1393,3 +1790,32 @@ class Bot:
                 return list(event.result) if event.result is not None else []
             except (TypeError, ValueError):
                 return []
+
+    async def await_message(
+        self,
+        *patterns: str | re.Pattern[str] | list[str | re.Pattern[str]],
+        timeout: float = 30.0,
+    ) -> str:
+        """Wait for the next chat message matching any exact string or regex."""
+        flat_patterns: list[str | re.Pattern[str]] = []
+        for pattern in patterns:
+            if isinstance(pattern, list):
+                flat_patterns.extend(pattern)
+            else:
+                flat_patterns.append(pattern)
+        if not flat_patterns:
+            raise ValueError("await_message requires at least one pattern")
+
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+        while True:
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                raise asyncio.TimeoutError
+            event = await self._observe.wait_for(MessageStrEvent, timeout=remaining)
+            for pattern in flat_patterns:
+                if isinstance(pattern, str):
+                    if event.message == pattern:
+                        return event.message
+                elif pattern.search(event.message):
+                    return event.message

@@ -1,6 +1,7 @@
 """Comprehensive tests for EventRelay."""
 
 import asyncio
+from types import SimpleNamespace
 
 import pytest
 
@@ -12,9 +13,21 @@ from minethon._bridge._events import (
 )
 from minethon._bridge.event_relay import EventRelay
 from minethon.models.events import (
+    EntityMovedEvent,
+    EntityUpdateEvent,
+    HeldItemChangedEvent,
+    MessageStrEvent,
+    PlayerJoinedEvent,
+    PhysicsTickEvent,
+    ScoreUpdatedEvent,
+    SoundEffectHeardEvent,
+    TeamCreatedEvent,
+)
+from minethon.models.events import (
     ChatEvent,
     GoalFailedEvent,
     GoalReachedEvent,
+    MoveEvent,
     SpawnEvent,
 )
 from minethon.models.vec3 import Vec3
@@ -336,3 +349,320 @@ class TestEventRelayGoalEvents:
 
         assert fut1.done()
         assert fut2.done()
+
+
+class TestEventRelayMineflayerParity:
+    """Payload mapping and throttled event registration."""
+
+    @staticmethod
+    def _make_item(**overrides: object) -> SimpleNamespace:
+        data = {
+            "name": "stick",
+            "displayName": "Stick",
+            "count": 2,
+            "slot": 5,
+            "stackSize": 64,
+            "enchants": None,
+            "nbt": None,
+        }
+        data.update(overrides)
+        return SimpleNamespace(**data)
+
+    @staticmethod
+    def _make_bot() -> SimpleNamespace:
+        return SimpleNamespace(
+            entity=SimpleNamespace(position=SimpleNamespace(x=1.0, y=64.0, z=2.0)),
+            health=20,
+            food=18,
+            foodSaturation=5,
+            experience=SimpleNamespace(level=1, points=3, progress=0.2),
+            rainState=0.0,
+            thunderState=0.0,
+            time=SimpleNamespace(timeOfDay=6000, age=12000),
+        )
+
+    @pytest.mark.asyncio
+    async def test_messagestr_uses_sender_and_verified_positions(self) -> None:
+        relay = EventRelay(event_throttle_ms={"move": 0, "entityMoved": 0, "physicsTick": 0})
+        relay.set_loop(asyncio.get_running_loop())
+        js_bot = self._make_bot()
+        handlers: dict[str, object] = {}
+
+        def on_fn(_bot: object, event_name: str):
+            def decorator(fn):
+                handlers[event_name] = fn
+                return fn
+
+            return decorator
+
+        relay.register_js_events(js_bot, on_fn)
+
+        received: list[MessageStrEvent] = []
+
+        async def handler(event: MessageStrEvent) -> None:
+            received.append(event)
+
+        relay.add_handler(MessageStrEvent, handler)
+        handlers["messagestr"](js_bot, "hello", "chat", object(), "uuid-1", True)
+        await asyncio.sleep(0.01)
+
+        assert received == [
+            MessageStrEvent(
+                message="hello",
+                position="chat",
+                sender="uuid-1",
+                verified=True,
+            )
+        ]
+
+    @pytest.mark.asyncio
+    async def test_held_item_changed_converts_item_stack(self) -> None:
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+        js_bot = self._make_bot()
+        handlers: dict[str, object] = {}
+
+        def on_fn(_bot: object, event_name: str):
+            def decorator(fn):
+                handlers[event_name] = fn
+                return fn
+
+            return decorator
+
+        relay.register_js_events(js_bot, on_fn)
+
+        received: list[HeldItemChangedEvent] = []
+
+        async def handler(event: HeldItemChangedEvent) -> None:
+            received.append(event)
+
+        relay.add_handler(HeldItemChangedEvent, handler)
+        handlers["heldItemChanged"](js_bot, self._make_item())
+        await asyncio.sleep(0.01)
+
+        assert received[0].item is not None
+        assert received[0].item.name == "stick"
+        assert received[0].item.display_name == "Stick"
+
+    @pytest.mark.asyncio
+    async def test_held_item_changed_snapshots_before_later_proxy_mutation(self) -> None:
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+        js_bot = self._make_bot()
+        handlers: dict[str, object] = {}
+
+        def on_fn(_bot: object, event_name: str):
+            def decorator(fn):
+                handlers[event_name] = fn
+                return fn
+
+            return decorator
+
+        relay.register_js_events(js_bot, on_fn)
+
+        received: list[HeldItemChangedEvent] = []
+
+        async def handler(event: HeldItemChangedEvent) -> None:
+            received.append(event)
+
+        relay.add_handler(HeldItemChangedEvent, handler)
+        item = self._make_item()
+        handlers["heldItemChanged"](js_bot, item)
+        item.name = "diamond"
+        item.displayName = "Diamond"
+        item.count = 99
+        await asyncio.sleep(0.01)
+
+        assert len(received) == 1
+        assert received[0].item is not None
+        assert received[0].item.name == "stick"
+        assert received[0].item.display_name == "Stick"
+        assert received[0].item.count == 2
+
+    @pytest.mark.asyncio
+    async def test_player_and_named_events_snapshot_scalar_fields(self) -> None:
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+        js_bot = self._make_bot()
+        handlers: dict[str, object] = {}
+
+        def on_fn(_bot: object, event_name: str):
+            def decorator(fn):
+                handlers[event_name] = fn
+                return fn
+
+            return decorator
+
+        relay.register_js_events(js_bot, on_fn)
+
+        players: list[PlayerJoinedEvent] = []
+        teams: list[TeamCreatedEvent] = []
+
+        async def player_handler(event: PlayerJoinedEvent) -> None:
+            players.append(event)
+
+        async def team_handler(event: TeamCreatedEvent) -> None:
+            teams.append(event)
+
+        relay.add_handler(PlayerJoinedEvent, player_handler)
+        relay.add_handler(TeamCreatedEvent, team_handler)
+
+        player = SimpleNamespace(username="Alex")
+        team = SimpleNamespace(name="builders")
+        handlers["playerJoined"](js_bot, player)
+        handlers["teamCreated"](js_bot, team)
+        player.username = "Steve"
+        team.name = "raiders"
+        await asyncio.sleep(0.01)
+
+        assert players == [PlayerJoinedEvent(username="Alex")]
+        assert teams == [TeamCreatedEvent(name="builders")]
+
+    @pytest.mark.asyncio
+    async def test_sound_and_score_payloads_match_docs(self) -> None:
+        relay = EventRelay()
+        relay.set_loop(asyncio.get_running_loop())
+        js_bot = self._make_bot()
+        handlers: dict[str, object] = {}
+
+        def on_fn(_bot: object, event_name: str):
+            def decorator(fn):
+                handlers[event_name] = fn
+                return fn
+
+            return decorator
+
+        relay.register_js_events(js_bot, on_fn)
+
+        sounds: list[SoundEffectHeardEvent] = []
+        scores: list[ScoreUpdatedEvent] = []
+
+        async def sound_handler(event: SoundEffectHeardEvent) -> None:
+            sounds.append(event)
+
+        async def score_handler(event: ScoreUpdatedEvent) -> None:
+            scores.append(event)
+
+        relay.add_handler(SoundEffectHeardEvent, sound_handler)
+        relay.add_handler(ScoreUpdatedEvent, score_handler)
+
+        position = SimpleNamespace(x=4.0, y=70.0, z=-3.0)
+        handlers["soundEffectHeard"](js_bot, "entity.arrow.hit", position, 1.5, 63)
+        handlers["scoreUpdated"](
+            js_bot,
+            SimpleNamespace(name="sidebar"),
+            SimpleNamespace(name="Alex", value=12),
+        )
+        await asyncio.sleep(0.01)
+
+        assert sounds == [
+            SoundEffectHeardEvent(
+                sound_name="entity.arrow.hit",
+                position=Vec3(4.0, 70.0, -3.0),
+                volume=1.5,
+                pitch=63.0,
+            )
+        ]
+        assert scores == [
+            ScoreUpdatedEvent(
+                scoreboard_name="sidebar",
+                item_name="Alex",
+                value=12,
+            )
+        ]
+
+    @pytest.mark.asyncio
+    async def test_high_frequency_events_dispatch_typed_events(self) -> None:
+        relay = EventRelay(event_throttle_ms={"move": 0, "entityMoved": 0, "physicsTick": 0})
+        relay.set_loop(asyncio.get_running_loop())
+        js_bot = self._make_bot()
+        handlers: dict[str, object] = {}
+
+        def on_fn(_bot: object, event_name: str):
+            def decorator(fn):
+                handlers[event_name] = fn
+                return fn
+
+            return decorator
+
+        relay.register_js_events(js_bot, on_fn)
+
+        moves: list[MoveEvent] = []
+        entity_moves: list[EntityMovedEvent] = []
+        ticks: list[PhysicsTickEvent] = []
+        raw_entity_moves: list[dict] = []
+
+        async def move_handler(event: MoveEvent) -> None:
+            moves.append(event)
+
+        async def entity_move_handler(event: EntityMovedEvent) -> None:
+            entity_moves.append(event)
+
+        async def tick_handler(event: PhysicsTickEvent) -> None:
+            ticks.append(event)
+
+        async def raw_entity_move_handler(data: dict) -> None:
+            raw_entity_moves.append(data)
+
+        relay.add_handler(MoveEvent, move_handler)
+        relay.add_handler(EntityMovedEvent, entity_move_handler)
+        relay.add_handler(PhysicsTickEvent, tick_handler)
+        relay.add_raw_handler("entityMoved", raw_entity_move_handler)
+
+        moving_entity = SimpleNamespace(id=99, position=SimpleNamespace(x=9.0, y=65.0, z=7.0))
+        handlers["move"](js_bot)
+        handlers["entityMoved"](js_bot, moving_entity)
+        handlers["physicsTick"](js_bot)
+        await asyncio.sleep(0.01)
+
+        assert moves == [MoveEvent(position=Vec3(1.0, 64.0, 2.0))]
+        assert entity_moves == [EntityMovedEvent(entity_id=99, position=Vec3(9.0, 65.0, 7.0))]
+        assert len(ticks) == 1
+        assert raw_entity_moves == [{"args": [moving_entity]}]
+
+    @pytest.mark.asyncio
+    async def test_entity_update_snapshots_before_later_proxy_mutation(self) -> None:
+        relay = EventRelay(
+            event_throttle_ms={"move": 0, "entityMoved": 0, "entityUpdate": 0, "physicsTick": 0}
+        )
+        relay.set_loop(asyncio.get_running_loop())
+        js_bot = self._make_bot()
+        handlers: dict[str, object] = {}
+
+        def on_fn(_bot: object, event_name: str):
+            def decorator(fn):
+                handlers[event_name] = fn
+                return fn
+
+            return decorator
+
+        relay.register_js_events(js_bot, on_fn)
+
+        updates: list[EntityUpdateEvent] = []
+
+        async def handler(event: EntityUpdateEvent) -> None:
+            updates.append(event)
+
+        relay.add_handler(EntityUpdateEvent, handler)
+        entity = SimpleNamespace(
+            id=7,
+            position=SimpleNamespace(x=1.0, y=65.0, z=2.0),
+            velocity=SimpleNamespace(x=0.1, y=0.0, z=0.2),
+            health=12.0,
+            username="Alex",
+            name="player",
+            metadata=None,
+            type="player",
+        )
+
+        handlers["entityUpdate"](js_bot, entity)
+        entity.position.x = 99.0
+        entity.velocity.z = 9.0
+        entity.health = 1.0
+        await asyncio.sleep(0.01)
+
+        assert len(updates) == 1
+        assert updates[0].entity is not None
+        assert updates[0].entity.position == Vec3(1.0, 65.0, 2.0)
+        assert updates[0].entity.velocity == Vec3(0.1, 0.0, 0.2)
+        assert updates[0].entity.health == 12.0
