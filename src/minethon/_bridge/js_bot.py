@@ -553,104 +553,12 @@ class JSBotController:
         except Exception as exc:
             raise BridgeError(f"clear_control_states failed: {exc}", js_stack=extract_js_stack(exc)) from exc
 
-    # -- Additional state queries --
-
-    def get_food_saturation(self) -> float:
-        """Read bot food saturation."""
-        try:
-            return float(self._js_bot.foodSaturation)
-        except Exception as exc:
-            raise BridgeError(f"get_food_saturation failed: {exc}", js_stack=extract_js_stack(exc)) from exc
-
-    def get_oxygen_level(self) -> float:
-        """Read bot oxygen level (0-20)."""
-        try:
-            return float(self._js_bot.oxygenLevel)
-        except Exception as exc:
-            raise BridgeError(f"get_oxygen_level failed: {exc}", js_stack=extract_js_stack(exc)) from exc
-
-    def get_spawn_point(self) -> dict[str, float] | None:
-        """Read bot spawn point as ``{x, y, z}`` dict, or None."""
-        try:
-            sp = self._js_bot.spawnPoint
-            if sp is None:
-                return None
-            return {"x": float(sp.x), "y": float(sp.y), "z": float(sp.z)}
-        except (AttributeError, TypeError):
-            return None
-
-    def get_held_item_data(self) -> dict[str, Any] | None:
-        """Read the held item as a plain dict, or None."""
-        try:
-            item = self._js_bot.heldItem
-            if item is None:
-                return None
-            return {
-                "name": str(item.name),
-                "displayName": str(item.displayName),
-                "count": int(item.count),
-                "slot": int(item.slot),
-                "stackSize": int(item.stackSize),
-            }
-        except (AttributeError, TypeError):
-            return None
+    # -- Additional state queries (unique, no first-block equivalent) --
 
     def get_using_held_item(self) -> bool:
         """Whether the bot is currently using the held item."""
         try:
             return bool(self._js_bot.usingHeldItem)
-        except (AttributeError, TypeError):
-            return False
-
-    def get_game_data(self) -> dict[str, Any]:
-        """Read all bot.game.* properties as a plain dict."""
-        try:
-            g = self._js_bot.game
-            return {
-                "levelType": str(g.levelType) if getattr(g, "levelType", None) is not None else None,
-                "dimension": str(g.dimension) if getattr(g, "dimension", None) is not None else None,
-                "difficulty": str(g.difficulty) if getattr(g, "difficulty", None) is not None else None,
-                "gameMode": str(g.gameMode) if getattr(g, "gameMode", None) is not None else "unknown",
-                "hardcore": bool(g.hardcore) if getattr(g, "hardcore", None) is not None else False,
-                "maxPlayers": int(g.maxPlayers) if getattr(g, "maxPlayers", None) is not None else 0,
-                "serverBrand": str(g.serverBrand) if getattr(g, "serverBrand", None) is not None else None,
-                "minY": int(g.minY) if getattr(g, "minY", None) is not None else 0,
-                "height": int(g.height) if getattr(g, "height", None) is not None else 256,
-            }
-        except Exception as exc:
-            raise BridgeError(f"get_game_data failed: {exc}", js_stack=extract_js_stack(exc)) from exc
-
-    def get_experience(self) -> dict[str, Any]:
-        """Read bot.experience.* properties."""
-        try:
-            exp = self._js_bot.experience
-            return {
-                "level": int(exp.level) if getattr(exp, "level", None) is not None else 0,
-                "points": int(exp.points) if getattr(exp, "points", None) is not None else 0,
-                "progress": float(exp.progress) if getattr(exp, "progress", None) is not None else 0.0,
-            }
-        except Exception as exc:
-            raise BridgeError(f"get_experience failed: {exc}", js_stack=extract_js_stack(exc)) from exc
-
-    def get_time_data(self) -> dict[str, Any]:
-        """Read bot.time.* properties."""
-        try:
-            t = self._js_bot.time
-            return {
-                "timeOfDay": int(t.timeOfDay) if getattr(t, "timeOfDay", None) is not None else 0,
-                "day": int(t.day) if getattr(t, "day", None) is not None else 0,
-                "isDay": bool(t.isDay) if getattr(t, "isDay", None) is not None else True,
-                "moonPhase": int(t.moonPhase) if getattr(t, "moonPhase", None) is not None else 0,
-                "age": int(t.age) if getattr(t, "age", None) is not None else 0,
-                "doDaylightCycle": bool(t.doDaylightCycle) if getattr(t, "doDaylightCycle", None) is not None else True,
-            }
-        except Exception as exc:
-            raise BridgeError(f"get_time_data failed: {exc}", js_stack=extract_js_stack(exc)) from exc
-
-    def get_is_raining(self) -> bool:
-        """Whether it is raining."""
-        try:
-            return bool(self._js_bot.isRaining)
         except (AttributeError, TypeError):
             return False
 
@@ -660,41 +568,6 @@ class JSBotController:
             return float(self._js_bot.rainState)
         except (AttributeError, TypeError):
             return 0.0
-
-    def get_thunder_state(self) -> float:
-        """Thunder level (0-1)."""
-        try:
-            return float(self._js_bot.thunderState)
-        except (AttributeError, TypeError):
-            return 0.0
-
-    def get_is_sleeping(self) -> bool:
-        """Whether the bot is in bed."""
-        try:
-            return bool(self._js_bot.isSleeping)
-        except (AttributeError, TypeError):
-            return False
-
-    def get_quick_bar_slot(self) -> int:
-        """Current quick bar slot (0-8)."""
-        try:
-            return int(self._js_bot.quickBarSlot)
-        except (AttributeError, TypeError):
-            return 0
-
-    def get_physics_enabled(self) -> bool:
-        """Whether physics simulation is enabled."""
-        try:
-            return bool(self._js_bot.physicsEnabled)
-        except (AttributeError, TypeError):
-            return True
-
-    def set_physics_enabled(self, enabled: bool) -> None:
-        """Set physics simulation on/off."""
-        try:
-            self._js_bot.physicsEnabled = enabled
-        except Exception as exc:
-            raise BridgeError(f"set_physics_enabled failed: {exc}", js_stack=extract_js_stack(exc)) from exc
 
     def get_inventory_items(self) -> list[Any]:
         """Return raw JS Item proxies from bot.inventory.items()."""
@@ -709,36 +582,6 @@ class JSBotController:
             return bool(self._js_bot.getControlState(control))
         except Exception as exc:
             raise BridgeError(f"get_control_state failed: {exc}", js_stack=extract_js_stack(exc)) from exc
-
-    def get_tablist(self) -> dict[str, str]:
-        """Read tablist header/footer as plain strings."""
-        try:
-            tl = self._js_bot.tablist
-            header = str(tl.header) if getattr(tl, "header", None) is not None else ""
-            footer = str(tl.footer) if getattr(tl, "footer", None) is not None else ""
-            return {"header": header, "footer": footer}
-        except (AttributeError, TypeError):
-            return {"header": "", "footer": ""}
-
-    def get_target_dig_block(self) -> Any | None:
-        """Return the block currently being dug, or None."""
-        try:
-            return self._js_bot.targetDigBlock
-        except (AttributeError, TypeError):
-            return None
-
-    def get_entities_snapshot(self) -> list[Any]:
-        """Return all entity JS proxies as a list."""
-        try:
-            entities = self._js_bot.entities
-            result: list[Any] = []
-            for eid in entities:
-                e = entities[eid]
-                if e is not None:
-                    result.append(e)
-            return result
-        except Exception as exc:
-            raise BridgeError(f"get_entities_snapshot failed: {exc}", js_stack=extract_js_stack(exc)) from exc
 
     # -- Additional synchronous actions --
 
@@ -800,13 +643,6 @@ class JSBotController:
             self._js_bot.moveVehicle(left, forward)
         except Exception as exc:
             raise BridgeError(f"move_vehicle failed: {exc}", js_stack=extract_js_stack(exc)) from exc
-
-    def set_quick_bar_slot(self, slot: int) -> None:
-        """Select a quick bar slot (0-8)."""
-        try:
-            self._js_bot.setQuickBarSlot(slot)
-        except Exception as exc:
-            raise BridgeError(f"set_quick_bar_slot failed: {exc}", js_stack=extract_js_stack(exc)) from exc
 
     def stop_digging(self) -> None:
         """Stop the current digging operation."""

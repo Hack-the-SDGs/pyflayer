@@ -564,78 +564,10 @@ class Bot:
         return (data["header"], data["footer"])
 
     @property
-    def food_saturation(self) -> float:
-        """Bot food saturation level.
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        ctrl = self._ensure_spawned()
-        return ctrl.get_food_saturation()
-
-    @property
-    def oxygen_level(self) -> float:
-        """Bot oxygen level (0-300, decreases while underwater).
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        ctrl = self._ensure_spawned()
-        return ctrl.get_oxygen_level()
-
-    @property
-    def spawn_point(self) -> Vec3 | None:
-        """Bot spawn point, or ``None`` if not set."""
-        ctrl = self._ensure_connected()
-        data = ctrl.get_spawn_point()
-        if data is None:
-            return None
-        return Vec3(x=data["x"], y=data["y"], z=data["z"])
-
-    @property
-    def held_item(self) -> ItemStack | None:
-        """Currently held item, or ``None`` if the hand is empty."""
-        ctrl = self._ensure_connected()
-        data = ctrl.get_held_item_data()
-        if data is None:
-            return None
-        return ItemStack(
-            name=data["name"],
-            display_name=data["displayName"],
-            count=data["count"],
-            slot=data["slot"],
-            max_stack_size=data["stackSize"],
-        )
-
-    @property
     def using_held_item(self) -> bool:
         """Whether the bot is currently using its held item (e.g. eating)."""
         ctrl = self._ensure_connected()
         return ctrl.get_using_held_item()
-
-    @property
-    def game(self) -> dict[str, Any]:
-        """Game state data (dimension, difficulty, gameMode, etc.)."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_game_data()
-
-    @property
-    def experience(self) -> dict[str, Any]:
-        """Experience data (``level``, ``points``, ``progress``)."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_experience()
-
-    @property
-    def time(self) -> dict[str, Any]:
-        """World time data (``timeOfDay``, ``day``, ``age``, etc.)."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_time_data()
-
-    @property
-    def is_raining(self) -> bool:
-        """Whether it is currently raining in the world."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_is_raining()
 
     @property
     def rain_state(self) -> float:
@@ -644,57 +576,10 @@ class Bot:
         return ctrl.get_rain_state()
 
     @property
-    def thunder_state(self) -> float:
-        """Thunder intensity (0.0 = none, 1.0 = full thunder)."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_thunder_state()
-
-    @property
-    def is_sleeping(self) -> bool:
-        """Whether the bot is currently sleeping."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_is_sleeping()
-
-    @property
-    def quick_bar_slot(self) -> int:
-        """Currently selected quick bar slot (0-8)."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_quick_bar_slot()
-
-    @property
-    def physics_enabled(self) -> bool:
-        """Whether bot physics simulation is enabled."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_physics_enabled()
-
-    @physics_enabled.setter
-    def physics_enabled(self, value: bool) -> None:
-        ctrl = self._ensure_connected()
-        ctrl.set_physics_enabled(value)
-
-    @property
-    def tablist(self) -> dict[str, str]:
-        """Tab list header and footer as ``{header: ..., footer: ...}``."""
-        ctrl = self._ensure_connected()
-        return ctrl.get_tablist()
-
-    @property
     def inventory_items(self) -> list[ItemStack]:
         """All items currently in the bot inventory."""
         ctrl = self._ensure_connected()
         return [js_item_to_item_stack(item) for item in ctrl.get_inventory_items()]
-
-    @property
-    def entities(self) -> list[Entity]:
-        """All entities currently tracked by the client."""
-        ctrl = self._ensure_connected()
-        result: list[Entity] = []
-        for e in ctrl.get_entities_snapshot():
-            try:
-                result.append(js_entity_to_entity(e))
-            except (AttributeError, TypeError):
-                continue
-        return result
 
     # -- Chat --
 

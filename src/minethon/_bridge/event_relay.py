@@ -159,7 +159,6 @@ from minethon.models.events import (
     BossBarUpdatedEvent,
     # Physics & Particles
     ParticleEvent,
-    PhysicsTickEvent,
 )
 from minethon.models.vec3 import Vec3
 
@@ -228,7 +227,7 @@ _STATIC_BRIDGED_EVENTS: frozenset[str] = frozenset({
     # Boss bar
     "bossBarCreated", "bossBarDeleted", "bossBarUpdated",
     # Physics & particles
-    "physicsTick", "particle",
+    "particle",
     # Internal done events
     "_minethon:digDone", "_minethon:placeDone",
     "_minethon:equipDone", "_minethon:lookAtDone",
@@ -1360,10 +1359,6 @@ class EventRelay:
         # Physics & Particles
         # ================================================================
 
-        @on_fn(js_bot, "physicsTick")
-        def _on_physics_tick(*_args: Any) -> None:
-            self._post(PhysicsTickEvent, PhysicsTickEvent())
-
         @on_fn(js_bot, "particle")
         def _on_particle(*args: Any) -> None:
             if args:
@@ -1662,7 +1657,7 @@ class EventRelay:
             # Boss bar
             _on_boss_bar_created, _on_boss_bar_deleted, _on_boss_bar_updated,
             # Physics & particles
-            _on_physics_tick, _on_particle,
+            _on_particle,
             # Internal done events (void)
             _on_dig_done, _on_place_done, _on_equip_done, _on_look_at_done,
             _on_look_done, _on_sleep_done, _on_wake_done,
