@@ -181,7 +181,7 @@ _STATIC_BRIDGED_EVENTS: frozenset[str] = frozenset({
     "death", "kicked", "end",
     "sleep", "wake", "heldItemChanged",
     # Movement
-    "move", "forcedMove", "mount", "dismount",
+    "forcedMove", "mount", "dismount",
     # Navigation
     "goal_reached", "path_update", "path_stop",
     # Entity events
@@ -510,10 +510,6 @@ class EventRelay:
         # ================================================================
         # Movement
         # ================================================================
-
-        @on_fn(js_bot, "move")
-        def _on_move(*_args: Any) -> None:
-            self._post(MoveEvent, MoveEvent())
 
         @on_fn(js_bot, "forcedMove")
         def _on_forced_move(*_args: Any) -> None:
@@ -1572,7 +1568,10 @@ class EventRelay:
                     if now - last < intv:
                         return
                     self._throttle_last_post[evt] = now
-                    self._post_raw(evt, {"args": list(_args)})
+                    if evt == "move":
+                        self._post(MoveEvent, MoveEvent())
+                    else:
+                        self._post_raw(evt, {"args": list(_args)})
                 return _handler
 
             handler = _make_throttled(event_name, interval)
@@ -1597,7 +1596,7 @@ class EventRelay:
             _on_health, _on_breath, _on_experience,
             _on_sleep, _on_wake, _on_held_item_changed,
             # Movement
-            _on_move, _on_forced_move, _on_mount, _on_dismount,
+            _on_forced_move, _on_mount, _on_dismount,
             # Navigation
             _on_goal_reached, _on_path_update, _on_path_stop,
             # Entity events

@@ -148,6 +148,9 @@ class Bot:
         self._activate_block_lock = asyncio.Lock()
         self._activate_entity_lock = asyncio.Lock()
         self._craft_lock = asyncio.Lock()
+        self._tab_complete_lock = asyncio.Lock()
+        self._wait_chunks_lock = asyncio.Lock()
+        self._wait_ticks_lock = asyncio.Lock()
 
     def _ensure_connected(self) -> JSBotController:
         """Return the controller or raise if not connected."""
@@ -1288,14 +1291,15 @@ class Bot:
         Raises:
             BridgeError: If the operation fails or times out.
         """
-        ctrl = self._ensure_connected()
-        ctrl.start_wait_for_chunks_to_load()
-        try:
-            event = await self._relay.wait_for(ChunksLoadedDoneEvent, timeout=30.0)
-        except asyncio.TimeoutError as exc:
-            raise BridgeError("wait_for_chunks timed out") from exc
-        if event.error is not None:
-            raise BridgeError(f"wait_for_chunks failed: {event.error}")
+        async with self._wait_chunks_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_wait_for_chunks_to_load()
+            try:
+                event = await self._relay.wait_for(ChunksLoadedDoneEvent, timeout=30.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("wait_for_chunks timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"wait_for_chunks failed: {event.error}")
 
     async def wait_for_ticks(self, ticks: int) -> None:
         """Wait for a specific number of game ticks.
@@ -1306,17 +1310,18 @@ class Bot:
         Raises:
             BridgeError: If the operation fails or times out.
         """
-        ctrl = self._ensure_connected()
-        ctrl.start_wait_for_ticks(ticks)
-        try:
-            event = await self._relay.wait_for(
-                WaitForTicksDoneEvent,
-                timeout=max(30.0, ticks * 0.05 + 5.0),
-            )
-        except asyncio.TimeoutError as exc:
-            raise BridgeError("wait_for_ticks timed out") from exc
-        if event.error is not None:
-            raise BridgeError(f"wait_for_ticks failed: {event.error}")
+        async with self._wait_ticks_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_wait_for_ticks(ticks)
+            try:
+                event = await self._relay.wait_for(
+                    WaitForTicksDoneEvent,
+                    timeout=max(30.0, ticks * 0.05 + 5.0),
+                )
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("wait_for_ticks timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"wait_for_ticks failed: {event.error}")
 
     # -- Misc --
 
@@ -1372,15 +1377,16 @@ class Bot:
         Raises:
             BridgeError: If the tab-complete operation fails.
         """
-        ctrl = self._ensure_connected()
-        ctrl.start_tab_complete(text, assume_command)
-        try:
-            event = await self._relay.wait_for(TabCompleteDoneEvent, timeout=10.0)
-        except asyncio.TimeoutError as exc:
-            raise BridgeError("tab_complete timed out") from exc
-        if event.error is not None:
-            raise BridgeError(f"tab_complete failed: {event.error}")
-        try:
-            return list(event.result) if event.result is not None else []
-        except (TypeError, ValueError):
-            return []
+        async with self._tab_complete_lock:
+            ctrl = self._ensure_connected()
+            ctrl.start_tab_complete(text, assume_command)
+            try:
+                event = await self._relay.wait_for(TabCompleteDoneEvent, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise BridgeError("tab_complete timed out") from exc
+            if event.error is not None:
+                raise BridgeError(f"tab_complete failed: {event.error}")
+            try:
+                return list(event.result) if event.result is not None else []
+            except (TypeError, ValueError):
+                return []
