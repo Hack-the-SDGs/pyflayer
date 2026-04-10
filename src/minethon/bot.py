@@ -1882,12 +1882,20 @@ class Bot:
             if event.error is not None:
                 raise BridgeError(f"creative_fly_to failed: {event.error}")
 
-    async def creative_set_inventory_slot(self, slot: int, item: Any) -> None:
-        """Set an inventory slot to a specific item in creative mode.
+    async def creative_set_inventory_slot_raw(self, slot: int, item: Any) -> None:
+        """**Raw escape hatch.** Set an inventory slot in creative mode.
+
+        This method accepts a raw JS ``prismarine-item`` proxy because
+        there is no lossless way to reconstruct one from a Python
+        :class:`ItemStack`.  Callers must obtain the item via
+        :attr:`Bot.raw` or similar bridge-level access.
+
+        Ref: mineflayer/lib/plugins/creative.js — bot.creative.setInventorySlot()
 
         Args:
             slot: Inventory window slot (36 = first quickbar slot).
-            item: A prismarine-item instance, or ``None`` to delete.
+            item: A raw JS ``prismarine-item`` instance, or ``None``
+                to clear the slot.
 
         Raises:
             BridgeError: If the operation fails or times out.
