@@ -280,6 +280,30 @@ module.exports = {
      *   velocity:{x:number,y:number,z:number}|null,
      *   health:number|null}>}
      */
+    /**
+     * Serialise all inventory items into a plain array in one JS call,
+     * avoiding per-item bridge round-trips from Python.
+     *
+     * Ref: mineflayer/lib/plugins/inventory.js — bot.inventory.items()
+     *
+     * @returns {Array<{name:string, type:number, count:number,
+     *   metadata:number, nbt:object|null, slot:number,
+     *   displayName:string|null}>}
+     */
+    snapshotInventory(bot) {
+        return bot.inventory.items().map(item => ({
+            name: item.name,
+            type: item.type,
+            count: item.count,
+            metadata: item.metadata,
+            nbt: item.nbt ? JSON.parse(JSON.stringify(item.nbt)) : null,
+            slot: item.slot,
+            stackSize: item.stackSize,
+            displayName: item.displayName ?? null,
+            enchants: item.enchants ? JSON.parse(JSON.stringify(item.enchants)) : null,
+        }));
+    },
+
     snapshotEntities(bot) {
         const result = [];
         const entities = bot.entities;

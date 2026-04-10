@@ -903,10 +903,25 @@ class Bot:
     async def get_inventory_items(self) -> list[ItemStack]:
         """All items currently in the bot inventory.
 
+        Uses a batch JS helper to avoid per-item bridge round-trips.
+
         Ref: mineflayer/lib/plugins/inventory.js — bot.inventory.items()
         """
         ctrl = self._ensure_connected()
-        return [js_item_to_item_stack(item) for item in ctrl.get_inventory_items()]
+        result: list[ItemStack] = []
+        for raw in ctrl.get_inventory_snapshot():
+            enchants = raw.get("enchants")
+            nbt = raw.get("nbt")
+            result.append(ItemStack(
+                name=str(raw["name"]),
+                display_name=str(raw["displayName"]) if raw.get("displayName") else str(raw["name"]),
+                count=int(raw["count"]),  # type: ignore[arg-type]
+                slot=int(raw["slot"]),  # type: ignore[arg-type]
+                max_stack_size=int(raw["stackSize"]),  # type: ignore[arg-type]
+                enchantments=list(enchants) if enchants else None,  # type: ignore[arg-type]
+                nbt=dict(nbt) if nbt else None,  # type: ignore[arg-type]
+            ))
+        return result
 
     # -- Chat --
 

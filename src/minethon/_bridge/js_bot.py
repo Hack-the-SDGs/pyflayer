@@ -579,6 +579,20 @@ class JSBotController:
         except Exception as exc:
             raise BridgeError(f"get_inventory_items failed: {exc}", js_stack=extract_js_stack(exc)) from exc
 
+    def get_inventory_snapshot(self) -> list[dict[str, object]]:
+        """Batch-serialise all inventory items in one JS call.
+
+        Uses ``helpers.snapshotInventory()`` to avoid per-item bridge
+        round-trips.  Each item is a plain Python dict.
+
+        Ref: mineflayer/lib/plugins/inventory.js — bot.inventory.items()
+        """
+        try:
+            raw_list = self._helpers.snapshotInventory(self._js_bot)
+            return [dict(item.valueOf()) for item in raw_list]
+        except Exception as exc:
+            raise BridgeError(f"get_inventory_snapshot failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
     def find_inventory_item_by_name(self, name: str) -> tuple[int | None, Any | None]:
         """Find first inventory item matching *name*.
 
