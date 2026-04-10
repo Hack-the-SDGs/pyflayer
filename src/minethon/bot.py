@@ -1,9 +1,8 @@
 """Bot -- the public entry point for minethon."""
 
 import asyncio
-import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from minethon._bridge._events import (
     ActivateBlockDoneEvent,
@@ -96,6 +95,9 @@ from minethon.models.player_info import PlayerInfo
 from minethon.models.time_state import TimeState
 from minethon.models.vec3 import Vec3
 from minethon.raw import RawBotHandle
+
+if TYPE_CHECKING:
+    import re
 
 
 @dataclass(slots=True)

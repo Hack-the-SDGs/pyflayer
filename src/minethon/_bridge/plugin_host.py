@@ -1,10 +1,12 @@
 """JS plugin loading and management."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from minethon._bridge._util import extract_js_stack
-from minethon._bridge.runtime import BridgeRuntime
 from minethon.models.errors import BridgeError
+
+if TYPE_CHECKING:
+    from minethon._bridge.runtime import BridgeRuntime
 
 
 class PluginHost:

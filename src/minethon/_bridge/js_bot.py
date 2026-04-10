@@ -1,13 +1,15 @@
 """Encapsulates all operations on the JS mineflayer bot object."""
 
 import pathlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from minethon._bridge._util import extract_js_stack
-from minethon._bridge.runtime import BridgeRuntime
-from minethon.config import BotConfig
 from minethon.models.entity import EntityKind
 from minethon.models.errors import BridgeError
+
+if TYPE_CHECKING:
+    from minethon._bridge.runtime import BridgeRuntime
+    from minethon.config import BotConfig
 
 # Mapping from EntityKind to the JS entity type string used by mineflayer.
 # EntityKind.OTHER is intentionally omitted: mineflayer has no literal

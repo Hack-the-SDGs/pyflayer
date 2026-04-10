@@ -2,10 +2,12 @@
 
 import shutil
 import subprocess
-from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from minethon.models.errors import BridgeError
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
 class BridgeRuntime:

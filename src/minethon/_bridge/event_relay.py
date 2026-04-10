@@ -4,8 +4,7 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
-from collections.abc import Callable, Coroutine
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from minethon._bridge._events import (
     ActivateBlockDoneEvent,
@@ -163,6 +162,9 @@ from minethon.models.events import (
     WindowOpenEvent,
 )
 from minethon.models.vec3 import Vec3
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Coroutine
 
 _log = logging.getLogger(__name__)
 

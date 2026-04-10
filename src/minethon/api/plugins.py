@@ -1,7 +1,11 @@
 """Typed public plugin-management API."""
 
-from minethon._bridge.plugin_host import PluginHost
+from typing import TYPE_CHECKING
+
 from minethon.models.errors import PluginError
+
+if TYPE_CHECKING:
+    from minethon._bridge.plugin_host import PluginHost
 
 
 class PluginAPI:
