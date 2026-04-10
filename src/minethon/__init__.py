@@ -39,13 +39,9 @@ from minethon.models.window import TradeOffer, VillagerSession, WindowHandle
 from minethon.raw import RawBotHandle
 
 __all__ = [
-    # Types
     "Block",
-    # Events
     "BlockBrokenEvent",
-    # Core
     "Bot",
-    # Errors
     "BridgeError",
     "ChatEvent",
     "CollectCompletedEvent",
@@ -63,7 +59,6 @@ __all__ = [
     "KickedEvent",
     "MinethonConnectionError",
     "MinethonError",
-    # Sub-APIs
     "NavigationAPI",
     "NavigationError",
     "NotSpawnedError",

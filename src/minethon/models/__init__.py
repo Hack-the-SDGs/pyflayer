@@ -120,40 +120,29 @@ from minethon.models.vec3 import Vec3
 from minethon.models.window import TradeOffer, VillagerSession, WindowHandle
 
 __all__ = [
-    # Chat events
     "ActionBarEvent",
-    # Core types
     "Block",
-    # Block interaction events
     "BlockBreakProgressEndEvent",
     "BlockBreakProgressObservedEvent",
-    # World events
     "BlockBrokenEvent",
     "BlockPlacedEvent",
     "BlockUpdateEvent",
-    # Scoreboard/team/bossbar events
     "BossBarCreatedEvent",
     "BossBarDeletedEvent",
     "BossBarUpdatedEvent",
-    # Health/state events
     "BreathEvent",
-    # Errors
     "BridgeError",
     "ChatEvent",
     "ChestLidMoveEvent",
     "ChunkColumnLoadEvent",
     "ChunkColumnUnloadEvent",
-    # Collection events
     "CollectCompletedEvent",
-    # Lifecycle events
     "DeathEvent",
     "DiggingAbortedEvent",
     "DiggingCompletedEvent",
-    # Movement events
     "DismountEvent",
     "EndEvent",
     "Entity",
-    # Entity events
     "EntityAttachEvent",
     "EntityAttributesEvent",
     "EntityCriticalEffectEvent",
@@ -186,10 +175,8 @@ __all__ = [
     "ForcedMoveEvent",
     "GameEvent",
     "GameState",
-    # Navigation events
     "GoalFailedEvent",
     "GoalReachedEvent",
-    # Sound events
     "HardcodedSoundEffectHeardEvent",
     "HealthChangedEvent",
     "HeldItemChangedEvent",
@@ -207,13 +194,11 @@ __all__ = [
     "NavigationError",
     "NotSpawnedError",
     "NoteHeardEvent",
-    # Other events
     "ParticleEvent",
     "PhysicsTickEvent",
     "PistonMoveEvent",
     "PlayerCollectEvent",
     "PlayerInfo",
-    # Player events
     "PlayerJoinedEvent",
     "PlayerLeftEvent",
     "PlayerUpdatedEvent",
@@ -249,7 +234,6 @@ __all__ = [
     "WakeEvent",
     "WeatherUpdateEvent",
     "WhisperEvent",
-    # Window events
     "WindowCloseEvent",
     "WindowHandle",
     "WindowOpenEvent",
