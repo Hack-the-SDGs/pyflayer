@@ -15,9 +15,7 @@ class Vec3:
     def distance_to(self, other: Vec3) -> float:
         """Euclidean distance to another vector."""
         return math.sqrt(
-            (self.x - other.x) ** 2
-            + (self.y - other.y) ** 2
-            + (self.z - other.z) ** 2
+            (self.x - other.x) ** 2 + (self.y - other.y) ** 2 + (self.z - other.z) ** 2
         )
 
     def offset(self, dx: float, dy: float, dz: float) -> Vec3:

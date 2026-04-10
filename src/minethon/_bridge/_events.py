@@ -10,6 +10,7 @@ from typing import Any
 
 # -- Existing events --
 
+
 @dataclass(frozen=True, slots=True)
 class DigDoneEvent:
     """Dig operation finished (success if error is None)."""
@@ -40,6 +41,7 @@ class LookAtDoneEvent:
 
 # -- Movement --
 
+
 @dataclass(frozen=True, slots=True)
 class LookDoneEvent:
     """Look (yaw/pitch) operation finished."""
@@ -48,6 +50,7 @@ class LookDoneEvent:
 
 
 # -- Sleep --
+
 
 @dataclass(frozen=True, slots=True)
 class SleepDoneEvent:
@@ -64,6 +67,7 @@ class WakeDoneEvent:
 
 
 # -- Inventory --
+
 
 @dataclass(frozen=True, slots=True)
 class UnequipDoneEvent:
@@ -88,6 +92,7 @@ class TossDoneEvent:
 
 # -- Actions --
 
+
 @dataclass(frozen=True, slots=True)
 class ConsumeDoneEvent:
     """Consume (eat/drink) operation finished."""
@@ -111,6 +116,7 @@ class ElytraFlyDoneEvent:
 
 # -- Crafting --
 
+
 @dataclass(frozen=True, slots=True)
 class CraftDoneEvent:
     """Craft operation finished."""
@@ -119,6 +125,7 @@ class CraftDoneEvent:
 
 
 # -- Block interaction --
+
 
 @dataclass(frozen=True, slots=True)
 class ActivateBlockDoneEvent:
@@ -142,6 +149,7 @@ class ActivateEntityAtDoneEvent:
 
 
 # -- Containers (return JS window/instance proxy on success) --
+
 
 @dataclass(frozen=True, slots=True)
 class OpenContainerDoneEvent:
@@ -185,6 +193,7 @@ class OpenVillagerDoneEvent:
 
 # -- Trading --
 
+
 @dataclass(frozen=True, slots=True)
 class TradeDoneEvent:
     """Trade operation finished."""
@@ -193,6 +202,7 @@ class TradeDoneEvent:
 
 
 # -- Tab completion (returns matches) --
+
 
 @dataclass(frozen=True, slots=True)
 class TabCompleteDoneEvent:
@@ -204,6 +214,7 @@ class TabCompleteDoneEvent:
 
 # -- Writing --
 
+
 @dataclass(frozen=True, slots=True)
 class WriteBookDoneEvent:
     """WriteBook operation finished."""
@@ -212,6 +223,7 @@ class WriteBookDoneEvent:
 
 
 # -- World --
+
 
 @dataclass(frozen=True, slots=True)
 class ChunksLoadedDoneEvent:
@@ -228,6 +240,7 @@ class WaitForTicksDoneEvent:
 
 
 # -- Lower-level inventory --
+
 
 @dataclass(frozen=True, slots=True)
 class ClickWindowDoneEvent:
@@ -259,6 +272,7 @@ class PutAwayDoneEvent:
 
 # -- Creative --
 
+
 @dataclass(frozen=True, slots=True)
 class CreativeFlyToDoneEvent:
     """Creative flyTo operation finished."""
@@ -288,6 +302,7 @@ class CreativeClearInventoryDoneEvent:
 
 
 # -- Entity placement --
+
 
 @dataclass(frozen=True, slots=True)
 class PlaceEntityDoneEvent:

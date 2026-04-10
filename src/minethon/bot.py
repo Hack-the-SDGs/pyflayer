@@ -185,7 +185,11 @@ class Bot:
             skip_validation=skip_validation,
             profiles_folder=profiles_folder,
             load_internal_plugins=load_internal_plugins,
-            **({"event_throttle_ms": event_throttle_ms} if event_throttle_ms is not None else {}),
+            **(
+                {"event_throttle_ms": event_throttle_ms}
+                if event_throttle_ms is not None
+                else {}
+            ),
         )
         self._relay = EventRelay(self._config.event_throttle_ms)
         self._observe = ObserveAPI(self._relay)
@@ -325,7 +329,9 @@ class Bot:
                         ping=int(info["ping"]),  # type: ignore[arg-type]
                         game_mode=int(info["game_mode"]),  # type: ignore[arg-type]
                         display_name=(
-                            str(info["display_name"]) if info["display_name"] is not None else None
+                            str(info["display_name"])
+                            if info["display_name"] is not None
+                            else None
                         ),
                     )
                     for name, info in raw.items()
@@ -874,10 +880,19 @@ class Bot:
             if vel is not None:
                 velocity = Vec3(float(vel["x"]), float(vel["y"]), float(vel["z"]))  # type: ignore[index]
             etype = raw.get("type")
-            kind_map = {"player": EntityKind.PLAYER, "mob": EntityKind.MOB,
-                        "animal": EntityKind.ANIMAL, "hostile": EntityKind.HOSTILE,
-                        "projectile": EntityKind.PROJECTILE, "object": EntityKind.OBJECT}
-            kind = kind_map.get(str(etype), EntityKind.OTHER) if etype else EntityKind.OTHER
+            kind_map = {
+                "player": EntityKind.PLAYER,
+                "mob": EntityKind.MOB,
+                "animal": EntityKind.ANIMAL,
+                "hostile": EntityKind.HOSTILE,
+                "projectile": EntityKind.PROJECTILE,
+                "object": EntityKind.OBJECT,
+            }
+            kind = (
+                kind_map.get(str(etype), EntityKind.OTHER)
+                if etype
+                else EntityKind.OTHER
+            )
             name = raw.get("username") or raw.get("name")
             health_val = raw.get("health")
             eid = int(raw["id"])  # type: ignore[arg-type]
@@ -962,15 +977,19 @@ class Bot:
         for raw in ctrl.get_inventory_snapshot():
             enchants = raw.get("enchants")
             nbt = raw.get("nbt")
-            result.append(ItemStack(
-                name=str(raw["name"]),
-                display_name=str(raw["displayName"]) if raw.get("displayName") else str(raw["name"]),
-                count=int(raw["count"]),  # type: ignore[arg-type]
-                slot=int(raw["slot"]),  # type: ignore[arg-type]
-                max_stack_size=int(raw["stackSize"]),  # type: ignore[arg-type]
-                enchantments=list(enchants) if enchants else None,  # type: ignore[arg-type]
-                nbt=dict(nbt) if nbt else None,  # type: ignore[arg-type]
-            ))
+            result.append(
+                ItemStack(
+                    name=str(raw["name"]),
+                    display_name=str(raw["displayName"])
+                    if raw.get("displayName")
+                    else str(raw["name"]),
+                    count=int(raw["count"]),  # type: ignore[arg-type]
+                    slot=int(raw["slot"]),  # type: ignore[arg-type]
+                    max_stack_size=int(raw["stackSize"]),  # type: ignore[arg-type]
+                    enchantments=list(enchants) if enchants else None,  # type: ignore[arg-type]
+                    nbt=dict(nbt) if nbt else None,  # type: ignore[arg-type]
+                )
+            )
         return result
 
     # -- Chat --
@@ -1184,9 +1203,7 @@ class Bot:
 
     # -- Movement --
 
-    async def goto(
-        self, x: float, y: float, z: float, radius: float = 1.0
-    ) -> None:
+    async def goto(self, x: float, y: float, z: float, radius: float = 1.0) -> None:
         """Move the bot to a position using A* pathfinding.
 
         Convenience wrapper for ``bot.navigation.goto()``.
@@ -1516,7 +1533,9 @@ class Bot:
                 return
             ctrl.start_activate_entity(js_entity)
             try:
-                event = await self._relay.wait_for(ActivateEntityDoneEvent, timeout=10.0)
+                event = await self._relay.wait_for(
+                    ActivateEntityDoneEvent, timeout=10.0
+                )
             except TimeoutError as exc:
                 raise BridgeError("activate_entity timed out") from exc
             if event.error is not None:
@@ -1539,7 +1558,9 @@ class Bot:
                 return
             ctrl.start_activate_entity_at(js_entity, position.x, position.y, position.z)
             try:
-                event = await self._relay.wait_for(ActivateEntityAtDoneEvent, timeout=10.0)
+                event = await self._relay.wait_for(
+                    ActivateEntityAtDoneEvent, timeout=10.0
+                )
             except TimeoutError as exc:
                 raise BridgeError("activate_entity_at timed out") from exc
             if event.error is not None:
@@ -1767,7 +1788,9 @@ class Bot:
         ctrl = self._ensure_connected()
         js_proxy = self._window_registry.pop(window.id, None)
         if js_proxy is None:
-            raise BridgeError(f"No JS proxy found for window id={window.id} (already closed?)")
+            raise BridgeError(
+                f"No JS proxy found for window id={window.id} (already closed?)"
+            )
         ctrl.close_window(js_proxy)
 
     async def trade(
@@ -1782,7 +1805,9 @@ class Bot:
             ctrl = self._ensure_connected()
             js_proxy = self._window_registry.get(villager.id)
             if js_proxy is None:
-                raise BridgeError(f"No JS proxy found for villager session id={villager.id}")
+                raise BridgeError(
+                    f"No JS proxy found for villager session id={villager.id}"
+                )
             ctrl.start_trade(js_proxy, trade_index, times)
             try:
                 event = await self._relay.wait_for(TradeDoneEvent, timeout=30.0)
@@ -2004,7 +2029,9 @@ class Bot:
             ctrl = self._ensure_connected()
             ctrl.start_creative_set_inventory_slot(slot, item)
             try:
-                event = await self._relay.wait_for(CreativeSetSlotDoneEvent, timeout=10.0)
+                event = await self._relay.wait_for(
+                    CreativeSetSlotDoneEvent, timeout=10.0
+                )
             except TimeoutError as exc:
                 raise BridgeError("creative_set_inventory_slot timed out") from exc
             if event.error is not None:
@@ -2023,7 +2050,9 @@ class Bot:
             ctrl = self._ensure_connected()
             ctrl.start_creative_clear_slot(slot)
             try:
-                event = await self._relay.wait_for(CreativeClearSlotDoneEvent, timeout=10.0)
+                event = await self._relay.wait_for(
+                    CreativeClearSlotDoneEvent, timeout=10.0
+                )
             except TimeoutError as exc:
                 raise BridgeError("creative_clear_slot timed out") from exc
             if event.error is not None:
@@ -2241,7 +2270,7 @@ class Bot:
                 if event.result is not None:
                     return [str(item) for item in event.result]
                 return []
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 return []
 
     async def await_message(

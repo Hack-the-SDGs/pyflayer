@@ -166,91 +166,170 @@ from minethon.models.vec3 import Vec3
 
 _log = logging.getLogger(__name__)
 
-_HIGH_FREQ_EVENTS: frozenset[str] = frozenset({
-    "physicsTick", "entityMoved", "entityUpdate", "move",
-})
+_HIGH_FREQ_EVENTS: frozenset[str] = frozenset(
+    {
+        "physicsTick",
+        "entityMoved",
+        "entityUpdate",
+        "move",
+    }
+)
 _SLOW_HANDLER_THRESHOLD: float = 0.5  # 500ms
 
 # Static events always bound by register_js_events().
-_STATIC_BRIDGED_EVENTS: frozenset[str] = frozenset({
-    # Lifecycle
-    "spawn", "login", "respawn", "game", "spawnReset", "error",
-    # Chat / message
-    "chat", "whisper", "actionBar", "message", "messagestr",
-    # Title
-    "title", "title_times", "title_clear",
-    # Health & state
-    "health", "breath", "experience",
-    "death", "kicked", "end",
-    "sleep", "wake", "heldItemChanged",
-    # Movement
-    "forcedMove", "mount", "dismount",
-    # Navigation
-    "goal_reached", "path_update", "path_stop",
-    # Entity events
-    "entitySwingArm", "entityHurt", "entityDead",
-    "entityTaming", "entityTamed",
-    "entityShakingOffWater", "entityEatingGrass",
-    "entityHandSwap", "entityWake", "entityEat",
-    "entityCriticalEffect", "entityMagicCriticalEffect",
-    "entityCrouch", "entityUncrouch",
-    "entityEquip", "entitySleep",
-    "entitySpawn", "entityElytraFlew",
-    "entityGone",
-    "entityAttach", "entityDetach",
-    "entityAttributes",
-    "entityEffect", "entityEffectEnd",
-    "itemDrop", "playerCollect",
-    # Player events
-    "playerJoined", "playerUpdated", "playerLeft",
-    # Block events
-    "blockUpdate", "blockPlaced",
-    "chunkColumnLoad", "chunkColumnUnload",
-    # Digging
-    "diggingCompleted", "diggingAborted",
-    "blockBreakProgressObserved", "blockBreakProgressEnd",
-    # Sound
-    "soundEffectHeard", "hardcodedSoundEffectHeard", "noteHeard",
-    # Weather & time
-    "rain", "weatherUpdate", "time",
-    # World events
-    "pistonMove", "chestLidMove", "usedFirework",
-    # Window
-    "windowOpen", "windowClose",
-    # Resource pack
-    "resourcePack",
-    # Scoreboard
-    "scoreboardCreated", "scoreboardDeleted",
-    "scoreboardTitleChanged", "scoreUpdated", "scoreRemoved",
-    "scoreboardPosition",
-    # Team
-    "teamCreated", "teamRemoved", "teamUpdated",
-    "teamMemberAdded", "teamMemberRemoved",
-    # Boss bar
-    "bossBarCreated", "bossBarDeleted", "bossBarUpdated",
-    # Physics & particles
-    "particle",
-    # Internal done events
-    "_minethon:digDone", "_minethon:placeDone",
-    "_minethon:equipDone", "_minethon:lookAtDone",
-    "_minethon:lookDone", "_minethon:sleepDone", "_minethon:wakeDone",
-    "_minethon:unequipDone", "_minethon:tossStackDone", "_minethon:tossDone",
-    "_minethon:consumeDone", "_minethon:fishDone", "_minethon:elytraFlyDone",
-    "_minethon:craftDone",
-    "_minethon:activateBlockDone", "_minethon:activateEntityDone",
-    "_minethon:activateEntityAtDone",
-    "_minethon:openContainerDone", "_minethon:openFurnaceDone",
-    "_minethon:openEnchantmentTableDone", "_minethon:openAnvilDone",
-    "_minethon:openVillagerDone",
-    "_minethon:tradeDone", "_minethon:tabCompleteDone",
-    "_minethon:writeBookDone",
-    "_minethon:chunksLoadedDone", "_minethon:waitForTicksDone",
-    "_minethon:clickWindowDone", "_minethon:transferDone",
-    "_minethon:moveSlotItemDone", "_minethon:putAwayDone",
-    "_minethon:creativeFlyToDone", "_minethon:creativeSetSlotDone",
-    "_minethon:creativeClearSlotDone", "_minethon:creativeClearInventoryDone",
-    "_minethon:placeEntityDone",
-})
+_STATIC_BRIDGED_EVENTS: frozenset[str] = frozenset(
+    {
+        # Lifecycle
+        "spawn",
+        "login",
+        "respawn",
+        "game",
+        "spawnReset",
+        "error",
+        # Chat / message
+        "chat",
+        "whisper",
+        "actionBar",
+        "message",
+        "messagestr",
+        # Title
+        "title",
+        "title_times",
+        "title_clear",
+        # Health & state
+        "health",
+        "breath",
+        "experience",
+        "death",
+        "kicked",
+        "end",
+        "sleep",
+        "wake",
+        "heldItemChanged",
+        # Movement
+        "forcedMove",
+        "mount",
+        "dismount",
+        # Navigation
+        "goal_reached",
+        "path_update",
+        "path_stop",
+        # Entity events
+        "entitySwingArm",
+        "entityHurt",
+        "entityDead",
+        "entityTaming",
+        "entityTamed",
+        "entityShakingOffWater",
+        "entityEatingGrass",
+        "entityHandSwap",
+        "entityWake",
+        "entityEat",
+        "entityCriticalEffect",
+        "entityMagicCriticalEffect",
+        "entityCrouch",
+        "entityUncrouch",
+        "entityEquip",
+        "entitySleep",
+        "entitySpawn",
+        "entityElytraFlew",
+        "entityGone",
+        "entityAttach",
+        "entityDetach",
+        "entityAttributes",
+        "entityEffect",
+        "entityEffectEnd",
+        "itemDrop",
+        "playerCollect",
+        # Player events
+        "playerJoined",
+        "playerUpdated",
+        "playerLeft",
+        # Block events
+        "blockUpdate",
+        "blockPlaced",
+        "chunkColumnLoad",
+        "chunkColumnUnload",
+        # Digging
+        "diggingCompleted",
+        "diggingAborted",
+        "blockBreakProgressObserved",
+        "blockBreakProgressEnd",
+        # Sound
+        "soundEffectHeard",
+        "hardcodedSoundEffectHeard",
+        "noteHeard",
+        # Weather & time
+        "rain",
+        "weatherUpdate",
+        "time",
+        # World events
+        "pistonMove",
+        "chestLidMove",
+        "usedFirework",
+        # Window
+        "windowOpen",
+        "windowClose",
+        # Resource pack
+        "resourcePack",
+        # Scoreboard
+        "scoreboardCreated",
+        "scoreboardDeleted",
+        "scoreboardTitleChanged",
+        "scoreUpdated",
+        "scoreRemoved",
+        "scoreboardPosition",
+        # Team
+        "teamCreated",
+        "teamRemoved",
+        "teamUpdated",
+        "teamMemberAdded",
+        "teamMemberRemoved",
+        # Boss bar
+        "bossBarCreated",
+        "bossBarDeleted",
+        "bossBarUpdated",
+        # Physics & particles
+        "particle",
+        # Internal done events
+        "_minethon:digDone",
+        "_minethon:placeDone",
+        "_minethon:equipDone",
+        "_minethon:lookAtDone",
+        "_minethon:lookDone",
+        "_minethon:sleepDone",
+        "_minethon:wakeDone",
+        "_minethon:unequipDone",
+        "_minethon:tossStackDone",
+        "_minethon:tossDone",
+        "_minethon:consumeDone",
+        "_minethon:fishDone",
+        "_minethon:elytraFlyDone",
+        "_minethon:craftDone",
+        "_minethon:activateBlockDone",
+        "_minethon:activateEntityDone",
+        "_minethon:activateEntityAtDone",
+        "_minethon:openContainerDone",
+        "_minethon:openFurnaceDone",
+        "_minethon:openEnchantmentTableDone",
+        "_minethon:openAnvilDone",
+        "_minethon:openVillagerDone",
+        "_minethon:tradeDone",
+        "_minethon:tabCompleteDone",
+        "_minethon:writeBookDone",
+        "_minethon:chunksLoadedDone",
+        "_minethon:waitForTicksDone",
+        "_minethon:clickWindowDone",
+        "_minethon:transferDone",
+        "_minethon:moveSlotItemDone",
+        "_minethon:putAwayDone",
+        "_minethon:creativeFlyToDone",
+        "_minethon:creativeSetSlotDone",
+        "_minethon:creativeClearSlotDone",
+        "_minethon:creativeClearInventoryDone",
+        "_minethon:placeEntityDone",
+    }
+)
 
 
 class EventRelay:
@@ -258,9 +337,7 @@ class EventRelay:
     dispatches them to asyncio handlers via ``call_soon_threadsafe``.
     """
 
-    def __init__(
-        self, event_throttle_ms: dict[str, int] | None = None
-    ) -> None:
+    def __init__(self, event_throttle_ms: dict[str, int] | None = None) -> None:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._handlers: dict[type, list[Callable[..., Coroutine[Any, Any, None]]]] = (
             defaultdict(list)
@@ -363,17 +440,28 @@ class EventRelay:
                     self._post(event_type, PlayerLeftEvent(username=username))
                 else:
                     uuid_val = str(player.uuid) if getattr(player, "uuid", None) else ""
-                    ping_val = int(player.ping) if getattr(player, "ping", None) is not None else 0
-                    gm_val = int(player.gamemode) if getattr(player, "gamemode", None) is not None else 0
+                    ping_val = (
+                        int(player.ping)
+                        if getattr(player, "ping", None) is not None
+                        else 0
+                    )
+                    gm_val = (
+                        int(player.gamemode)
+                        if getattr(player, "gamemode", None) is not None
+                        else 0
+                    )
                     dn = getattr(player, "displayName", None)
                     dn_val = str(dn.toString()) if dn is not None else None
-                    self._post(event_type, event_type(
-                        username=username,
-                        uuid=uuid_val,
-                        ping=ping_val,
-                        game_mode=gm_val,
-                        display_name=dn_val,
-                    ))
+                    self._post(
+                        event_type,
+                        event_type(
+                            username=username,
+                            uuid=uuid_val,
+                            ping=ping_val,
+                            game_mode=gm_val,
+                            display_name=dn_val,
+                        ),
+                    )
             except Exception:
                 _log.debug(
                     "Failed to snapshot %s from JS player payload",
@@ -453,7 +541,9 @@ class EventRelay:
 
         @on_fn(js_bot, "kicked")
         def _on_kicked(*args: Any) -> None:
-            def builder(reason: Any | None = None, logged_in: Any = False) -> KickedEvent:
+            def builder(
+                reason: Any | None = None, logged_in: Any = False
+            ) -> KickedEvent:
                 return KickedEvent(
                     reason=str(reason) if reason is not None else "unknown",
                     logged_in=bool(logged_in),
@@ -616,8 +706,13 @@ class EventRelay:
                 # Read quickBarSlot here on the JS callback thread so the
                 # asyncio handler doesn't need a bridge call.
                 # Ref: mineflayer/lib/plugins/inventory.js:43 — bot.quickBarSlot
-                slot = int(js_bot.quickBarSlot) if js_bot.quickBarSlot is not None else 0
-                self._post(HeldItemChangedEvent, HeldItemChangedEvent(item=item, quick_bar_slot=slot))
+                slot = (
+                    int(js_bot.quickBarSlot) if js_bot.quickBarSlot is not None else 0
+                )
+                self._post(
+                    HeldItemChangedEvent,
+                    HeldItemChangedEvent(item=item, quick_bar_slot=slot),
+                )
             except Exception:
                 _log.debug(
                     "Failed to snapshot HeldItemChangedEvent from JS payload",
@@ -651,6 +746,7 @@ class EventRelay:
         @on_fn(js_bot, "goal_reached")
         def _on_goal_reached(*_args: Any) -> None:
             self._goal_just_reached = True
+
             def builder(*_unused: Any) -> GoalReachedEvent:
                 return GoalReachedEvent(position=_vec3_from_js(js_bot.entity.position))
 
@@ -837,7 +933,9 @@ class EventRelay:
 
         @on_fn(js_bot, "blockUpdate")
         def _on_block_update(*args: Any) -> None:
-            def builder(old_b: Any | None, new_b: Any | None) -> BlockUpdateEvent | None:
+            def builder(
+                old_b: Any | None, new_b: Any | None
+            ) -> BlockUpdateEvent | None:
                 pos = (
                     new_b.position
                     if new_b is not None
@@ -855,7 +953,9 @@ class EventRelay:
 
         @on_fn(js_bot, "blockPlaced")
         def _on_block_placed(*args: Any) -> None:
-            def builder(old_b: Any | None, new_b: Any | None) -> BlockPlacedEvent | None:
+            def builder(
+                old_b: Any | None, new_b: Any | None
+            ) -> BlockPlacedEvent | None:
                 pos = (
                     new_b.position
                     if new_b is not None
@@ -930,7 +1030,9 @@ class EventRelay:
 
         @on_fn(js_bot, "blockBreakProgressEnd")
         def _on_block_break_progress_end(*args: Any) -> None:
-            def builder(block: Any, entity: Any | None = None) -> BlockBreakProgressEndEvent:
+            def builder(
+                block: Any, entity: Any | None = None
+            ) -> BlockBreakProgressEndEvent:
                 return BlockBreakProgressEndEvent(
                     position=_vec3_from_js(block.position),
                     entity_id=int(entity.id) if entity is not None else -1,
@@ -981,7 +1083,9 @@ class EventRelay:
         @on_fn(js_bot, "noteHeard")
         def _on_note_heard(*args: Any) -> None:
             def builder(block: Any, instrument: Any, pitch: Any = 0) -> NoteHeardEvent:
-                instrument_id = int(instrument.id) if hasattr(instrument, "id") else int(instrument)
+                instrument_id = (
+                    int(instrument.id) if hasattr(instrument, "id") else int(instrument)
+                )
                 return NoteHeardEvent(
                     position=_vec3_from_js(block.position),
                     instrument_id=instrument_id,
@@ -1058,7 +1162,9 @@ class EventRelay:
         @on_fn(js_bot, "usedFirework")
         def _on_used_firework(*args: Any) -> None:
             def builder(firework: Any) -> UsedFireworkEvent:
-                firework_id = int(firework.id) if hasattr(firework, "id") else int(firework)
+                firework_id = (
+                    int(firework.id) if hasattr(firework, "id") else int(firework)
+                )
                 return UsedFireworkEvent(firework_entity_id=firework_id)
 
             self._post_built(js_bot, UsedFireworkEvent, builder, *args)
@@ -1175,8 +1281,12 @@ class EventRelay:
         def _on_boss_bar_created(*args: Any) -> None:
             def builder(bar: Any) -> BossBarCreatedEvent:
                 return BossBarCreatedEvent(
-                    entity_uuid=str(bar.entityUUID) if hasattr(bar, "entityUUID") else str(bar),
-                    title=_stringify_message(bar.title) if hasattr(bar, "title") else "",
+                    entity_uuid=str(bar.entityUUID)
+                    if hasattr(bar, "entityUUID")
+                    else str(bar),
+                    title=_stringify_message(bar.title)
+                    if hasattr(bar, "title")
+                    else "",
                     health=float(bar.health) if hasattr(bar, "health") else 0.0,
                 )
 
@@ -1186,7 +1296,9 @@ class EventRelay:
         def _on_boss_bar_deleted(*args: Any) -> None:
             def builder(bar: Any) -> BossBarDeletedEvent:
                 return BossBarDeletedEvent(
-                    entity_uuid=str(bar.entityUUID) if hasattr(bar, "entityUUID") else str(bar),
+                    entity_uuid=str(bar.entityUUID)
+                    if hasattr(bar, "entityUUID")
+                    else str(bar),
                 )
 
             self._post_built(js_bot, BossBarDeletedEvent, builder, *args)
@@ -1195,8 +1307,12 @@ class EventRelay:
         def _on_boss_bar_updated(*args: Any) -> None:
             def builder(bar: Any) -> BossBarUpdatedEvent:
                 return BossBarUpdatedEvent(
-                    entity_uuid=str(bar.entityUUID) if hasattr(bar, "entityUUID") else str(bar),
-                    title=_stringify_message(bar.title) if hasattr(bar, "title") else "",
+                    entity_uuid=str(bar.entityUUID)
+                    if hasattr(bar, "entityUUID")
+                    else str(bar),
+                    title=_stringify_message(bar.title)
+                    if hasattr(bar, "title")
+                    else "",
                     health=float(bar.health) if hasattr(bar, "health") else 0.0,
                 )
 
@@ -1209,10 +1325,14 @@ class EventRelay:
         @on_fn(js_bot, "particle")
         def _on_particle(*args: Any) -> None:
             def builder(particle: Any) -> ParticleEvent:
-                position = particle.position if hasattr(particle, "position") else particle
+                position = (
+                    particle.position if hasattr(particle, "position") else particle
+                )
                 return ParticleEvent(
                     particle_id=int(particle.id) if hasattr(particle, "id") else 0,
-                    particle_name=str(particle.name) if hasattr(particle, "name") else "",
+                    particle_name=str(particle.name)
+                    if hasattr(particle, "name")
+                    else "",
                     position=_vec3_from_js(position),
                     count=int(particle.count) if hasattr(particle, "count") else 1,
                 )
@@ -1282,7 +1402,9 @@ class EventRelay:
         @on_fn(js_bot, "_minethon:tossStackDone")
         def _on_toss_stack_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> TossStackDoneEvent:
-                return TossStackDoneEvent(error=str(error) if error is not None else None)
+                return TossStackDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, TossStackDoneEvent, builder, *args)
 
@@ -1310,7 +1432,9 @@ class EventRelay:
         @on_fn(js_bot, "_minethon:elytraFlyDone")
         def _on_elytra_fly_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> ElytraFlyDoneEvent:
-                return ElytraFlyDoneEvent(error=str(error) if error is not None else None)
+                return ElytraFlyDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, ElytraFlyDoneEvent, builder, *args)
 
@@ -1324,21 +1448,27 @@ class EventRelay:
         @on_fn(js_bot, "_minethon:activateBlockDone")
         def _on_activate_block_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> ActivateBlockDoneEvent:
-                return ActivateBlockDoneEvent(error=str(error) if error is not None else None)
+                return ActivateBlockDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, ActivateBlockDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:activateEntityDone")
         def _on_activate_entity_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> ActivateEntityDoneEvent:
-                return ActivateEntityDoneEvent(error=str(error) if error is not None else None)
+                return ActivateEntityDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, ActivateEntityDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:activateEntityAtDone")
         def _on_activate_entity_at_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> ActivateEntityAtDoneEvent:
-                return ActivateEntityAtDoneEvent(error=str(error) if error is not None else None)
+                return ActivateEntityAtDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, ActivateEntityAtDoneEvent, builder, *args)
 
@@ -1352,42 +1482,54 @@ class EventRelay:
         @on_fn(js_bot, "_minethon:writeBookDone")
         def _on_write_book_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> WriteBookDoneEvent:
-                return WriteBookDoneEvent(error=str(error) if error is not None else None)
+                return WriteBookDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, WriteBookDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:chunksLoadedDone")
         def _on_chunks_loaded_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> ChunksLoadedDoneEvent:
-                return ChunksLoadedDoneEvent(error=str(error) if error is not None else None)
+                return ChunksLoadedDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, ChunksLoadedDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:waitForTicksDone")
         def _on_wait_for_ticks_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> WaitForTicksDoneEvent:
-                return WaitForTicksDoneEvent(error=str(error) if error is not None else None)
+                return WaitForTicksDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, WaitForTicksDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:clickWindowDone")
         def _on_click_window_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> ClickWindowDoneEvent:
-                return ClickWindowDoneEvent(error=str(error) if error is not None else None)
+                return ClickWindowDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, ClickWindowDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:transferDone")
         def _on_transfer_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> TransferDoneEvent:
-                return TransferDoneEvent(error=str(error) if error is not None else None)
+                return TransferDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, TransferDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:moveSlotItemDone")
         def _on_move_slot_item_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> MoveSlotItemDoneEvent:
-                return MoveSlotItemDoneEvent(error=str(error) if error is not None else None)
+                return MoveSlotItemDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, MoveSlotItemDoneEvent, builder, *args)
 
@@ -1401,28 +1543,36 @@ class EventRelay:
         @on_fn(js_bot, "_minethon:creativeFlyToDone")
         def _on_creative_fly_to_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> CreativeFlyToDoneEvent:
-                return CreativeFlyToDoneEvent(error=str(error) if error is not None else None)
+                return CreativeFlyToDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, CreativeFlyToDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:creativeSetSlotDone")
         def _on_creative_set_slot_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> CreativeSetSlotDoneEvent:
-                return CreativeSetSlotDoneEvent(error=str(error) if error is not None else None)
+                return CreativeSetSlotDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, CreativeSetSlotDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:creativeClearSlotDone")
         def _on_creative_clear_slot_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> CreativeClearSlotDoneEvent:
-                return CreativeClearSlotDoneEvent(error=str(error) if error is not None else None)
+                return CreativeClearSlotDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, CreativeClearSlotDoneEvent, builder, *args)
 
         @on_fn(js_bot, "_minethon:creativeClearInventoryDone")
         def _on_creative_clear_inventory_done(*args: Any) -> None:
             def builder(error: Any | None = None) -> CreativeClearInventoryDoneEvent:
-                return CreativeClearInventoryDoneEvent(error=str(error) if error is not None else None)
+                return CreativeClearInventoryDoneEvent(
+                    error=str(error) if error is not None else None
+                )
 
             self._post_built(js_bot, CreativeClearInventoryDoneEvent, builder, *args)
 
@@ -1430,7 +1580,9 @@ class EventRelay:
 
         @on_fn(js_bot, "_minethon:openContainerDone")
         def _on_open_container_done(*args: Any) -> None:
-            def builder(error: Any | None = None, result: Any | None = None) -> OpenContainerDoneEvent:
+            def builder(
+                error: Any | None = None, result: Any | None = None
+            ) -> OpenContainerDoneEvent:
                 return OpenContainerDoneEvent(
                     error=str(error) if error is not None else None,
                     result=result,
@@ -1440,7 +1592,9 @@ class EventRelay:
 
         @on_fn(js_bot, "_minethon:openFurnaceDone")
         def _on_open_furnace_done(*args: Any) -> None:
-            def builder(error: Any | None = None, result: Any | None = None) -> OpenFurnaceDoneEvent:
+            def builder(
+                error: Any | None = None, result: Any | None = None
+            ) -> OpenFurnaceDoneEvent:
                 return OpenFurnaceDoneEvent(
                     error=str(error) if error is not None else None,
                     result=result,
@@ -1463,7 +1617,9 @@ class EventRelay:
 
         @on_fn(js_bot, "_minethon:openAnvilDone")
         def _on_open_anvil_done(*args: Any) -> None:
-            def builder(error: Any | None = None, result: Any | None = None) -> OpenAnvilDoneEvent:
+            def builder(
+                error: Any | None = None, result: Any | None = None
+            ) -> OpenAnvilDoneEvent:
                 return OpenAnvilDoneEvent(
                     error=str(error) if error is not None else None,
                     result=result,
@@ -1473,7 +1629,9 @@ class EventRelay:
 
         @on_fn(js_bot, "_minethon:openVillagerDone")
         def _on_open_villager_done(*args: Any) -> None:
-            def builder(error: Any | None = None, result: Any | None = None) -> OpenVillagerDoneEvent:
+            def builder(
+                error: Any | None = None, result: Any | None = None
+            ) -> OpenVillagerDoneEvent:
                 return OpenVillagerDoneEvent(
                     error=str(error) if error is not None else None,
                     result=result,
@@ -1483,7 +1641,9 @@ class EventRelay:
 
         @on_fn(js_bot, "_minethon:tabCompleteDone")
         def _on_tab_complete_done(*args: Any) -> None:
-            def builder(error: Any | None = None, result: Any | None = None) -> TabCompleteDoneEvent:
+            def builder(
+                error: Any | None = None, result: Any | None = None
+            ) -> TabCompleteDoneEvent:
                 return TabCompleteDoneEvent(
                     error=str(error) if error is not None else None,
                     result=result,
@@ -1493,7 +1653,9 @@ class EventRelay:
 
         @on_fn(js_bot, "_minethon:placeEntityDone")
         def _on_place_entity_done(*args: Any) -> None:
-            def builder(error: Any | None = None, result: Any | None = None) -> PlaceEntityDoneEvent:
+            def builder(
+                error: Any | None = None, result: Any | None = None
+            ) -> PlaceEntityDoneEvent:
                 return PlaceEntityDoneEvent(
                     error=str(error) if error is not None else None,
                     result=result,
@@ -1508,10 +1670,9 @@ class EventRelay:
         throttled_handlers: list[object] = []
         for event_name in self._throttle_intervals:
             interval = self._throttle_intervals[event_name]
+
             # Capture event_name and interval per-iteration
-            def _make_throttled(
-                evt: str, intv: float
-            ) -> Callable[..., None]:
+            def _make_throttled(evt: str, intv: float) -> Callable[..., None]:
                 def _handler(*_args: Any) -> None:
                     now = time.monotonic()
                     last = self._throttle_last_post.get(evt, 0.0)
@@ -1520,7 +1681,9 @@ class EventRelay:
                     self._throttle_last_post[evt] = now
                     if evt == "move":
                         normalized = self._normalize_js_args(js_bot, _args)
-                        position = normalized[0] if normalized else js_bot.entity.position
+                        position = (
+                            normalized[0] if normalized else js_bot.entity.position
+                        )
                         try:
                             self._post(
                                 MoveEvent,
@@ -1547,19 +1710,29 @@ class EventRelay:
                                 )
                         self._post_raw(evt, {"args": list(normalized)})
                     elif evt == "entityUpdate":
-                        _post_entity_event(EntityUpdateEvent, *_args, include_entity=True)
+                        _post_entity_event(
+                            EntityUpdateEvent, *_args, include_entity=True
+                        )
                         self._post_raw(
                             evt,
                             {"args": list(self._normalize_js_args(js_bot, _args))},
                         )
                     elif evt == "physicsTick":
+
                         def build_physics_tick(*_unused: Any) -> PhysicsTickEvent:
                             return PhysicsTickEvent()
 
-                        self._post_built(js_bot, PhysicsTickEvent, build_physics_tick, *_args)
-                        self._post_raw(evt, {"args": list(self._normalize_js_args(js_bot, _args))})
+                        self._post_built(
+                            js_bot, PhysicsTickEvent, build_physics_tick, *_args
+                        )
+                        self._post_raw(
+                            evt, {"args": list(self._normalize_js_args(js_bot, _args))}
+                        )
                     else:
-                        self._post_raw(evt, {"args": list(self._normalize_js_args(js_bot, _args))})
+                        self._post_raw(
+                            evt, {"args": list(self._normalize_js_args(js_bot, _args))}
+                        )
+
                 return _handler
 
             handler = _make_throttled(event_name, interval)
@@ -1571,88 +1744,162 @@ class EventRelay:
         # Keep strong refs to ALL handlers to prevent GC
         # ================================================================
 
-        self._js_handler_refs.extend([
-            # Lifecycle
-            _on_spawn, _on_login, _on_respawn, _on_game,
-            _on_spawn_reset, _on_error, _on_death, _on_kicked, _on_end,
-            # Chat / message
-            _on_chat, _on_whisper, _on_action_bar,
-            _on_message, _on_messagestr,
-            # Title
-            _on_title, _on_title_times, _on_title_clear,
-            # Health & state
-            _on_health, _on_breath, _on_experience,
-            _on_sleep, _on_wake, _on_held_item_changed,
-            # Movement
-            _on_forced_move, _on_mount, _on_dismount,
-            # Navigation
-            _on_goal_reached, _on_path_update, _on_path_stop,
-            # Entity events
-            _on_entity_swing_arm, _on_entity_hurt, _on_entity_dead,
-            _on_entity_taming, _on_entity_tamed,
-            _on_entity_shaking_off_water, _on_entity_eating_grass,
-            _on_entity_hand_swap, _on_entity_wake, _on_entity_eat,
-            _on_entity_critical_effect, _on_entity_magic_critical_effect,
-            _on_entity_crouch, _on_entity_uncrouch,
-            _on_entity_equip, _on_entity_sleep,
-            _on_entity_spawn, _on_entity_elytra_flew,
-            _on_entity_gone,
-            _on_entity_attach, _on_entity_detach,
-            _on_entity_attributes,
-            _on_entity_effect, _on_entity_effect_end,
-            _on_item_drop, _on_player_collect,
-            # Player events
-            _on_player_joined, _on_player_updated, _on_player_left,
-            # Block events
-            _on_block_update, _on_block_placed,
-            _on_chunk_column_load, _on_chunk_column_unload,
-            # Digging
-            _on_digging_completed, _on_digging_aborted,
-            _on_block_break_progress_observed, _on_block_break_progress_end,
-            # Sound
-            _on_sound_effect_heard, _on_hardcoded_sound_effect_heard,
-            _on_note_heard,
-            # Weather & time
-            _on_rain, _on_weather_update, _on_time,
-            # World events
-            _on_piston_move, _on_chest_lid_move, _on_used_firework,
-            # Window
-            _on_window_open, _on_window_close,
-            # Resource pack
-            _on_resource_pack,
-            # Scoreboard
-            _on_scoreboard_created, _on_scoreboard_deleted,
-            _on_scoreboard_title_changed, _on_score_updated,
-            _on_score_removed, _on_scoreboard_position,
-            # Team
-            _on_team_created, _on_team_removed, _on_team_updated,
-            _on_team_member_added, _on_team_member_removed,
-            # Boss bar
-            _on_boss_bar_created, _on_boss_bar_deleted, _on_boss_bar_updated,
-            # Physics & particles
-            _on_particle,
-            # Internal done events (void)
-            _on_dig_done, _on_place_done, _on_equip_done, _on_look_at_done,
-            _on_look_done, _on_sleep_done, _on_wake_done,
-            _on_unequip_done, _on_toss_stack_done, _on_toss_done,
-            _on_consume_done, _on_fish_done, _on_elytra_fly_done,
-            _on_craft_done,
-            _on_activate_block_done, _on_activate_entity_done,
-            _on_activate_entity_at_done,
-            _on_trade_done, _on_write_book_done,
-            _on_chunks_loaded_done, _on_wait_for_ticks_done,
-            _on_click_window_done, _on_transfer_done,
-            _on_move_slot_item_done, _on_put_away_done,
-            _on_creative_fly_to_done, _on_creative_set_slot_done,
-            _on_creative_clear_slot_done, _on_creative_clear_inventory_done,
-            # Internal done events (with result)
-            _on_open_container_done, _on_open_furnace_done,
-            _on_open_enchantment_table_done, _on_open_anvil_done,
-            _on_open_villager_done,
-            _on_tab_complete_done, _on_place_entity_done,
-            # Throttled
-            *throttled_handlers,
-        ])
+        self._js_handler_refs.extend(
+            [
+                # Lifecycle
+                _on_spawn,
+                _on_login,
+                _on_respawn,
+                _on_game,
+                _on_spawn_reset,
+                _on_error,
+                _on_death,
+                _on_kicked,
+                _on_end,
+                # Chat / message
+                _on_chat,
+                _on_whisper,
+                _on_action_bar,
+                _on_message,
+                _on_messagestr,
+                # Title
+                _on_title,
+                _on_title_times,
+                _on_title_clear,
+                # Health & state
+                _on_health,
+                _on_breath,
+                _on_experience,
+                _on_sleep,
+                _on_wake,
+                _on_held_item_changed,
+                # Movement
+                _on_forced_move,
+                _on_mount,
+                _on_dismount,
+                # Navigation
+                _on_goal_reached,
+                _on_path_update,
+                _on_path_stop,
+                # Entity events
+                _on_entity_swing_arm,
+                _on_entity_hurt,
+                _on_entity_dead,
+                _on_entity_taming,
+                _on_entity_tamed,
+                _on_entity_shaking_off_water,
+                _on_entity_eating_grass,
+                _on_entity_hand_swap,
+                _on_entity_wake,
+                _on_entity_eat,
+                _on_entity_critical_effect,
+                _on_entity_magic_critical_effect,
+                _on_entity_crouch,
+                _on_entity_uncrouch,
+                _on_entity_equip,
+                _on_entity_sleep,
+                _on_entity_spawn,
+                _on_entity_elytra_flew,
+                _on_entity_gone,
+                _on_entity_attach,
+                _on_entity_detach,
+                _on_entity_attributes,
+                _on_entity_effect,
+                _on_entity_effect_end,
+                _on_item_drop,
+                _on_player_collect,
+                # Player events
+                _on_player_joined,
+                _on_player_updated,
+                _on_player_left,
+                # Block events
+                _on_block_update,
+                _on_block_placed,
+                _on_chunk_column_load,
+                _on_chunk_column_unload,
+                # Digging
+                _on_digging_completed,
+                _on_digging_aborted,
+                _on_block_break_progress_observed,
+                _on_block_break_progress_end,
+                # Sound
+                _on_sound_effect_heard,
+                _on_hardcoded_sound_effect_heard,
+                _on_note_heard,
+                # Weather & time
+                _on_rain,
+                _on_weather_update,
+                _on_time,
+                # World events
+                _on_piston_move,
+                _on_chest_lid_move,
+                _on_used_firework,
+                # Window
+                _on_window_open,
+                _on_window_close,
+                # Resource pack
+                _on_resource_pack,
+                # Scoreboard
+                _on_scoreboard_created,
+                _on_scoreboard_deleted,
+                _on_scoreboard_title_changed,
+                _on_score_updated,
+                _on_score_removed,
+                _on_scoreboard_position,
+                # Team
+                _on_team_created,
+                _on_team_removed,
+                _on_team_updated,
+                _on_team_member_added,
+                _on_team_member_removed,
+                # Boss bar
+                _on_boss_bar_created,
+                _on_boss_bar_deleted,
+                _on_boss_bar_updated,
+                # Physics & particles
+                _on_particle,
+                # Internal done events (void)
+                _on_dig_done,
+                _on_place_done,
+                _on_equip_done,
+                _on_look_at_done,
+                _on_look_done,
+                _on_sleep_done,
+                _on_wake_done,
+                _on_unequip_done,
+                _on_toss_stack_done,
+                _on_toss_done,
+                _on_consume_done,
+                _on_fish_done,
+                _on_elytra_fly_done,
+                _on_craft_done,
+                _on_activate_block_done,
+                _on_activate_entity_done,
+                _on_activate_entity_at_done,
+                _on_trade_done,
+                _on_write_book_done,
+                _on_chunks_loaded_done,
+                _on_wait_for_ticks_done,
+                _on_click_window_done,
+                _on_transfer_done,
+                _on_move_slot_item_done,
+                _on_put_away_done,
+                _on_creative_fly_to_done,
+                _on_creative_set_slot_done,
+                _on_creative_clear_slot_done,
+                _on_creative_clear_inventory_done,
+                # Internal done events (with result)
+                _on_open_container_done,
+                _on_open_furnace_done,
+                _on_open_enchantment_table_done,
+                _on_open_anvil_done,
+                _on_open_villager_done,
+                _on_tab_complete_done,
+                _on_place_entity_done,
+                # Throttled
+                *throttled_handlers,
+            ]
+        )
 
     # -- Handler management (called from ObserveAPI) --
 
@@ -1680,9 +1927,7 @@ class EventRelay:
         """Unregister a raw event handler."""
         self._raw_handlers[event_name].remove(handler)
 
-    def bind_raw_js_event(
-        self, js_bot: Any, on_fn: Any, event_name: str
-    ) -> None:
+    def bind_raw_js_event(self, js_bot: Any, on_fn: Any, event_name: str) -> None:
         """Dynamically bind a raw JS event for ``on_raw()`` subscribers.
 
         Events already handled by :meth:`register_js_events` are
@@ -1786,16 +2031,12 @@ class EventRelay:
         """Thread-safe post for raw events."""
         if self._loop is not None and self._loop.is_running():
             try:
-                self._loop.call_soon_threadsafe(
-                    self._dispatch_raw, event_name, data
-                )
+                self._loop.call_soon_threadsafe(self._dispatch_raw, event_name, data)
             except RuntimeError:
                 pass
 
     @staticmethod
-    async def _timed(
-        coro: Coroutine[Any, Any, None], name: str
-    ) -> None:
+    async def _timed(coro: Coroutine[Any, Any, None], name: str) -> None:
         """Run a handler coroutine with execution-time monitoring."""
         t0 = time.monotonic()
         try:

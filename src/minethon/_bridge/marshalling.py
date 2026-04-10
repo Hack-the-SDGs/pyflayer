@@ -83,7 +83,7 @@ def js_entity_to_entity(js_obj: Any) -> Entity:
     if js_vel is not None:
         try:
             velocity = Vec3(float(js_vel.x), float(js_vel.y), float(js_vel.z))
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             pass
 
     health: float | None = None
@@ -91,7 +91,7 @@ def js_entity_to_entity(js_obj: Any) -> Entity:
     if js_health is not None:
         try:
             health = float(js_health)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             pass
 
     name: str | None = None
@@ -107,7 +107,7 @@ def js_entity_to_entity(js_obj: Any) -> Entity:
     if js_meta is not None:
         try:
             metadata = dict(js_meta.valueOf())
-        except (AttributeError, TypeError, ValueError):
+        except AttributeError, TypeError, ValueError:
             pass
 
     return Entity(
@@ -135,7 +135,7 @@ def js_item_to_item_stack(js_obj: Any) -> ItemStack:
     if js_enchants is not None:
         try:
             enchants = list(js_enchants.valueOf())
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             pass
 
     nbt: dict[str, Any] | None = None
@@ -143,7 +143,7 @@ def js_item_to_item_stack(js_obj: Any) -> ItemStack:
     if js_nbt is not None:
         try:
             nbt = dict(js_nbt.valueOf())
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             pass
 
     return ItemStack(
@@ -181,7 +181,9 @@ def _dict_to_item_stack(raw: dict[str, Any]) -> ItemStack:
     nbt = raw.get("nbt")
     return ItemStack(
         name=str(raw["name"]),
-        display_name=str(raw["displayName"]) if raw.get("displayName") else str(raw["name"]),
+        display_name=str(raw["displayName"])
+        if raw.get("displayName")
+        else str(raw["name"]),
         count=int(raw["count"]),
         slot=int(raw["slot"]),
         max_stack_size=int(raw["stackSize"]),
@@ -202,9 +204,7 @@ def villager_snapshot_to_session(data: dict[str, Any]) -> VillagerSession:
             TradeOffer(
                 first_input=_dict_to_item_stack(trade["inputItem1"]),
                 output=_dict_to_item_stack(trade["outputItem"]),
-                secondary_input=(
-                    _dict_to_item_stack(secondary) if secondary else None
-                ),
+                secondary_input=(_dict_to_item_stack(secondary) if secondary else None),
                 disabled=bool(trade.get("tradeDisabled", False)),
                 uses=int(trade.get("nbTradeUses", 0)),
                 max_uses=int(trade.get("maximumNbTradeUses", 0)),

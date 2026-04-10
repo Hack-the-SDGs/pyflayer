@@ -383,7 +383,9 @@ class TestEventRelayMineflayerParity:
 
     @pytest.mark.asyncio
     async def test_messagestr_uses_sender_and_verified_positions(self) -> None:
-        relay = EventRelay(event_throttle_ms={"move": 0, "entityMoved": 0, "physicsTick": 0})
+        relay = EventRelay(
+            event_throttle_ms={"move": 0, "entityMoved": 0, "physicsTick": 0}
+        )
         relay.set_loop(asyncio.get_running_loop())
         js_bot = self._make_bot()
         handlers: dict[str, object] = {}
@@ -445,7 +447,9 @@ class TestEventRelayMineflayerParity:
         assert received[0].item.display_name == "Stick"
 
     @pytest.mark.asyncio
-    async def test_held_item_changed_snapshots_before_later_proxy_mutation(self) -> None:
+    async def test_held_item_changed_snapshots_before_later_proxy_mutation(
+        self,
+    ) -> None:
         relay = EventRelay()
         relay.set_loop(asyncio.get_running_loop())
         js_bot = self._make_bot()
@@ -573,7 +577,9 @@ class TestEventRelayMineflayerParity:
 
     @pytest.mark.asyncio
     async def test_high_frequency_events_dispatch_typed_events(self) -> None:
-        relay = EventRelay(event_throttle_ms={"move": 0, "entityMoved": 0, "physicsTick": 0})
+        relay = EventRelay(
+            event_throttle_ms={"move": 0, "entityMoved": 0, "physicsTick": 0}
+        )
         relay.set_loop(asyncio.get_running_loop())
         js_bot = self._make_bot()
         handlers: dict[str, object] = {}
@@ -609,21 +615,30 @@ class TestEventRelayMineflayerParity:
         relay.add_handler(PhysicsTickEvent, tick_handler)
         relay.add_raw_handler("entityMoved", raw_entity_move_handler)
 
-        moving_entity = SimpleNamespace(id=99, position=SimpleNamespace(x=9.0, y=65.0, z=7.0))
+        moving_entity = SimpleNamespace(
+            id=99, position=SimpleNamespace(x=9.0, y=65.0, z=7.0)
+        )
         handlers["move"](js_bot)
         handlers["entityMoved"](js_bot, moving_entity)
         handlers["physicsTick"](js_bot)
         await asyncio.sleep(0.01)
 
         assert moves == [MoveEvent(position=Vec3(1.0, 64.0, 2.0))]
-        assert entity_moves == [EntityMovedEvent(entity_id=99, position=Vec3(9.0, 65.0, 7.0))]
+        assert entity_moves == [
+            EntityMovedEvent(entity_id=99, position=Vec3(9.0, 65.0, 7.0))
+        ]
         assert len(ticks) == 1
         assert raw_entity_moves == [{"args": [moving_entity]}]
 
     @pytest.mark.asyncio
     async def test_entity_update_snapshots_before_later_proxy_mutation(self) -> None:
         relay = EventRelay(
-            event_throttle_ms={"move": 0, "entityMoved": 0, "entityUpdate": 0, "physicsTick": 0}
+            event_throttle_ms={
+                "move": 0,
+                "entityMoved": 0,
+                "entityUpdate": 0,
+                "physicsTick": 0,
+            }
         )
         relay.set_loop(asyncio.get_running_loop())
         js_bot = self._make_bot()
