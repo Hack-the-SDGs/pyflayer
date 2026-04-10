@@ -2,7 +2,7 @@
 
 import asyncio
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from minethon._bridge._events import (
@@ -79,6 +79,9 @@ from minethon.models.events import (
     HeldItemChangedEvent,
     MessageStrEvent,
     MoveEvent,
+    PlayerJoinedEvent,
+    PlayerLeftEvent,
+    PlayerUpdatedEvent,
     RainEvent,
     RespawnEvent,
     SleepEvent,
@@ -117,6 +120,7 @@ class _BotStateCache:
     version: str | None = None
     physics_enabled: bool | None = None
     quick_bar_slot: int | None = None
+    players: dict[str, PlayerInfo] = field(default_factory=dict)
 
 
 class Bot:
@@ -307,6 +311,24 @@ class Bot:
                 self._state.physics_enabled = ctrl.get_physics_enabled()
             except BridgeError:
                 pass
+        # Ref: mineflayer/docs/api.md — bot.players
+        if not self._state.players:
+            try:
+                raw = ctrl.get_players_full()
+                self._state.players = {
+                    name: PlayerInfo(
+                        username=str(info["username"]),
+                        uuid=str(info["uuid"]),
+                        ping=int(info["ping"]),  # type: ignore[arg-type]
+                        game_mode=int(info["game_mode"]),  # type: ignore[arg-type]
+                        display_name=(
+                            str(info["display_name"]) if info["display_name"] is not None else None
+                        ),
+                    )
+                    for name, info in raw.items()
+                }
+            except BridgeError:
+                pass
 
     def _refresh_spawn_state_cache(self) -> None:
         """Refresh spawned-state snapshots on the event-loop thread."""
@@ -443,6 +465,27 @@ class Bot:
             self._state.is_sleeping = False
             self._state.is_sleeping_known = True
 
+        async def _on_player_joined(event: PlayerJoinedEvent) -> None:
+            self._state.players[event.username] = PlayerInfo(
+                username=event.username,
+                uuid=event.uuid,
+                ping=event.ping,
+                game_mode=event.game_mode,
+                display_name=event.display_name,
+            )
+
+        async def _on_player_updated(event: PlayerUpdatedEvent) -> None:
+            self._state.players[event.username] = PlayerInfo(
+                username=event.username,
+                uuid=event.uuid,
+                ping=event.ping,
+                game_mode=event.game_mode,
+                display_name=event.display_name,
+            )
+
+        async def _on_player_left(event: PlayerLeftEvent) -> None:
+            self._state.players.pop(event.username, None)
+
         self._relay.add_handler(SpawnEvent, _on_spawn)  # type: ignore[arg-type]
         self._relay.add_handler(RespawnEvent, _on_respawn)  # type: ignore[arg-type]
         self._relay.add_handler(MoveEvent, _on_move)  # type: ignore[arg-type]
@@ -457,6 +500,9 @@ class Bot:
         self._relay.add_handler(GameEvent, _on_game)  # type: ignore[arg-type]
         self._relay.add_handler(SleepEvent, _on_sleep)  # type: ignore[arg-type]
         self._relay.add_handler(WakeEvent, _on_wake)  # type: ignore[arg-type]
+        self._relay.add_handler(PlayerJoinedEvent, _on_player_joined)  # type: ignore[arg-type]
+        self._relay.add_handler(PlayerUpdatedEvent, _on_player_updated)  # type: ignore[arg-type]
+        self._relay.add_handler(PlayerLeftEvent, _on_player_left)  # type: ignore[arg-type]
 
     def _ensure_connected(self) -> JSBotController:
         """Return the controller or raise if not connected."""
@@ -642,19 +688,16 @@ class Bot:
 
     @property
     def players(self) -> dict[str, PlayerInfo]:
-        """Online players as ``{username: PlayerInfo}``."""
-        ctrl = self._ensure_connected()
-        raw = ctrl.get_players_full()
-        return {
-            name: PlayerInfo(
-                username=str(info["username"]),
-                uuid=str(info["uuid"]),
-                ping=int(info["ping"]),  # type: ignore[arg-type]
-                game_mode=int(info["game_mode"]),  # type: ignore[arg-type]
-                display_name=str(info["display_name"]) if info["display_name"] is not None else None,
-            )
-            for name, info in raw.items()
-        }
+        """Online players as ``{username: PlayerInfo}``.
+
+        Backed by event-driven snapshot updated via ``playerJoined``,
+        ``playerUpdated``, and ``playerLeft`` events.  Seeded from
+        ``bot.players`` at connect time.
+
+        Ref: mineflayer/docs/api.md — bot.players
+        """
+        self._ensure_connected()
+        return dict(self._state.players)
 
     @property
     def food_saturation(self) -> float:

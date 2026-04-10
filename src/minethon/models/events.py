@@ -449,21 +449,38 @@ class PlayerCollectEvent:
 
 @dataclass(frozen=True, slots=True)
 class PlayerJoinedEvent:
-    """A player joined the server."""
+    """A player joined the server.
+
+    Ref: mineflayer/docs/api.md — "playerJoined" (player)
+    """
 
     username: str
+    uuid: str
+    ping: int
+    game_mode: int
+    display_name: str | None
 
 
 @dataclass(frozen=True, slots=True)
 class PlayerUpdatedEvent:
-    """A player's info was updated."""
+    """A player's info was updated.
+
+    Ref: mineflayer/docs/api.md — "playerUpdated" (player)
+    """
 
     username: str
+    uuid: str
+    ping: int
+    game_mode: int
+    display_name: str | None
 
 
 @dataclass(frozen=True, slots=True)
 class PlayerLeftEvent:
-    """A player left the server."""
+    """A player left the server.
+
+    Ref: mineflayer/docs/api.md — "playerLeft" (player)
+    """
 
     username: str
 

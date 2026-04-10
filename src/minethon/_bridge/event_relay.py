@@ -351,12 +351,29 @@ class EventRelay:
                 )
 
         def _post_player_event(event_type: type, *args: Any) -> None:
+            # Ref: mineflayer/docs/api.md — player object has
+            # username, uuid, displayName, gamemode, ping, entity.
             normalized = self._normalize_js_args(js_bot, args)
             player = normalized[0] if normalized else None
             if player is None:
                 return
             try:
-                self._post(event_type, event_type(username=str(player.username)))
+                username = str(player.username)
+                if event_type is PlayerLeftEvent:
+                    self._post(event_type, PlayerLeftEvent(username=username))
+                else:
+                    uuid_val = str(player.uuid) if getattr(player, "uuid", None) else ""
+                    ping_val = int(player.ping) if getattr(player, "ping", None) is not None else 0
+                    gm_val = int(player.gamemode) if getattr(player, "gamemode", None) is not None else 0
+                    dn = getattr(player, "displayName", None)
+                    dn_val = str(dn.toString()) if dn is not None else None
+                    self._post(event_type, event_type(
+                        username=username,
+                        uuid=uuid_val,
+                        ping=ping_val,
+                        game_mode=gm_val,
+                        display_name=dn_val,
+                    ))
             except Exception:
                 _log.debug(
                     "Failed to snapshot %s from JS player payload",
