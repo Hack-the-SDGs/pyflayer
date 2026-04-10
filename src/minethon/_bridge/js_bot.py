@@ -570,11 +570,31 @@ class JSBotController:
             return 0.0
 
     def get_inventory_items(self) -> list[Any]:
-        """Return raw JS Item proxies from bot.inventory.items()."""
+        """Return raw JS Item proxies from bot.inventory.items().
+
+        Ref: mineflayer/lib/plugins/inventory.js — bot.inventory.items()
+        """
         try:
             return list(self._js_bot.inventory.items())
         except Exception as exc:
             raise BridgeError(f"get_inventory_items failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
+    def find_inventory_item_by_name(self, name: str) -> tuple[int | None, Any | None]:
+        """Find first inventory item matching *name*.
+
+        Returns ``(item_type_id, js_item_proxy)`` or ``(None, None)``.
+        Performs the search entirely in the bridge layer so the caller
+        never iterates live JS proxies from the asyncio thread.
+
+        Ref: mineflayer/lib/plugins/inventory.js — bot.inventory.items()
+        """
+        try:
+            for item in self._js_bot.inventory.items():
+                if str(item.name) == name:
+                    return int(item.type), item
+            return None, None
+        except Exception as exc:
+            raise BridgeError(f"find_inventory_item_by_name failed: {exc}", js_stack=extract_js_stack(exc)) from exc
 
     def get_control_state_value(self, control: str) -> bool:
         """Read a specific control state."""

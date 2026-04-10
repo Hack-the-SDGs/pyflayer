@@ -1347,16 +1347,11 @@ class Bot:
         """
         async with self._toss_lock:
             ctrl = self._ensure_connected()
-            items = ctrl.get_inventory_items()
-            target = None
-            for item in items:
-                if str(item.name) == item_name:
-                    target = item
-                    break
-            if target is None:
+            item_type, js_item = ctrl.find_inventory_item_by_name(item_name)
+            if js_item is None:
                 raise InventoryError(f"Item '{item_name}' not found")
             if count is None:
-                ctrl.start_toss_stack(target)
+                ctrl.start_toss_stack(js_item)
                 try:
                     event = await self._relay.wait_for(TossStackDoneEvent, timeout=10.0)
                 except asyncio.TimeoutError as exc:
@@ -1364,7 +1359,7 @@ class Bot:
                 if event.error is not None:
                     raise InventoryError(f"toss failed: {event.error}")
             else:
-                ctrl.start_toss(int(target.type), None, count)
+                ctrl.start_toss(item_type, None, count)
                 try:
                     event = await self._relay.wait_for(TossDoneEvent, timeout=10.0)
                 except asyncio.TimeoutError as exc:
