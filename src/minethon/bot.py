@@ -756,9 +756,10 @@ class Bot:
         ctrl.set_quick_bar_slot(slot)
         self._state.quick_bar_slot = slot
 
-    @property
-    def spawn_point(self) -> Vec3:
+    async def get_spawn_point(self) -> Vec3:
         """Bot spawn point position.
+
+        Ref: mineflayer/lib/plugins/spawn_point.js — bot.spawnPoint
 
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
@@ -777,18 +778,21 @@ class Bot:
             raise BridgeError("is_sleeping snapshot is not available yet")
         return self._state.is_sleeping
 
-    @property
-    def target_dig_block(self) -> Block | None:
-        """Block currently being dug, or ``None``."""
+    async def get_target_dig_block(self) -> Block | None:
+        """Block currently being dug, or ``None``.
+
+        Ref: mineflayer/lib/plugins/digging.js — bot.targetDigBlock
+        """
         ctrl = self._ensure_connected()
         js_block = ctrl.get_target_dig_block()
         if js_block is None:
             return None
         return js_block_to_block(js_block)
 
-    @property
-    def entity(self) -> Entity:
+    async def get_entity(self) -> Entity:
         """The bot's own entity snapshot.
+
+        Ref: mineflayer/lib/plugins/entities.js — bot.entity
 
         Raises:
             NotSpawnedError: If ``wait_until_spawned()`` has not completed.
@@ -796,9 +800,10 @@ class Bot:
         ctrl = self._ensure_spawned()
         return js_entity_to_entity(ctrl.get_bot_entity())
 
-    @property
-    def entities(self) -> dict[int, Entity]:
+    async def get_entities(self) -> dict[int, Entity]:
         """All currently tracked entities as ``{entity_id: Entity}``.
+
+        Ref: mineflayer/lib/plugins/entities.js — bot.entities
 
         Note:
             This creates a snapshot of every tracked entity. For
@@ -867,22 +872,28 @@ class Bot:
         ctrl.set_physics_enabled(value)
         self._state.physics_enabled = value
 
-    @property
-    def firework_rocket_duration(self) -> int:
-        """Remaining firework rocket boost ticks (0 if not boosting)."""
+    async def get_firework_rocket_duration(self) -> int:
+        """Remaining firework rocket boost ticks (0 if not boosting).
+
+        Ref: mineflayer/lib/plugins/physics.js — bot.fireworkRocketDuration
+        """
         ctrl = self._ensure_connected()
         return ctrl.get_firework_rocket_duration()
 
-    @property
-    def tablist(self) -> tuple[str, str]:
-        """Tab list ``(header, footer)`` as plain strings."""
+    async def get_tablist(self) -> tuple[str, str]:
+        """Tab list ``(header, footer)`` as plain strings.
+
+        Ref: mineflayer/lib/plugins/tablist.js — bot.tablist
+        """
         ctrl = self._ensure_connected()
         data = ctrl.get_tablist()
         return (data["header"], data["footer"])
 
-    @property
-    def using_held_item(self) -> bool:
-        """Whether the bot is currently using its held item (e.g. eating)."""
+    async def get_using_held_item(self) -> bool:
+        """Whether the bot is currently using its held item (e.g. eating).
+
+        Ref: mineflayer/lib/plugins/inventory.js:46 — bot.usingHeldItem
+        """
         ctrl = self._ensure_connected()
         return ctrl.get_using_held_item()
 
@@ -892,9 +903,11 @@ class Bot:
         self._ensure_connected()
         return self._require_snapshot(self._state.rain_state, "rain_state")
 
-    @property
-    def inventory_items(self) -> list[ItemStack]:
-        """All items currently in the bot inventory."""
+    async def get_inventory_items(self) -> list[ItemStack]:
+        """All items currently in the bot inventory.
+
+        Ref: mineflayer/lib/plugins/inventory.js — bot.inventory.items()
+        """
         ctrl = self._ensure_connected()
         return [js_item_to_item_stack(item) for item in ctrl.get_inventory_items()]
 
