@@ -8,7 +8,6 @@ from minethon.models.entity import Entity
 from minethon.models.item import ItemStack
 from minethon.models.vec3 import Vec3
 
-
 # -- Lifecycle --
 
 

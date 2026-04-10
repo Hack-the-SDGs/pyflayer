@@ -9,11 +9,11 @@ from minethon.models.entity import Entity, EntityKind
 from minethon.models.errors import (
     BridgeError,
     InventoryError,
+    MinethonConnectionError,
+    MinethonError,
     NavigationError,
     NotSpawnedError,
     PluginError,
-    MinethonConnectionError,
-    MinethonError,
 )
 from minethon.models.events import (
     BlockBrokenEvent,

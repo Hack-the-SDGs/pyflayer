@@ -4,12 +4,12 @@ from minethon.models.block import Block
 from minethon.models.entity import Entity, EntityKind
 from minethon.models.errors import (
     BridgeError,
-    MinethonConnectionError,
     InventoryError,
+    MinethonConnectionError,
+    MinethonError,
     NavigationError,
     NotSpawnedError,
     PluginError,
-    MinethonError,
 )
 from minethon.models.events import (
     ActionBarEvent,
@@ -84,12 +84,12 @@ from minethon.models.events import (
     RainEvent,
     ResourcePackEvent,
     RespawnEvent,
-    ScoreRemovedEvent,
-    ScoreUpdatedEvent,
     ScoreboardCreatedEvent,
     ScoreboardDeletedEvent,
     ScoreboardPositionEvent,
     ScoreboardTitleChangedEvent,
+    ScoreRemovedEvent,
+    ScoreUpdatedEvent,
     SleepEvent,
     SoundEffectHeardEvent,
     SpawnEvent,

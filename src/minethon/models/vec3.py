@@ -12,7 +12,7 @@ class Vec3:
     y: float
     z: float
 
-    def distance_to(self, other: "Vec3") -> float:
+    def distance_to(self, other: Vec3) -> float:
         """Euclidean distance to another vector."""
         return math.sqrt(
             (self.x - other.x) ** 2
@@ -20,11 +20,11 @@ class Vec3:
             + (self.z - other.z) ** 2
         )
 
-    def offset(self, dx: float, dy: float, dz: float) -> "Vec3":
+    def offset(self, dx: float, dy: float, dz: float) -> Vec3:
         """Return a new vector offset by (dx, dy, dz)."""
         return Vec3(self.x + dx, self.y + dy, self.z + dz)
 
-    def floored(self) -> "Vec3":
+    def floored(self) -> Vec3:
         """Return a new vector with each component floored."""
         return Vec3(
             float(math.floor(self.x)),
@@ -32,8 +32,8 @@ class Vec3:
             float(math.floor(self.z)),
         )
 
-    def __add__(self, other: "Vec3") -> "Vec3":
+    def __add__(self, other: Vec3) -> Vec3:
         return Vec3(self.x + other.x, self.y + other.y, self.z + other.z)
 
-    def __sub__(self, other: "Vec3") -> "Vec3":
+    def __sub__(self, other: Vec3) -> Vec3:
         return Vec3(self.x - other.x, self.y - other.y, self.z - other.z)

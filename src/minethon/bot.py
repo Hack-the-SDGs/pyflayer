@@ -34,14 +34,14 @@ from minethon._bridge._events import (
     PutAwayDoneEvent,
     SleepDoneEvent,
     TabCompleteDoneEvent,
-    TradeDoneEvent,
     TossDoneEvent,
     TossStackDoneEvent,
+    TradeDoneEvent,
     TransferDoneEvent,
     UnequipDoneEvent,
-    WriteBookDoneEvent,
     WaitForTicksDoneEvent,
     WakeDoneEvent,
+    WriteBookDoneEvent,
 )
 from minethon._bridge.event_relay import EventRelay
 from minethon._bridge.js_bot import JSBotController
@@ -49,7 +49,6 @@ from minethon._bridge.marshalling import (
     js_block_to_block,
     js_entity_to_entity,
     js_item_to_item_stack,
-    js_recipe_to_recipe,
     js_window_to_window_handle,
     villager_snapshot_to_session,
 )
@@ -65,9 +64,9 @@ from minethon.models.entity import Entity, EntityKind
 from minethon.models.errors import (
     BridgeError,
     InventoryError,
-    NotSpawnedError,
     MinethonConnectionError,
     MinethonError,
+    NotSpawnedError,
 )
 from minethon.models.events import (
     BreathEvent,
@@ -1082,7 +1081,7 @@ class Bot:
             ctrl.start_dig(js_block)
             try:
                 event = await self._relay.wait_for(DigDoneEvent, timeout=60.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("dig timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"dig failed: {event.error}")
@@ -1119,7 +1118,7 @@ class Bot:
                         equip_event = await self._relay.wait_for(
                             EquipDoneEvent, timeout=10.0
                         )
-                    except asyncio.TimeoutError as exc:
+                    except TimeoutError as exc:
                         raise InventoryError("equip timed out") from exc
                     if equip_event.error is not None:
                         raise InventoryError(f"equip failed: {equip_event.error}")
@@ -1137,7 +1136,7 @@ class Bot:
             ctrl.start_place(js_block, face.x, face.y, face.z)
             try:
                 event = await self._relay.wait_for(PlaceDoneEvent, timeout=30.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("place timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"place failed: {event.error}")
@@ -1161,7 +1160,7 @@ class Bot:
             ctrl.start_place_entity(js_block, face.x, face.y, face.z)
             try:
                 event = await self._relay.wait_for(PlaceEntityDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("place_entity timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"place_entity failed: {event.error}")
@@ -1223,7 +1222,7 @@ class Bot:
             ctrl.start_look_at(x, y, z)
             try:
                 event = await self._relay.wait_for(LookAtDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("look_at timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"look_at failed: {event.error}")
@@ -1244,7 +1243,7 @@ class Bot:
             ctrl.start_look(yaw, pitch, force)
             try:
                 event = await self._relay.wait_for(LookDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("look timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"look failed: {event.error}")
@@ -1333,7 +1332,7 @@ class Bot:
             ctrl.start_sleep(js_block)
             try:
                 event = await self._relay.wait_for(SleepDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("sleep timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"sleep failed: {event.error}")
@@ -1349,7 +1348,7 @@ class Bot:
             ctrl.start_wake()
             try:
                 event = await self._relay.wait_for(WakeDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("wake timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"wake failed: {event.error}")
@@ -1373,7 +1372,7 @@ class Bot:
                 raise InventoryError(f"Item '{item_name}' not found in inventory")
             try:
                 event = await self._relay.wait_for(EquipDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise InventoryError("equip timed out") from exc
             if event.error is not None:
                 raise InventoryError(f"equip failed: {event.error}")
@@ -1393,7 +1392,7 @@ class Bot:
             ctrl.start_unequip(destination)
             try:
                 event = await self._relay.wait_for(UnequipDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise InventoryError("unequip timed out") from exc
             if event.error is not None:
                 raise InventoryError(f"unequip failed: {event.error}")
@@ -1417,7 +1416,7 @@ class Bot:
                 ctrl.start_toss_stack(js_item)
                 try:
                     event = await self._relay.wait_for(TossStackDoneEvent, timeout=10.0)
-                except asyncio.TimeoutError as exc:
+                except TimeoutError as exc:
                     raise InventoryError("toss timed out") from exc
                 if event.error is not None:
                     raise InventoryError(f"toss failed: {event.error}")
@@ -1425,7 +1424,7 @@ class Bot:
                 ctrl.start_toss(item_type, None, count)
                 try:
                     event = await self._relay.wait_for(TossDoneEvent, timeout=10.0)
-                except asyncio.TimeoutError as exc:
+                except TimeoutError as exc:
                     raise InventoryError("toss timed out") from exc
                 if event.error is not None:
                     raise InventoryError(f"toss failed: {event.error}")
@@ -1453,7 +1452,7 @@ class Bot:
             ctrl.start_consume()
             try:
                 event = await self._relay.wait_for(ConsumeDoneEvent, timeout=30.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("consume timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"consume failed: {event.error}")
@@ -1469,7 +1468,7 @@ class Bot:
             ctrl.start_fish()
             try:
                 event = await self._relay.wait_for(FishDoneEvent, timeout=120.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("fish timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"fish failed: {event.error}")
@@ -1496,7 +1495,7 @@ class Bot:
             ctrl.start_activate_block(js_block)
             try:
                 event = await self._relay.wait_for(ActivateBlockDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("activate_block timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"activate_block failed: {event.error}")
@@ -1518,7 +1517,7 @@ class Bot:
             ctrl.start_activate_entity(js_entity)
             try:
                 event = await self._relay.wait_for(ActivateEntityDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("activate_entity timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"activate_entity failed: {event.error}")
@@ -1541,7 +1540,7 @@ class Bot:
             ctrl.start_activate_entity_at(js_entity, position.x, position.y, position.z)
             try:
                 event = await self._relay.wait_for(ActivateEntityAtDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("activate_entity_at timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"activate_entity_at failed: {event.error}")
@@ -1557,7 +1556,7 @@ class Bot:
             ctrl.start_elytra_fly()
             try:
                 event = await self._relay.wait_for(ElytraFlyDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("elytra_fly timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"elytra_fly failed: {event.error}")
@@ -1668,7 +1667,7 @@ class Bot:
             ctrl.start_open_container(js_target)
             try:
                 event = await self._relay.wait_for(OpenContainerDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("open_container timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"open_container failed: {event.error}")
@@ -1688,7 +1687,7 @@ class Bot:
             ctrl.start_open_furnace(js_block)
             try:
                 event = await self._relay.wait_for(OpenFurnaceDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("open_furnace timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"open_furnace failed: {event.error}")
@@ -1711,7 +1710,7 @@ class Bot:
                     OpenEnchantmentTableDoneEvent,
                     timeout=10.0,
                 )
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("open_enchantment_table timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"open_enchantment_table failed: {event.error}")
@@ -1731,7 +1730,7 @@ class Bot:
             ctrl.start_open_anvil(js_block)
             try:
                 event = await self._relay.wait_for(OpenAnvilDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("open_anvil timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"open_anvil failed: {event.error}")
@@ -1751,7 +1750,7 @@ class Bot:
             ctrl.start_open_villager(js_villager)
             try:
                 event = await self._relay.wait_for(OpenVillagerDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("open_villager timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"open_villager failed: {event.error}")
@@ -1787,7 +1786,7 @@ class Bot:
             ctrl.start_trade(js_proxy, trade_index, times)
             try:
                 event = await self._relay.wait_for(TradeDoneEvent, timeout=30.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("trade timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"trade failed: {event.error}")
@@ -1828,7 +1827,7 @@ class Bot:
             ctrl.start_craft(js_recipe, count, js_table)
             try:
                 event = await self._relay.wait_for(CraftDoneEvent, timeout=30.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("craft timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"craft failed: {event.error}")
@@ -1849,7 +1848,7 @@ class Bot:
             ctrl.start_write_book(slot, pages)
             try:
                 event = await self._relay.wait_for(WriteBookDoneEvent, timeout=30.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("write_book timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"write_book failed: {event.error}")
@@ -1872,7 +1871,7 @@ class Bot:
             ctrl.start_click_window(slot, mouse_button, mode)
             try:
                 event = await self._relay.wait_for(ClickWindowDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("click_window timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"click_window failed: {event.error}")
@@ -1891,7 +1890,7 @@ class Bot:
             ctrl.start_put_away(slot)
             try:
                 event = await self._relay.wait_for(PutAwayDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("put_away timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"put_away failed: {event.error}")
@@ -1934,7 +1933,7 @@ class Bot:
             ctrl.start_transfer(options)
             try:
                 event = await self._relay.wait_for(TransferDoneEvent, timeout=30.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("transfer timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"transfer failed: {event.error}")
@@ -1954,7 +1953,7 @@ class Bot:
             ctrl.start_move_slot_item(source_slot, dest_slot)
             try:
                 event = await self._relay.wait_for(MoveSlotItemDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("move_slot_item timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"move_slot_item failed: {event.error}")
@@ -1978,7 +1977,7 @@ class Bot:
             ctrl.start_creative_fly_to(destination.x, destination.y, destination.z)
             try:
                 event = await self._relay.wait_for(CreativeFlyToDoneEvent, timeout=30.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("creative_fly_to timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"creative_fly_to failed: {event.error}")
@@ -2006,7 +2005,7 @@ class Bot:
             ctrl.start_creative_set_inventory_slot(slot, item)
             try:
                 event = await self._relay.wait_for(CreativeSetSlotDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("creative_set_inventory_slot timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"creative_set_inventory_slot failed: {event.error}")
@@ -2025,7 +2024,7 @@ class Bot:
             ctrl.start_creative_clear_slot(slot)
             try:
                 event = await self._relay.wait_for(CreativeClearSlotDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("creative_clear_slot timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"creative_clear_slot failed: {event.error}")
@@ -2043,7 +2042,7 @@ class Bot:
                 event = await self._relay.wait_for(
                     CreativeClearInventoryDoneEvent, timeout=30.0
                 )
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("creative_clear_inventory timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"creative_clear_inventory failed: {event.error}")
@@ -2148,7 +2147,7 @@ class Bot:
             ctrl.start_wait_for_chunks_to_load()
             try:
                 event = await self._relay.wait_for(ChunksLoadedDoneEvent, timeout=30.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("wait_for_chunks timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"wait_for_chunks failed: {event.error}")
@@ -2170,7 +2169,7 @@ class Bot:
                     WaitForTicksDoneEvent,
                     timeout=max(30.0, ticks * 0.05 + 5.0),
                 )
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("wait_for_ticks timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"wait_for_ticks failed: {event.error}")
@@ -2234,7 +2233,7 @@ class Bot:
             ctrl.start_tab_complete(text, assume_command)
             try:
                 event = await self._relay.wait_for(TabCompleteDoneEvent, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise BridgeError("tab_complete timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"tab_complete failed: {event.error}")
@@ -2265,7 +2264,7 @@ class Bot:
         while True:
             remaining = deadline - loop.time()
             if remaining <= 0:
-                raise asyncio.TimeoutError
+                raise TimeoutError
             event = await self._observe.wait_for(MessageStrEvent, timeout=remaining)
             for pattern in flat_patterns:
                 if isinstance(pattern, str):

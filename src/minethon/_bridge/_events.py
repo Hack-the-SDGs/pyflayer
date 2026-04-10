@@ -8,7 +8,6 @@ the helpers in ``_bridge/js/helpers.js``.
 from dataclasses import dataclass
 from typing import Any
 
-
 # -- Existing events --
 
 @dataclass(frozen=True, slots=True)

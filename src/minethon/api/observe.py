@@ -1,7 +1,7 @@
 """Event subscription API."""
 
-from collections.abc import Awaitable, Coroutine
-from typing import Any, Callable, TypeVar, overload
+from collections.abc import Awaitable, Callable, Coroutine
+from typing import Any, TypeVar, overload
 
 from minethon._bridge.event_relay import EventRelay
 from minethon.models.errors import MinethonConnectionError

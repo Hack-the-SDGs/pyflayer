@@ -4,14 +4,14 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
-from collections.abc import Coroutine
-from typing import Any, Callable
+from collections.abc import Callable, Coroutine
+from typing import Any
 
-from minethon._bridge.marshalling import js_entity_to_entity, js_item_to_item_stack
 from minethon._bridge._events import (
     ActivateBlockDoneEvent,
     ActivateEntityAtDoneEvent,
     ActivateEntityDoneEvent,
+    ChunksLoadedDoneEvent,
     ClickWindowDoneEvent,
     ConsumeDoneEvent,
     CraftDoneEvent,
@@ -19,7 +19,6 @@ from minethon._bridge._events import (
     CreativeClearSlotDoneEvent,
     CreativeFlyToDoneEvent,
     CreativeSetSlotDoneEvent,
-    ChunksLoadedDoneEvent,
     DigDoneEvent,
     ElytraFlyDoneEvent,
     EquipDoneEvent,
@@ -46,41 +45,34 @@ from minethon._bridge._events import (
     WakeDoneEvent,
     WriteBookDoneEvent,
 )
+from minethon._bridge.marshalling import js_entity_to_entity, js_item_to_item_stack
 from minethon.models.events import (
-    # Lifecycle
-    ChatEvent,
-    DeathEvent,
-    EndEvent,
-    ErrorEvent,
-    GameEvent,
-    GoalFailedEvent,
-    GoalReachedEvent,
-    HealthChangedEvent,
-    KickedEvent,
-    LoginEvent,
-    RespawnEvent,
-    SpawnEvent,
-    SpawnResetEvent,
-    WhisperEvent,
     # Chat/Message
     ActionBarEvent,
-    MessageEvent,
-    MessageStrEvent,
-    # Title
-    TitleClearEvent,
-    TitleEvent,
-    TitleTimesEvent,
+    # Digging
+    BlockBreakProgressEndEvent,
+    BlockBreakProgressObservedEvent,
+    # Block events
+    BlockPlacedEvent,
+    BlockUpdateEvent,
+    # Boss bar
+    BossBarCreatedEvent,
+    BossBarDeletedEvent,
+    BossBarUpdatedEvent,
     # Health & State
     BreathEvent,
-    ExperienceEvent,
-    HeldItemChangedEvent,
-    SleepEvent,
-    WakeEvent,
+    # Lifecycle
+    ChatEvent,
+    # World events
+    ChestLidMoveEvent,
+    ChunkColumnLoadEvent,
+    ChunkColumnUnloadEvent,
+    DeathEvent,
+    DiggingAbortedEvent,
+    DiggingCompletedEvent,
     # Movement
     DismountEvent,
-    ForcedMoveEvent,
-    MountEvent,
-    MoveEvent,
+    EndEvent,
     # Entity events
     EntityAttachEvent,
     EntityAttributesEvent,
@@ -108,39 +100,38 @@ from minethon.models.events import (
     EntityUncrouchEvent,
     EntityUpdateEvent,
     EntityWakeEvent,
+    ErrorEvent,
+    ExperienceEvent,
+    ForcedMoveEvent,
+    GameEvent,
+    GoalFailedEvent,
+    GoalReachedEvent,
+    # Sound
+    HardcodedSoundEffectHeardEvent,
+    HealthChangedEvent,
+    HeldItemChangedEvent,
     ItemDropEvent,
+    KickedEvent,
+    LoginEvent,
+    MessageEvent,
+    MessageStrEvent,
+    MountEvent,
+    MoveEvent,
+    NoteHeardEvent,
+    # Physics & Particles
+    ParticleEvent,
+    PhysicsTickEvent,
+    PistonMoveEvent,
     PlayerCollectEvent,
     # Player events
     PlayerJoinedEvent,
     PlayerLeftEvent,
     PlayerUpdatedEvent,
-    # Block events
-    BlockPlacedEvent,
-    BlockUpdateEvent,
-    ChunkColumnLoadEvent,
-    ChunkColumnUnloadEvent,
-    # Digging
-    BlockBreakProgressEndEvent,
-    BlockBreakProgressObservedEvent,
-    DiggingAbortedEvent,
-    DiggingCompletedEvent,
-    # Sound
-    HardcodedSoundEffectHeardEvent,
-    NoteHeardEvent,
-    SoundEffectHeardEvent,
     # Weather & Time
     RainEvent,
-    TimeEvent,
-    WeatherUpdateEvent,
-    # World events
-    ChestLidMoveEvent,
-    PistonMoveEvent,
-    UsedFireworkEvent,
-    # Window
-    WindowCloseEvent,
-    WindowOpenEvent,
     # Resource pack
     ResourcePackEvent,
+    RespawnEvent,
     # Scoreboard
     ScoreboardCreatedEvent,
     ScoreboardDeletedEvent,
@@ -148,19 +139,28 @@ from minethon.models.events import (
     ScoreboardTitleChangedEvent,
     ScoreRemovedEvent,
     ScoreUpdatedEvent,
+    SleepEvent,
+    SoundEffectHeardEvent,
+    SpawnEvent,
+    SpawnResetEvent,
     # Team
     TeamCreatedEvent,
     TeamMemberAddedEvent,
     TeamMemberRemovedEvent,
     TeamRemovedEvent,
     TeamUpdatedEvent,
-    # Boss bar
-    BossBarCreatedEvent,
-    BossBarDeletedEvent,
-    BossBarUpdatedEvent,
-    # Physics & Particles
-    ParticleEvent,
-    PhysicsTickEvent,
+    TimeEvent,
+    # Title
+    TitleClearEvent,
+    TitleEvent,
+    TitleTimesEvent,
+    UsedFireworkEvent,
+    WakeEvent,
+    WeatherUpdateEvent,
+    WhisperEvent,
+    # Window
+    WindowCloseEvent,
+    WindowOpenEvent,
 )
 from minethon.models.vec3 import Vec3
 
