@@ -1,4 +1,5 @@
 import pytest
+
 from minethon.models.entity import Entity, EntityKind
 from minethon.models.vec3 import Vec3
 

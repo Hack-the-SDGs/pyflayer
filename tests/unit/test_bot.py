@@ -14,8 +14,8 @@ from minethon._bridge.event_relay import EventRelay
 from minethon.api.observe import ObserveAPI
 from minethon.bot import Bot
 from minethon.models.errors import (
-    NotSpawnedError,
     MinethonConnectionError,
+    NotSpawnedError,
 )
 from minethon.models.events import (
     ChatEvent,
@@ -65,7 +65,9 @@ class TestObserveAPI:
     def test_on_raw_queues_before_bind(self) -> None:
         relay = EventRelay()
         api = ObserveAPI(relay)
-        raw = RawBotHandle(object(), raw_subscribe=api._on_raw, raw_unsubscribe=api._off_raw)
+        raw = RawBotHandle(
+            object(), raw_subscribe=api._on_raw, raw_unsubscribe=api._off_raw
+        )
 
         async def handler(data: dict) -> None:
             pass
@@ -85,7 +87,9 @@ class TestObserveAPI:
     def test_on_raw_direct_call(self) -> None:
         relay = EventRelay()
         api = ObserveAPI(relay)
-        raw = RawBotHandle(object(), raw_subscribe=api._on_raw, raw_unsubscribe=api._off_raw)
+        raw = RawBotHandle(
+            object(), raw_subscribe=api._on_raw, raw_unsubscribe=api._off_raw
+        )
 
         async def handler(data: dict) -> None:
             pass
@@ -96,7 +100,9 @@ class TestObserveAPI:
     def test_off_raw(self) -> None:
         relay = EventRelay()
         api = ObserveAPI(relay)
-        raw = RawBotHandle(object(), raw_subscribe=api._on_raw, raw_unsubscribe=api._off_raw)
+        raw = RawBotHandle(
+            object(), raw_subscribe=api._on_raw, raw_unsubscribe=api._off_raw
+        )
 
         async def handler(data: dict) -> None:
             pass
@@ -327,9 +333,7 @@ class TestBotGotoFlow:
         reached_fut = asyncio.ensure_future(
             relay.wait_for(GoalReachedEvent, timeout=1.0)
         )
-        failed_fut = asyncio.ensure_future(
-            relay.wait_for(GoalFailedEvent, timeout=1.0)
-        )
+        failed_fut = asyncio.ensure_future(relay.wait_for(GoalFailedEvent, timeout=1.0))
 
         done, pending = await asyncio.wait(
             [reached_fut, failed_fut],
@@ -357,9 +361,7 @@ class TestBotGotoFlow:
         reached_fut = asyncio.ensure_future(
             relay.wait_for(GoalReachedEvent, timeout=1.0)
         )
-        failed_fut = asyncio.ensure_future(
-            relay.wait_for(GoalFailedEvent, timeout=1.0)
-        )
+        failed_fut = asyncio.ensure_future(relay.wait_for(GoalFailedEvent, timeout=1.0))
 
         done, pending = await asyncio.wait(
             [reached_fut, failed_fut],

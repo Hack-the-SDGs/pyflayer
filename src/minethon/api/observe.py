@@ -1,10 +1,12 @@
 """Event subscription API."""
 
-from collections.abc import Awaitable, Coroutine
-from typing import Any, Callable, TypeVar, overload
+from collections.abc import Awaitable, Callable, Coroutine
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from minethon._bridge.event_relay import EventRelay
 from minethon.models.errors import MinethonConnectionError
+
+if TYPE_CHECKING:
+    from minethon._bridge.event_relay import EventRelay
 
 E = TypeVar("E")
 
@@ -125,9 +127,7 @@ class ObserveAPI:
         """Subscribe to a raw JS event by name for ``bot.raw``."""
         if event_name not in self._bound_raw_events:
             if self._js_bot is not None and self._on_fn is not None:
-                self._relay.bind_raw_js_event(
-                    self._js_bot, self._on_fn, event_name
-                )
+                self._relay.bind_raw_js_event(self._js_bot, self._on_fn, event_name)
                 self._bound_raw_events.add(event_name)
             else:
                 self._pending_raw_events.add(event_name)

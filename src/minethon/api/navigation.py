@@ -1,13 +1,16 @@
 """Path-planning and movement control."""
 
 import asyncio
+from typing import TYPE_CHECKING
 
-from minethon._bridge.event_relay import EventRelay
-from minethon._bridge.js_bot import JSBotController
-from minethon._bridge.plugin_host import PluginHost
 from minethon.models.entity import EntityKind
 from minethon.models.errors import NavigationError
 from minethon.models.events import GoalFailedEvent, GoalReachedEvent
+
+if TYPE_CHECKING:
+    from minethon._bridge.event_relay import EventRelay
+    from minethon._bridge.js_bot import JSBotController
+    from minethon._bridge.plugin_host import PluginHost
 
 
 class NavigationAPI:
@@ -34,9 +37,7 @@ class NavigationAPI:
         self._navigating = False
         self._goto_futs: list[asyncio.Future[object]] = []
 
-    async def goto(
-        self, x: float, y: float, z: float, *, radius: float = 1.0
-    ) -> None:
+    async def goto(self, x: float, y: float, z: float, *, radius: float = 1.0) -> None:
         """Move to a position using A* pathfinding.
 
         Resolves when the bot arrives within *radius* of the target.
@@ -87,9 +88,7 @@ class NavigationAPI:
                 self._host.stop_pathfinder()
                 if isinstance(exc, asyncio.TimeoutError):
                     raise NavigationError("Navigation timed out") from exc
-                raise NavigationError(
-                    f"Navigation failed: {exc}"
-                ) from exc
+                raise NavigationError(f"Navigation failed: {exc}") from exc
 
             if failed_fut in done:
                 if failed_fut.cancelled():
@@ -98,35 +97,25 @@ class NavigationAPI:
                 if exc is not None:
                     self._host.stop_pathfinder()
                     if isinstance(exc, asyncio.TimeoutError):
-                        raise NavigationError(
-                            "Navigation timed out"
-                        ) from exc
-                    raise NavigationError(
-                        f"Navigation failed: {exc}"
-                    ) from exc
+                        raise NavigationError("Navigation timed out") from exc
+                    raise NavigationError(f"Navigation failed: {exc}") from exc
                 result = failed_fut.result()
                 if isinstance(result, GoalFailedEvent):
                     self._host.stop_pathfinder()
-                    raise NavigationError(
-                        f"Navigation failed: {result.reason}"
-                    )
+                    raise NavigationError(f"Navigation failed: {result.reason}")
         except BaseException:
             # Stop the underlying pathfinder goal so the bot doesn't
             # keep navigating after caller cancellation / other errors.
             self._host.stop_pathfinder()
             reached_fut.cancel()
             failed_fut.cancel()
-            await asyncio.gather(
-                reached_fut, failed_fut, return_exceptions=True
-            )
+            await asyncio.gather(reached_fut, failed_fut, return_exceptions=True)
             raise
         finally:
             self._goto_futs = []
             self._navigating = False
 
-    async def follow(
-        self, username: str, *, distance: float = 2.0
-    ) -> None:
+    async def follow(self, username: str, *, distance: float = 2.0) -> None:
         """Start following a player continuously.
 
         Returns immediately once following begins.  The bot keeps
@@ -142,9 +131,7 @@ class NavigationAPI:
         if self._navigating:
             await self.stop()
 
-        js_entity = self._ctrl.get_entity_by_filter(
-            username, EntityKind.PLAYER, 1e6
-        )
+        js_entity = self._ctrl.get_entity_by_filter(username, EntityKind.PLAYER, 1e6)
         if js_entity is None:
             raise NavigationError(f"Player '{username}' not found")
         self._host.set_goal_follow(js_entity, distance)

@@ -5,8 +5,10 @@ proxy is held in ``Bot._window_registry`` (keyed by ``id``), not here.
 """
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from minethon.models.item import ItemStack
+if TYPE_CHECKING:
+    from minethon.models.item import ItemStack
 
 
 @dataclass(frozen=True, slots=True)

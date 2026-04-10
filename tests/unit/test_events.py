@@ -1,4 +1,5 @@
 import pytest
+
 from minethon.models.events import (
     BlockBrokenEvent,
     ChatEvent,

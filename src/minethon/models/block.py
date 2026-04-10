@@ -1,8 +1,10 @@
 """Block type for world blocks."""
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from minethon.models.vec3 import Vec3
+if TYPE_CHECKING:
+    from minethon.models.vec3 import Vec3
 
 
 @dataclass(frozen=True, slots=True)

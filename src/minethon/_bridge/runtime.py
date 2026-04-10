@@ -2,10 +2,12 @@
 
 import shutil
 import subprocess
-from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from minethon.models.errors import BridgeError
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
 class BridgeRuntime:
@@ -42,9 +44,7 @@ class BridgeRuntime:
             version_str = result.stdout.strip().lstrip("v")
             major = int(version_str.split(".")[0])
             if major < 18:
-                raise BridgeError(
-                    f"Node.js 18+ required, found v{version_str}."
-                )
+                raise BridgeError(f"Node.js 18+ required, found v{version_str}.")
         except (subprocess.SubprocessError, ValueError) as exc:
             raise BridgeError(f"Failed to check Node.js version: {exc}") from exc
 

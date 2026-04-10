@@ -1,6 +1,7 @@
 """Tests for BotConfig."""
 
 import pytest
+
 from minethon.config import BotConfig
 
 

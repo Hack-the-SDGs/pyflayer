@@ -2,9 +2,10 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from minethon.models.vec3 import Vec3
+if TYPE_CHECKING:
+    from minethon.models.vec3 import Vec3
 
 
 class EntityKind(Enum):
