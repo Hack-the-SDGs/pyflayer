@@ -50,8 +50,8 @@ from minethon._bridge.marshalling import (
     js_entity_to_entity,
     js_item_to_item_stack,
     js_recipe_to_recipe,
-    js_villager_to_session,
     js_window_to_window_handle,
+    villager_snapshot_to_session,
 )
 from minethon._bridge.plugin_host import PluginHost
 from minethon._bridge.runtime import BridgeRuntime
@@ -1739,7 +1739,9 @@ class Bot:
                 raise BridgeError(f"open_villager failed: {event.error}")
             if event.result is None:
                 raise BridgeError("open_villager returned no session")
-            session = js_villager_to_session(event.result)
+            ctrl = self._ensure_connected()
+            snapshot = ctrl.get_villager_session_snapshot(event.result)
+            session = villager_snapshot_to_session(snapshot)
             self._window_registry[session.id] = event.result
             return session
 
@@ -1771,7 +1773,8 @@ class Bot:
                 raise BridgeError("trade timed out") from exc
             if event.error is not None:
                 raise BridgeError(f"trade failed: {event.error}")
-            session = js_villager_to_session(js_proxy)
+            snapshot = ctrl.get_villager_session_snapshot(js_proxy)
+            session = villager_snapshot_to_session(snapshot)
             self._window_registry[session.id] = js_proxy
             return session
 

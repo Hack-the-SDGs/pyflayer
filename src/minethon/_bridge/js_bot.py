@@ -593,6 +593,27 @@ class JSBotController:
         except Exception as exc:
             raise BridgeError(f"get_inventory_snapshot failed: {exc}", js_stack=extract_js_stack(exc)) from exc
 
+    def get_villager_session_snapshot(self, js_villager: Any) -> dict[str, object]:
+        """Batch-serialise a villager session in one JS call.
+
+        Ref: mineflayer/lib/plugins/villager.js — villager trades
+        """
+        try:
+            raw = self._helpers.snapshotVillagerSession(js_villager)
+            result = dict(raw.valueOf())
+            trades_raw = raw.trades
+            trades = []
+            for t in trades_raw:
+                trade = dict(t.valueOf())
+                for key in ("inputItem1", "outputItem", "inputItem2"):
+                    val = getattr(t, key, None)
+                    trade[key] = dict(val.valueOf()) if val is not None else None
+                trades.append(trade)
+            result["trades"] = trades
+            return result
+        except Exception as exc:
+            raise BridgeError(f"get_villager_session_snapshot failed: {exc}", js_stack=extract_js_stack(exc)) from exc
+
     def find_inventory_item_by_name(self, name: str) -> tuple[int | None, Any | None]:
         """Find first inventory item matching *name*.
 

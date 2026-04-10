@@ -21,6 +21,25 @@
 
 const _err = (err) => err?.message ?? String(err);
 
+/**
+ * Serialise a single mineflayer Item to a plain object.
+ * Shared by snapshotInventory and snapshotVillagerSession.
+ */
+const _snapshotItem = (item) => {
+    if (!item) return null;
+    return {
+        name: item.name,
+        type: item.type,
+        count: item.count,
+        metadata: item.metadata,
+        slot: item.slot,
+        stackSize: item.stackSize,
+        displayName: item.displayName ?? null,
+        nbt: item.nbt ? JSON.parse(JSON.stringify(item.nbt)) : null,
+        enchants: item.enchants ? JSON.parse(JSON.stringify(item.enchants)) : null,
+    };
+};
+
 module.exports = {
 
     // -- Digging / Placing --
@@ -291,17 +310,26 @@ module.exports = {
      *   displayName:string|null}>}
      */
     snapshotInventory(bot) {
-        return bot.inventory.items().map(item => ({
-            name: item.name,
-            type: item.type,
-            count: item.count,
-            metadata: item.metadata,
-            nbt: item.nbt ? JSON.parse(JSON.stringify(item.nbt)) : null,
-            slot: item.slot,
-            stackSize: item.stackSize,
-            displayName: item.displayName ?? null,
-            enchants: item.enchants ? JSON.parse(JSON.stringify(item.enchants)) : null,
-        }));
+        return bot.inventory.items().map(_snapshotItem);
+    },
+
+    /**
+     * Serialise a villager trading session in one JS call.
+     * Ref: mineflayer/lib/plugins/villager.js
+     */
+    snapshotVillagerSession(villager) {
+        return {
+            id: villager.id,
+            title: villager.title,
+            trades: (villager.trades || []).map(t => ({
+                inputItem1: _snapshotItem(t.inputItem1),
+                outputItem: _snapshotItem(t.outputItem),
+                inputItem2: _snapshotItem(t.inputItem2),
+                tradeDisabled: t.tradeDisabled ?? false,
+                nbTradeUses: t.nbTradeUses ?? 0,
+                maximumNbTradeUses: t.maximumNbTradeUses ?? 0,
+            })),
+        };
     },
 
     snapshotEntities(bot) {

@@ -175,27 +175,43 @@ def js_window_to_window_handle(js_obj: Any) -> WindowHandle:
     )
 
 
-def js_villager_to_session(js_obj: Any) -> VillagerSession:
-    """Convert a JS ``Villager`` trading window to a typed session."""
+def _dict_to_item_stack(raw: dict[str, Any]) -> ItemStack:
+    """Convert a plain dict (from JS snapshot) to :class:`ItemStack`."""
+    enchants = raw.get("enchants")
+    nbt = raw.get("nbt")
+    return ItemStack(
+        name=str(raw["name"]),
+        display_name=str(raw["displayName"]) if raw.get("displayName") else str(raw["name"]),
+        count=int(raw["count"]),
+        slot=int(raw["slot"]),
+        max_stack_size=int(raw["stackSize"]),
+        enchantments=list(enchants) if enchants else None,
+        nbt=dict(nbt) if nbt else None,
+    )
+
+
+def villager_snapshot_to_session(data: dict[str, Any]) -> VillagerSession:
+    """Convert a plain dict snapshot to :class:`VillagerSession`.
+
+    Expects output from ``helpers.snapshotVillagerSession()``.
+    """
     trades: list[TradeOffer] = []
-    for trade in getattr(js_obj, "trades", []) or []:
-        secondary_input = getattr(trade, "inputItem2", None)
+    for trade in data.get("trades", []) or []:
+        secondary = trade.get("inputItem2")
         trades.append(
             TradeOffer(
-                first_input=js_item_to_item_stack(trade.inputItem1),
-                output=js_item_to_item_stack(trade.outputItem),
+                first_input=_dict_to_item_stack(trade["inputItem1"]),
+                output=_dict_to_item_stack(trade["outputItem"]),
                 secondary_input=(
-                    js_item_to_item_stack(secondary_input)
-                    if secondary_input is not None
-                    else None
+                    _dict_to_item_stack(secondary) if secondary else None
                 ),
-                disabled=bool(getattr(trade, "tradeDisabled", False)),
-                uses=int(getattr(trade, "nbTradeUses", 0)),
-                max_uses=int(getattr(trade, "maximumNbTradeUses", 0)),
+                disabled=bool(trade.get("tradeDisabled", False)),
+                uses=int(trade.get("nbTradeUses", 0)),
+                max_uses=int(trade.get("maximumNbTradeUses", 0)),
             )
         )
     return VillagerSession(
-        id=int(js_obj.id),
-        title=str(js_obj.title),
+        id=int(data["id"]),
+        title=str(data["title"]),
         trades=tuple(trades),
     )
