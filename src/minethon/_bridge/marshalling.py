@@ -83,7 +83,7 @@ def js_entity_to_entity(js_obj: Any) -> Entity:
     if js_vel is not None:
         try:
             velocity = Vec3(float(js_vel.x), float(js_vel.y), float(js_vel.z))
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             pass
 
     health: float | None = None
@@ -91,7 +91,7 @@ def js_entity_to_entity(js_obj: Any) -> Entity:
     if js_health is not None:
         try:
             health = float(js_health)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             pass
 
     name: str | None = None
@@ -135,7 +135,7 @@ def js_item_to_item_stack(js_obj: Any) -> ItemStack:
     if js_enchants is not None:
         try:
             enchants = list(js_enchants.valueOf())
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             pass
 
     nbt: dict[str, Any] | None = None
@@ -143,7 +143,7 @@ def js_item_to_item_stack(js_obj: Any) -> ItemStack:
     if js_nbt is not None:
         try:
             nbt = dict(js_nbt.valueOf())
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             pass
 
     return ItemStack(

@@ -104,14 +104,14 @@ class PluginHost:
             if pathfinder is None:
                 return
             pathfinder.setGoal(None)
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return
 
     def is_pathfinding(self) -> bool:
         """Whether the pathfinder is actively moving along a path."""
         try:
             return bool(self._js_bot.pathfinder.isMoving())
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return False
 
     def is_pathfinder_loaded(self) -> bool:

@@ -396,7 +396,7 @@ class JSBotController:
         """Read the JS ``bot.isAlive`` property directly."""
         try:
             return bool(self._js_bot.isAlive)
-        except (TypeError, AttributeError):
+        except TypeError, AttributeError:
             return False
 
     def get_username_js(self) -> str:
@@ -483,7 +483,7 @@ class JSBotController:
         try:
             entities = self._js_bot.entities
             return entities[str(entity_id)]
-        except (KeyError, TypeError):
+        except KeyError, TypeError:
             return None
         except Exception as exc:
             raise BridgeError(
@@ -654,14 +654,14 @@ class JSBotController:
         """Whether the bot is currently using the held item."""
         try:
             return bool(self._js_bot.usingHeldItem)
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return False
 
     def get_rain_state(self) -> float:
         """Rain level (0-1)."""
         try:
             return float(self._js_bot.rainState)
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return 0.0
 
     def get_inventory_items(self) -> list[Any]:
@@ -842,28 +842,28 @@ class JSBotController:
         """Whether the block is diggable and in range."""
         try:
             return bool(self._js_bot.canDigBlock(js_block))
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return False
 
     def can_see_block(self, js_block: Any) -> bool:
         """Whether the bot can see the block."""
         try:
             return bool(self._js_bot.canSeeBlock(js_block))
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return False
 
     def block_at_cursor(self, max_distance: float = 256) -> Any | None:
         """Return the block the bot is looking at, or None."""
         try:
             return self._js_bot.blockAtCursor(max_distance)
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return None
 
     def entity_at_cursor(self, max_distance: float = 3.5) -> Any | None:
         """Return the entity the bot is looking at, or None."""
         try:
             return self._js_bot.entityAtCursor(max_distance)
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return None
 
     def accept_resource_pack(self) -> None:
@@ -897,7 +897,7 @@ class JSBotController:
         """Check if a feature is supported in the current MC version."""
         try:
             return bool(self._js_bot.supportFeature(name))
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return False
 
     def do_respawn(self) -> None:
@@ -913,7 +913,7 @@ class JSBotController:
         """Return True if the block is a bed."""
         try:
             return bool(self._js_bot.isABed(js_block))
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return False
 
     def update_sign(self, js_block: Any, text: str, back: bool = False) -> None:
