@@ -1377,6 +1377,7 @@ class Bot:
         """
         ctrl = self._ensure_connected()
         ctrl.set_quick_bar_slot(slot)
+        self._state.quick_bar_slot = slot
 
     # -- Actions (extended) --
 
