@@ -213,7 +213,6 @@ __all__ = [
     "PistonMoveEvent",
     "PlayerCollectEvent",
     "PlayerInfo",
-    "PlayerInfo",
     # Player events
     "PlayerJoinedEvent",
     "PlayerLeftEvent",

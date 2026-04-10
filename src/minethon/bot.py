@@ -2272,7 +2272,7 @@ class Bot:
                 if event.result is not None:
                     return [str(item) for item in event.result]
                 return []
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 return []
 
     async def await_message(

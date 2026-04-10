@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from minethon.models.entity import Entity
-    from minethon.models.item import ItemStack
-    from minethon.models.vec3 import Vec3
+from minethon.models.entity import Entity  # noqa: TC001
+from minethon.models.item import ItemStack  # noqa: TC001
+from minethon.models.vec3 import Vec3  # noqa: TC001
 
 # -- Lifecycle --
 
