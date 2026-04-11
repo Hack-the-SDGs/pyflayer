@@ -1,9 +1,9 @@
-"""03_drasl_auth -- Connect via a custom Drasl auth server.
+"""drasl_auth -- Connect via a custom Drasl auth server.
 
 Run with:
-    cp examples/03_drasl_auth/.env.example examples/03_drasl_auth/.env
+    cp examples/demos/drasl_auth/.env.example examples/demos/drasl_auth/.env
     # Edit .env with your credentials, then:
-    uv run --env-file examples/03_drasl_auth/.env examples/03_drasl_auth/main.py
+    uv run --env-file examples/demos/drasl_auth/.env examples/demos/drasl_auth/main.py
 """
 
 import asyncio

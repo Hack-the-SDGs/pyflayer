@@ -1,4 +1,4 @@
-# 03 — Drasl Auth
+# Drasl Auth
 
 透過自建 [Drasl](https://github.com/unmojang/drasl) 驗證伺服器連線。
 
@@ -19,7 +19,7 @@
 複製環境變數範本並填入你的資訊：
 
 ```bash
-cp examples/03_drasl_auth/.env.example examples/03_drasl_auth/.env
+cp examples/demos/drasl_auth/.env.example examples/demos/drasl_auth/.env
 ```
 
 編輯 `.env`：
@@ -27,6 +27,7 @@ cp examples/03_drasl_auth/.env.example examples/03_drasl_auth/.env
 ```env
 MC_USERNAME=your_username
 MC_PASSWORD=your_password
+MC_HOST=mc.example.com
 MC_AUTH_SERVER=https://drasl.example.com/auth
 MC_SESSION_SERVER=https://drasl.example.com/session
 ```
@@ -34,5 +35,5 @@ MC_SESSION_SERVER=https://drasl.example.com/session
 ## 執行
 
 ```bash
-uv run --env-file examples/03_drasl_auth/.env examples/03_drasl_auth/main.py
+uv run --env-file examples/demos/drasl_auth/.env examples/demos/drasl_auth/main.py
 ```

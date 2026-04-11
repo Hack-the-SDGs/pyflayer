@@ -1,4 +1,5 @@
-"""02_goto_player.py -- Navigate to and follow players on command."""
+"""goto_player -- Navigate to and follow players on command."""
+
 import asyncio
 
 from minethon import Bot

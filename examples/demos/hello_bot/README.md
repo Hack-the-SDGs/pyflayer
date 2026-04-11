@@ -1,4 +1,4 @@
-# 01 — Hello Bot
+# Hello Bot
 
 基本的 minethon bot，連線到 Minecraft 伺服器並回覆聊天訊息。
 
@@ -16,5 +16,5 @@
 ## 執行
 
 ```bash
-uv run examples/01_hello_bot/main.py
+uv run examples/demos/hello_bot/main.py
 ```

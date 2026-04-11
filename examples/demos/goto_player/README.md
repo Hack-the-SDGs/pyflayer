@@ -1,4 +1,4 @@
-# 02 — Goto Player
+# Goto Player
 
 導航到指定玩家位置並跟隨的 bot。
 
@@ -17,5 +17,5 @@
 ## 執行
 
 ```bash
-uv run examples/02_goto_player/main.py
+uv run examples/demos/goto_player/main.py
 ```

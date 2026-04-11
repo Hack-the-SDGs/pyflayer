@@ -1,4 +1,4 @@
-"""01_hello_bot.py -- Basic minethon bot."""
+"""hello_bot -- Basic minethon bot."""
 
 import asyncio
 
