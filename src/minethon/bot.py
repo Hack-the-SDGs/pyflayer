@@ -53,6 +53,7 @@ from minethon._bridge.marshalling import (
 )
 from minethon._bridge.plugin_registry import PluginRegistry
 from minethon._bridge.runtime import BridgeRuntime
+from minethon.api.armor import ArmorAPI
 from minethon.api.navigation import NavigationAPI
 from minethon.api.observe import ObserveAPI
 from minethon.api.plugins import PluginAPI
@@ -208,6 +209,7 @@ class Bot:
         self._resolved_username: str | None = None
         self._registry: PluginRegistry | None = None
         self._navigation: NavigationAPI | None = None
+        self._armor: ArmorAPI | None = None
         self._on_end_handler: object | None = None
         # Serialize long-running operations that use global completion
         # events, preventing concurrent calls from stealing each other's
@@ -635,6 +637,7 @@ class Bot:
                 self._controller.quit()
             self._controller = None
         self._navigation = None
+        self._armor = None
         self._registry = None
         if self._runtime is not None:
             self._runtime.shutdown()
@@ -1312,6 +1315,34 @@ class Bot:
         if self._navigation is None:
             raise MinethonConnectionError("Bot is not connected.")
         return self._navigation
+
+    @property
+    def armor(self) -> ArmorAPI:
+        """Armor management API.
+
+        Requires ``mineflayer-armor-manager`` to be loaded first::
+
+            await bot.plugins.load("mineflayer-armor-manager")
+            await bot.armor.equip_best()
+
+        Raises:
+            MinethonConnectionError: If the bot is not connected.
+            BridgeError: If the armor-manager plugin is not loaded.
+
+        Ref: mineflayer-armor-manager/dist/index.js — ``bot.armorManager``
+        """
+        if self._registry is None:
+            raise MinethonConnectionError("Bot is not connected.")
+        if self._armor is not None:
+            return self._armor
+        bridge = self._registry.get_armor_manager()
+        if bridge is None or not bridge.is_loaded:
+            raise BridgeError(
+                "armor-manager plugin is not loaded. "
+                'Call await bot.plugins.load("mineflayer-armor-manager") first.'
+            )
+        self._armor = ArmorAPI(bridge, self._relay)
+        return self._armor
 
     @property
     def observe(self) -> ObserveAPI:

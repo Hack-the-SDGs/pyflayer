@@ -1,5 +1,6 @@
 """minethon -- A Python-first Mineflayer SDK."""
 
+from minethon.api.armor import ArmorAPI
 from minethon.api.navigation import NavigationAPI
 from minethon.api.observe import ObserveAPI
 from minethon.api.plugins import PluginAPI
@@ -39,6 +40,7 @@ from minethon.models.window import TradeOffer, VillagerSession, WindowHandle
 from minethon.raw import RawBotHandle
 
 __all__ = [
+    "ArmorAPI",
     "Block",
     "BlockBrokenEvent",
     "Bot",
