@@ -310,3 +310,26 @@ class PlaceEntityDoneEvent:
 
     error: str | None = None
     result: Any = None
+
+
+# -- Web inventory service --
+
+
+@dataclass(frozen=True, slots=True)
+class WebInvStartDoneEvent:
+    """Web inventory start() finished.
+
+    Ref: mineflayer-web-inventory/index.js — start()
+    """
+
+    error: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class WebInvStopDoneEvent:
+    """Web inventory stop() finished.
+
+    Ref: mineflayer-web-inventory/index.js — stop()
+    """
+
+    error: str | None = None

@@ -290,6 +290,20 @@ module.exports = {
             .catch(err => bot.emit("_minethon:placeEntityDone", _err(err)));
     },
 
+    // -- Web Inventory Service (Type B) --
+
+    startWebInventory(bot) {
+        bot.webInventory.start()
+            .then(() => bot.emit("_minethon:webInvStartDone"))
+            .catch(err => bot.emit("_minethon:webInvStartDone", _err(err)));
+    },
+
+    stopWebInventory(bot) {
+        bot.webInventory.stop()
+            .then(() => bot.emit("_minethon:webInvStopDone"))
+            .catch(err => bot.emit("_minethon:webInvStopDone", _err(err)));
+    },
+
     /**
      * Serialise all tracked entities into a plain array in one JS call,
      * avoiding per-entity bridge round-trips from Python.
