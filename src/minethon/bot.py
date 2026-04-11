@@ -69,6 +69,7 @@ from minethon.models.errors import (
 )
 from minethon.models.events import (
     BreathEvent,
+    DeathEvent,
     EndEvent,
     ExperienceEvent,
     GameEvent,
@@ -116,6 +117,7 @@ class _BotStateCache:
     held_item_known: bool = False
     rain_state: float | None = None
     thunder_state: float | None = None
+    is_alive: bool = True
     is_sleeping: bool = False
     is_sleeping_known: bool = False
     version: str | None = None
@@ -308,6 +310,12 @@ class Bot:
             self._state.is_sleeping_known = True
         except BridgeError:
             pass
+        # Ref: mineflayer/lib/plugins/game.js — bot.username (set at login)
+        if self._resolved_username is None:
+            try:
+                self._resolved_username = ctrl.get_username_js()
+            except BridgeError:
+                pass
         # Ref: mineflayer/lib/plugins/inventory.js — bot.version (set once at login)
         if self._state.version is None:
             try:
@@ -409,11 +417,16 @@ class Bot:
 
         async def _on_spawn(_event: SpawnEvent) -> None:
             self._spawned = True
+            self._state.is_alive = True
             if self._controller is not None and self._connected:
                 self._refresh_spawn_state_cache()
 
         async def _on_respawn(_event: RespawnEvent) -> None:
             self._spawned = False
+            # is_alive will be reset to True by the following _on_spawn handler.
+
+        async def _on_death(_event: DeathEvent) -> None:
+            self._state.is_alive = False
 
         async def _on_move(event: MoveEvent) -> None:
             self._state.position = event.position
@@ -503,6 +516,7 @@ class Bot:
 
         self._relay.add_handler(SpawnEvent, _on_spawn)  # type: ignore[arg-type]
         self._relay.add_handler(RespawnEvent, _on_respawn)  # type: ignore[arg-type]
+        self._relay.add_handler(DeathEvent, _on_death)  # type: ignore[arg-type]
         self._relay.add_handler(MoveEvent, _on_move)  # type: ignore[arg-type]
         self._relay.add_handler(GoalReachedEvent, _on_goal_reached)  # type: ignore[arg-type]
         self._relay.add_handler(HealthChangedEvent, _on_health)  # type: ignore[arg-type]
@@ -611,6 +625,8 @@ class Bot:
             self._on_end_handler = None
         self._relay.reset()
         self._observe._reset_state()  # pyright: ignore[reportPrivateUsage]
+        if self._plugin_host is not None:
+            self._plugin_host.stop_pathfinder()
         if self._controller is not None:
             if self._connected:
                 self._controller.quit()
@@ -646,11 +662,12 @@ class Bot:
     def is_alive(self) -> bool:
         """Whether the bot entity is alive.
 
-        Reads the ``isAlive`` flag from mineflayer directly, which
-        accounts for respawn transitions.
+        Derived from spawn/death/respawn events — no live bridge I/O.
+
+        Ref: mineflayer/lib/plugins/health.js — bot.isAlive
         """
-        ctrl = self._ensure_spawned()
-        return ctrl.get_is_alive_js()
+        self._ensure_spawned()
+        return self._state.is_alive
 
     @property
     def position(self) -> Vec3:
@@ -687,12 +704,12 @@ class Bot:
         """Bot username.
 
         After authentication the server may assign a different name
-        (e.g. Microsoft auth).  This reads the live value from the JS
-        bot on first access after connecting, then caches it.
+        (e.g. Microsoft auth).  Populated from the JS bot during
+        state cache refresh — no live bridge I/O from this property.
+
+        Ref: mineflayer/lib/plugins/game.js — bot.username
         """
-        if self._controller is not None and self._connected:
-            if self._resolved_username is None:
-                self._resolved_username = self._controller.get_username_js()
+        if self._resolved_username is not None:
             return self._resolved_username
         return self._config.username
 

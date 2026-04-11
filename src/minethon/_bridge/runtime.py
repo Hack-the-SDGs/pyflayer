@@ -22,12 +22,12 @@ class BridgeRuntime:
         self._js: ModuleType | None = None
 
     def ensure_node_available(self) -> None:
-        """Check that Node.js >= 18 is on PATH."""
+        """Check that Node.js >= 22 is on PATH."""
         node = shutil.which("node")
         if node is None:
             raise BridgeError(
                 "Node.js not found in PATH. "
-                "Please install Node.js 18+ from https://nodejs.org/"
+                "Please install Node.js 22+ from https://nodejs.org/"
             )
         try:
             result = subprocess.run(
@@ -43,8 +43,8 @@ class BridgeRuntime:
                 )
             version_str = result.stdout.strip().lstrip("v")
             major = int(version_str.split(".")[0])
-            if major < 18:
-                raise BridgeError(f"Node.js 18+ required, found v{version_str}.")
+            if major < 22:
+                raise BridgeError(f"Node.js 22+ required, found v{version_str}.")
         except (subprocess.SubprocessError, ValueError) as exc:
             raise BridgeError(f"Failed to check Node.js version: {exc}") from exc
 

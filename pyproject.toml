@@ -76,6 +76,8 @@ pylint.max-statements = 65
     "PLR2004",             # magic values (ports, coords) are fine
     "S",                   # security lints less relevant in demo code
     "ERA001",              # commented-out code OK while iterating
+    "BLE001",              # broad except is fine for demo error handling
+    "ASYNC110",            # sleep-in-loop keep-alive is idiomatic for bot examples
 ]
 
 # bridge internals — JS interop constraints
@@ -90,7 +92,7 @@ pylint.max-statements = 65
 "src/minethon/_bridge/runtime.py" = [
     "PLC0415", # delayed `import javascript` for conditional bridge loading
     "S603", "PLW1510",   # subprocess.run for node version check
-    "PLR2004", # magic value 18 for Node.js minimum version
+    "PLR2004", # magic value 22 for Node.js minimum version
 ]
 "src/minethon/_bridge/js_bot.py" = ["S110", "FBT003"]
 "src/minethon/_bridge/plugin_host.py" = ["FBT003"]
