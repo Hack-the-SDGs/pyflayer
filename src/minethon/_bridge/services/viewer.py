@@ -104,7 +104,7 @@ class ViewerService:
             return
         try:
             self._js_bot.viewer.close()
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             pass
         self._started = False
 

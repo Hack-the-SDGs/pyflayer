@@ -72,17 +72,13 @@ class PathfinderBridge(PluginBridge):
                 js_stack=extract_js_stack(exc),
             ) from exc
 
-    def set_goal_near(
-        self, x: float, y: float, z: float, radius: float
-    ) -> None:
+    def set_goal_near(self, x: float, y: float, z: float, radius: float) -> None:
         """Set a GoalNear target.  Pathfinder starts navigating immediately.
 
         Ref: mineflayer-pathfinder/lib/goals.js — ``GoalNear``
         """
         if not self._loaded:
-            raise BridgeError(
-                "set_goal_near failed: pathfinder has not been loaded"
-            )
+            raise BridgeError("set_goal_near failed: pathfinder has not been loaded")
         try:
             goal = self._pf_goals.GoalNear(x, y, z, radius)
             self._js_bot.pathfinder.setGoal(goal)
@@ -102,9 +98,7 @@ class PathfinderBridge(PluginBridge):
         Ref: mineflayer-pathfinder/lib/goals.js — ``GoalFollow``
         """
         if not self._loaded:
-            raise BridgeError(
-                "set_goal_follow failed: pathfinder has not been loaded"
-            )
+            raise BridgeError("set_goal_follow failed: pathfinder has not been loaded")
         try:
             goal = self._pf_goals.GoalFollow(js_entity, distance)
             dynamic = True  # GoalFollow requires dynamic=True
@@ -151,7 +145,7 @@ class PathfinderBridge(PluginBridge):
             if pathfinder is None:
                 return
             pathfinder.setGoal(None)
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return
 
     def is_pathfinding(self) -> bool:
@@ -161,7 +155,7 @@ class PathfinderBridge(PluginBridge):
         """
         try:
             return bool(self._js_bot.pathfinder.isMoving())
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return False
 
     def teardown(self) -> None:

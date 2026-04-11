@@ -8,7 +8,9 @@ from minethon._bridge.plugins.pathfinder import PathfinderBridge
 from minethon.models.errors import BridgeError, NavigationError
 
 
-def _make_bridge() -> tuple[PathfinderBridge, MagicMock, MagicMock, MagicMock, MagicMock]:
+def _make_bridge() -> tuple[
+    PathfinderBridge, MagicMock, MagicMock, MagicMock, MagicMock
+]:
     runtime = MagicMock()
     js_bot = MagicMock()
     relay = MagicMock()

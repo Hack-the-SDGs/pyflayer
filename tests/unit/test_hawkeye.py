@@ -47,7 +47,8 @@ def _make_bridge() -> tuple[HawkEyeBridge, MagicMock, MagicMock, MagicMock]:
 
 
 def _load_bridge(
-    bridge: HawkEyeBridge, runtime: MagicMock,
+    bridge: HawkEyeBridge,
+    runtime: MagicMock,
 ) -> None:
     mod = MagicMock()
     mod.default = MagicMock()

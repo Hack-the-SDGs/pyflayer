@@ -45,9 +45,7 @@ class PanoramaAPI:
         self._panorama_lock = asyncio.Lock()
         self._picture_lock = asyncio.Lock()
 
-    async def raw_take_panorama(
-        self, camera_height: float | None = None
-    ) -> Any:
+    async def raw_take_panorama(self, camera_height: float | None = None) -> Any:
         """**Raw escape hatch.** Take a 360-degree panorama.
 
         Returns a raw JS JPEG stream proxy — caller is responsible
@@ -68,9 +66,7 @@ class PanoramaAPI:
         async with self._panorama_lock:
             self._bridge.start_take_panorama(camera_height)
             try:
-                event = await self._relay.wait_for(
-                    PanoramaDoneEvent, timeout=60.0
-                )
+                event = await self._relay.wait_for(PanoramaDoneEvent, timeout=60.0)
             except TimeoutError as exc:
                 raise BridgeError("panorama capture timed out") from exc
             if event.error is not None:
@@ -97,13 +93,15 @@ class PanoramaAPI:
         """
         async with self._picture_lock:
             self._bridge.start_take_picture(
-                point.x, point.y, point.z,
-                direction.x, direction.y, direction.z,
+                point.x,
+                point.y,
+                point.z,
+                direction.x,
+                direction.y,
+                direction.z,
             )
             try:
-                event = await self._relay.wait_for(
-                    PictureDoneEvent, timeout=60.0
-                )
+                event = await self._relay.wait_for(PictureDoneEvent, timeout=60.0)
             except TimeoutError as exc:
                 raise BridgeError("picture capture timed out") from exc
             if event.error is not None:

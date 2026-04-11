@@ -1369,7 +1369,10 @@ class JSBotController:
     # -- Plugin: mineflayer-tool --
 
     def start_tool_equip_for_block(
-        self, js_block: Any, *, require_harvest: bool = False,
+        self,
+        js_block: Any,
+        *,
+        require_harvest: bool = False,
     ) -> None:
         """Start equipping the best tool for a block without blocking.
 
@@ -1380,7 +1383,9 @@ class JSBotController:
         try:
             options = {"requireHarvest": require_harvest}
             self._helpers.startToolEquipForBlock(
-                self._js_bot, js_block, options,
+                self._js_bot,
+                js_block,
+                options,
             )
         except Exception as exc:
             raise BridgeError(

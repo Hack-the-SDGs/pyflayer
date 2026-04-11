@@ -55,9 +55,7 @@ class HawkEyeBridge(PluginBridge):
             mod = self._runtime.require(self.NPM_NAME)
             inject = getattr(mod, "default", mod)
             self._js_bot.loadPlugin(inject)
-            self._helpers = self._runtime.require(
-                str(_JS_HELPERS_PATH.as_posix())
-            )
+            self._helpers = self._runtime.require(str(_JS_HELPERS_PATH.as_posix()))
         except Exception as exc:
             self._loaded = False
             raise BridgeError(
@@ -85,16 +83,12 @@ class HawkEyeBridge(PluginBridge):
         Ref: minecrafthawkeye/dist/hawkEye.js — ``autoAttack(target, weapon)``
         """
         if not self._loaded:
-            raise BridgeError(
-                "auto_attack failed: hawkeye has not been loaded"
-            )
+            raise BridgeError("auto_attack failed: hawkeye has not been loaded")
         js_entity = self._controller.get_entity_by_id(entity_id)
         if js_entity is None:
             raise BridgeError(f"Entity with id {entity_id} not found")
         try:
-            return bool(
-                self._js_bot.hawkEye.autoAttack(js_entity, weapon_value)
-            )
+            return bool(self._js_bot.hawkEye.autoAttack(js_entity, weapon_value))
         except Exception as exc:
             raise BridgeError(
                 f"auto_attack failed: {exc}",
@@ -121,16 +115,12 @@ class HawkEyeBridge(PluginBridge):
         Ref: minecrafthawkeye/dist/hawkEye.js — ``oneShot(target, weapon)``
         """
         if not self._loaded:
-            raise BridgeError(
-                "one_shot failed: hawkeye has not been loaded"
-            )
+            raise BridgeError("one_shot failed: hawkeye has not been loaded")
         js_entity = self._controller.get_entity_by_id(entity_id)
         if js_entity is None:
             raise BridgeError(f"Entity with id {entity_id} not found")
         try:
-            return bool(
-                self._js_bot.hawkEye.oneShot(js_entity, weapon_value)
-            )
+            return bool(self._js_bot.hawkEye.oneShot(js_entity, weapon_value))
         except Exception as exc:
             raise BridgeError(
                 f"one_shot failed: {exc}",
@@ -152,7 +142,7 @@ class HawkEyeBridge(PluginBridge):
             if hawk_eye is None:
                 return
             hawk_eye.stop()
-        except (AttributeError, TypeError):
+        except AttributeError, TypeError:
             return
 
     def start_simply_shot(self, yaw: float, pitch: float) -> None:
@@ -170,9 +160,7 @@ class HawkEyeBridge(PluginBridge):
         Ref: minecrafthawkeye/dist/hawkEye.js — ``simplyShot(yaw, pitch)``
         """
         if not self._loaded:
-            raise BridgeError(
-                "start_simply_shot failed: hawkeye has not been loaded"
-            )
+            raise BridgeError("start_simply_shot failed: hawkeye has not been loaded")
         try:
             self._helpers.startSimplyShot(self._js_bot, yaw, pitch)
         except Exception as exc:

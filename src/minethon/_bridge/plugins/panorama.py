@@ -41,9 +41,7 @@ class PanoramaBridge(PluginBridge):
     def _ensure_helpers(self) -> Any:
         """Lazy-load helpers.js and cache the reference."""
         if self._helpers is None:
-            self._helpers = self._runtime.require(
-                str(_JS_HELPERS_PATH.as_posix())
-            )
+            self._helpers = self._runtime.require(str(_JS_HELPERS_PATH.as_posix()))
         return self._helpers
 
     def _do_load(self) -> None:
@@ -139,9 +137,7 @@ class PanoramaBridge(PluginBridge):
         Ref: mineflayer-panorama/lib/camera.js — ``takePicture(point, direction)``
         """
         if not self._loaded:
-            raise BridgeError(
-                "start_take_picture failed: panorama has not been loaded"
-            )
+            raise BridgeError("start_take_picture failed: panorama has not been loaded")
         try:
             helpers = self._ensure_helpers()
             helpers.startPicture(

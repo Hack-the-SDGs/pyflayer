@@ -426,5 +426,3 @@ class GuiDropDoneEvent:
 
 
 # -- Panorama plugin --
-
-

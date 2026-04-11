@@ -287,9 +287,7 @@ class TestPanoramaAPIRawTakePanorama:
 
         relay.wait_for = _mock_wait_for
         api = PanoramaAPI(bridge, relay)
-        await asyncio.gather(
-            api.raw_take_panorama(), api.raw_take_panorama()
-        )
+        await asyncio.gather(api.raw_take_panorama(), api.raw_take_panorama())
         assert bridge.start_take_panorama.call_count == 2
 
 
@@ -349,9 +347,7 @@ class TestPanoramaAPIRawTakePicture:
         bridge = MagicMock(spec=PanoramaBridge)
         relay = MagicMock()
 
-        async def _mock_wait_for(
-            *_args: object, **_kwargs: object
-        ) -> PictureDoneEvent:
+        async def _mock_wait_for(*_args: object, **_kwargs: object) -> PictureDoneEvent:
             await asyncio.sleep(0.01)
             return PictureDoneEvent(error=None, result="jpeg")
 
@@ -359,7 +355,5 @@ class TestPanoramaAPIRawTakePicture:
         api = PanoramaAPI(bridge, relay)
         p = Vec3(0, 0, 0)
         d = Vec3(1, 0, 0)
-        await asyncio.gather(
-            api.raw_take_picture(p, d), api.raw_take_picture(p, d)
-        )
+        await asyncio.gather(api.raw_take_picture(p, d), api.raw_take_picture(p, d))
         assert bridge.start_take_picture.call_count == 2

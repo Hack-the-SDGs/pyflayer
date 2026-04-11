@@ -1799,15 +1799,11 @@ class EventRelay:
             target_js = normalized[0] if normalized else None
             try:
                 target = (
-                    js_entity_to_entity(target_js)
-                    if target_js is not None
-                    else None
+                    js_entity_to_entity(target_js) if target_js is not None else None
                 )
             except Exception:
                 target = None
-            self._post(
-                AutoShotStoppedEvent, AutoShotStoppedEvent(target=target)
-            )
+            self._post(AutoShotStoppedEvent, AutoShotStoppedEvent(target=target))
 
         # -- GUI (mineflayer-gui) done events --
 

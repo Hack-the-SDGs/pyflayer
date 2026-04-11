@@ -87,9 +87,7 @@ class DashboardBridge(PluginBridge):
         if not self._loaded:
             return
         try:
-            ui_mod = self._runtime.require(
-                "@ssmidge/mineflayer-dashboard/src/ui"
-            )
+            ui_mod = self._runtime.require("@ssmidge/mineflayer-dashboard/src/ui")
             ui_mod.screen.destroy()
         except Exception:
             pass  # Best-effort: upstream may not expose screen
@@ -110,9 +108,7 @@ class DashboardBridge(PluginBridge):
         Ref: @ssmidge/mineflayer-dashboard/index.js — ``bot.dashboard.log()``
         """
         if not self._loaded:
-            raise BridgeError(
-                "log failed: dashboard has not been loaded"
-            )
+            raise BridgeError("log failed: dashboard has not been loaded")
         try:
             self._js_bot.dashboard.log(*messages)
         except Exception as exc:

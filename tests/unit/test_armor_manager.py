@@ -171,7 +171,9 @@ class TestArmorAPI:
         relay = MagicMock()
         call_count = 0
 
-        async def _mock_wait_for(*_args: object, **_kwargs: object) -> ArmorEquipDoneEvent:
+        async def _mock_wait_for(
+            *_args: object, **_kwargs: object
+        ) -> ArmorEquipDoneEvent:
             nonlocal call_count
             call_count += 1
             await asyncio.sleep(0.01)

@@ -225,7 +225,9 @@ class Bot:
         self._viewer_api: ViewerAPI | None = None
         self._viewer_svc: Any = None  # _bridge.services.viewer.ViewerService
         self._inv_viewer_api: InventoryViewerAPI | None = None
-        self._inv_viewer_svc: Any = None  # _bridge.services.web_inventory.WebInventoryService
+        self._inv_viewer_svc: Any = (
+            None  # _bridge.services.web_inventory.WebInventoryService
+        )
         self._on_end_handler: object | None = None
         # Serialize long-running operations that use global completion
         # events, preventing concurrent calls from stealing each other's
@@ -596,7 +598,9 @@ class Bot:
         self._controller.create_bot()
 
         self._registry = PluginRegistry(
-            self._runtime, self._controller.js_bot, self._relay,
+            self._runtime,
+            self._controller.js_bot,
+            self._relay,
             self._controller,
         )
         self._registry.load("mineflayer-pathfinder")
@@ -1569,7 +1573,9 @@ class Bot:
 
             assert self._runtime is not None
             self._viewer_svc = ViewerService(
-                self._runtime, ctrl.js_bot, self._relay,
+                self._runtime,
+                ctrl.js_bot,
+                self._relay,
             )
             self._viewer_api = ViewerAPI(self._viewer_svc)
         return self._viewer_api

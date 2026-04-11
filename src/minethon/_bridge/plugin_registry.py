@@ -57,7 +57,10 @@ class PluginRegistry:
         Simple bridges use :meth:`_register`.
         """
         pf = PathfinderBridge(
-            self._runtime, self._js_bot, self._relay, self._controller,
+            self._runtime,
+            self._js_bot,
+            self._relay,
+            self._controller,
         )
         self._bridges[pf.NPM_NAME] = pf
         self._register(ArmorManagerBridge)
@@ -66,12 +69,18 @@ class PluginRegistry:
         self._register(DashboardBridge)
 
         tool = ToolBridge(
-            self._runtime, self._js_bot, self._relay, self._controller,
+            self._runtime,
+            self._js_bot,
+            self._relay,
+            self._controller,
         )
         self._bridges[tool.NPM_NAME] = tool
 
         hawkeye = HawkEyeBridge(
-            self._runtime, self._js_bot, self._relay, self._controller,
+            self._runtime,
+            self._js_bot,
+            self._relay,
+            self._controller,
         )
         self._bridges[hawkeye.NPM_NAME] = hawkeye
 
@@ -99,8 +108,7 @@ class PluginRegistry:
         bridge = self._bridges.get(name)
         if bridge is None:
             raise PluginError(
-                f"Unsupported plugin '{name}'. "
-                f"Supported: {', '.join(self.supported)}"
+                f"Unsupported plugin '{name}'. Supported: {', '.join(self.supported)}"
             )
         for dep in bridge.DEPENDS_ON:
             self.load(dep)

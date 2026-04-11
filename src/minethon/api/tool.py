@@ -66,10 +66,12 @@ class ToolAPI:
         )
         async with self._equip_lock:
             self._bridge.start_equip_for_block(
-                position, require_harvest=require_harvest,
+                position,
+                require_harvest=require_harvest,
             )
             event = await self._relay.wait_for(
-                ToolEquipDoneEvent, timeout=timeout,
+                ToolEquipDoneEvent,
+                timeout=timeout,
             )
             if event.error is not None:
                 raise BridgeError(f"equip_for_block failed: {event.error}")

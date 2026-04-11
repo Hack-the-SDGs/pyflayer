@@ -41,9 +41,7 @@ class GuiBridge(PluginBridge):
     def _ensure_helpers(self) -> Any:
         """Lazy-load helpers.js and cache the reference."""
         if self._helpers is None:
-            self._helpers = self._runtime.require(
-                str(_JS_HELPERS_PATH.as_posix())
-            )
+            self._helpers = self._runtime.require(str(_JS_HELPERS_PATH.as_posix()))
         return self._helpers
 
     def _do_load(self) -> None:
@@ -81,9 +79,7 @@ class GuiBridge(PluginBridge):
              Query.Equip, Query.Click
         """
         if not self._loaded:
-            raise BridgeError(
-                "start_click_by_name failed: gui has not been loaded"
-            )
+            raise BridgeError("start_click_by_name failed: gui has not been loaded")
         try:
             helpers = self._ensure_helpers()
             helpers.guiClickByName(self._js_bot, name, window)
@@ -107,9 +103,7 @@ class GuiBridge(PluginBridge):
         Ref: mineflayer-gui/src/query.js — Query.Window, Query.Drop
         """
         if not self._loaded:
-            raise BridgeError(
-                "start_drop_by_name failed: gui has not been loaded"
-            )
+            raise BridgeError("start_drop_by_name failed: gui has not been loaded")
         try:
             helpers = self._ensure_helpers()
             helpers.guiDropByName(self._js_bot, name, count)
@@ -132,9 +126,7 @@ class GuiBridge(PluginBridge):
         Ref: mineflayer-gui/src/query.js — ``new Query()``
         """
         if not self._loaded:
-            raise BridgeError(
-                "create_query failed: gui has not been loaded"
-            )
+            raise BridgeError("create_query failed: gui has not been loaded")
         try:
             return self._js_bot.gui.Query()
         except Exception as exc:

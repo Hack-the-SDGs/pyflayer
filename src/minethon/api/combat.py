@@ -39,9 +39,7 @@ class CombatAPI:
         self._relay = relay
         self._simply_shot_lock = asyncio.Lock()
 
-    def auto_attack(
-        self, entity: Entity, weapon: Weapon = Weapon.BOW
-    ) -> bool:
+    def auto_attack(self, entity: Entity, weapon: Weapon = Weapon.BOW) -> bool:
         """Start auto-attacking a target entity.
 
         The bot will continuously track and fire at the target until
@@ -61,9 +59,7 @@ class CombatAPI:
         """
         return self._bridge.auto_attack(entity.id, weapon.value)
 
-    def shoot(
-        self, entity: Entity, weapon: Weapon = Weapon.BOW
-    ) -> bool:
+    def shoot(self, entity: Entity, weapon: Weapon = Weapon.BOW) -> bool:
         """Fire a single shot at a target entity.
 
         Args:
@@ -106,8 +102,6 @@ class CombatAPI:
         """
         async with self._simply_shot_lock:
             self._bridge.start_simply_shot(yaw, pitch)
-            result = await self._relay.wait_for(
-                SimplyShotDoneEvent, timeout=10.0
-            )
+            result = await self._relay.wait_for(SimplyShotDoneEvent, timeout=10.0)
             if result.error is not None:
                 raise BridgeError(f"simply_shot failed: {result.error}")

@@ -147,9 +147,7 @@ class TestGuiBridgeDropByName:
     def test_calls_helpers(self) -> None:
         bridge, js_bot, _rt = _loaded_bridge()
         bridge.start_drop_by_name("cobblestone", 32)
-        bridge._helpers.guiDropByName.assert_called_once_with(
-            js_bot, "cobblestone", 32
-        )
+        bridge._helpers.guiDropByName.assert_called_once_with(js_bot, "cobblestone", 32)
 
     def test_not_loaded_raises(self) -> None:
         runtime = MagicMock()
@@ -236,9 +234,7 @@ class TestGuiAPI:
         relay.wait_for = _wait_for
         api = GuiAPI(bridge, relay)
         await api.click_item("diamond_sword", window=True)
-        bridge.start_click_by_name.assert_called_once_with(
-            "diamond_sword", window=True
-        )
+        bridge.start_click_by_name.assert_called_once_with("diamond_sword", window=True)
 
     @pytest.mark.asyncio
     async def test_click_item_error_raises(self) -> None:

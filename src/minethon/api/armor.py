@@ -47,9 +47,7 @@ class ArmorAPI:
         async with self._equip_lock:
             self._bridge.start_equip_all()
             try:
-                event = await self._relay.wait_for(
-                    ArmorEquipDoneEvent, timeout=30.0
-                )
+                event = await self._relay.wait_for(ArmorEquipDoneEvent, timeout=30.0)
             except TimeoutError as exc:
                 raise BridgeError("armor equip timed out") from exc
             if event.error is not None:

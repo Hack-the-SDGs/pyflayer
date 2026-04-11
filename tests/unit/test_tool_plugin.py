@@ -84,7 +84,8 @@ class TestToolBridgeEquipForBlock:
         bridge.start_equip_for_block((10, 64, 20))
         ctrl.block_at.assert_called_once_with(10, 64, 20)
         ctrl.start_tool_equip_for_block.assert_called_once_with(
-            js_block, require_harvest=False,
+            js_block,
+            require_harvest=False,
         )
 
     def test_equip_for_block_with_require_harvest(self) -> None:
@@ -93,7 +94,8 @@ class TestToolBridgeEquipForBlock:
         ctrl.block_at.return_value = js_block
         bridge.start_equip_for_block((5, 32, 10), require_harvest=True)
         ctrl.start_tool_equip_for_block.assert_called_once_with(
-            js_block, require_harvest=True,
+            js_block,
+            require_harvest=True,
         )
 
     def test_equip_for_block_default_no_harvest(self) -> None:
@@ -102,7 +104,8 @@ class TestToolBridgeEquipForBlock:
         ctrl.block_at.return_value = js_block
         bridge.start_equip_for_block((5, 32, 10))
         ctrl.start_tool_equip_for_block.assert_called_once_with(
-            js_block, require_harvest=False,
+            js_block,
+            require_harvest=False,
         )
 
     def test_equip_for_block_not_loaded_raises(self) -> None:
@@ -150,14 +153,17 @@ class TestToolAPI:
         api = ToolAPI(bridge, relay)
 
         done_event = ToolEquipDoneEvent(error=None)
-        fut: asyncio.Future[ToolEquipDoneEvent] = asyncio.get_running_loop().create_future()
+        fut: asyncio.Future[ToolEquipDoneEvent] = (
+            asyncio.get_running_loop().create_future()
+        )
         fut.set_result(done_event)
         relay.wait_for.return_value = fut
 
         await api.equip_for_block(_SAMPLE_BLOCK)
 
         bridge.start_equip_for_block.assert_called_once_with(
-            (10, 64, 20), require_harvest=False,
+            (10, 64, 20),
+            require_harvest=False,
         )
         relay.wait_for.assert_called_once()
 
@@ -168,14 +174,17 @@ class TestToolAPI:
         api = ToolAPI(bridge, relay)
 
         done_event = ToolEquipDoneEvent(error=None)
-        fut: asyncio.Future[ToolEquipDoneEvent] = asyncio.get_running_loop().create_future()
+        fut: asyncio.Future[ToolEquipDoneEvent] = (
+            asyncio.get_running_loop().create_future()
+        )
         fut.set_result(done_event)
         relay.wait_for.return_value = fut
 
         await api.equip_for_block(_SAMPLE_BLOCK, require_harvest=True)
 
         bridge.start_equip_for_block.assert_called_once_with(
-            (10, 64, 20), require_harvest=True,
+            (10, 64, 20),
+            require_harvest=True,
         )
 
     @pytest.mark.asyncio
@@ -185,7 +194,9 @@ class TestToolAPI:
         api = ToolAPI(bridge, relay)
 
         done_event = ToolEquipDoneEvent(error="no suitable tool")
-        fut: asyncio.Future[ToolEquipDoneEvent] = asyncio.get_running_loop().create_future()
+        fut: asyncio.Future[ToolEquipDoneEvent] = (
+            asyncio.get_running_loop().create_future()
+        )
         fut.set_result(done_event)
         relay.wait_for.return_value = fut
 
@@ -200,7 +211,9 @@ class TestToolAPI:
         api = ToolAPI(bridge, relay)
 
         done_event = ToolEquipDoneEvent(error=None)
-        fut: asyncio.Future[ToolEquipDoneEvent] = asyncio.get_running_loop().create_future()
+        fut: asyncio.Future[ToolEquipDoneEvent] = (
+            asyncio.get_running_loop().create_future()
+        )
         fut.set_result(done_event)
         relay.wait_for.return_value = fut
 
@@ -216,7 +229,8 @@ class TestToolAPI:
         await api.equip_for_block(block)
 
         bridge.start_equip_for_block.assert_called_once_with(
-            (10, 64, 20), require_harvest=False,
+            (10, 64, 20),
+            require_harvest=False,
         )
 
 

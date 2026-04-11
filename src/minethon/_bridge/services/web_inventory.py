@@ -91,8 +91,7 @@ class WebInventoryService:
     def _ensure_initialized(self) -> None:
         if not self._initialized:
             raise BridgeError(
-                "WebInventoryService is not initialised. "
-                "Call initialize() first."
+                "WebInventoryService is not initialised. Call initialize() first."
             )
 
     async def start(self) -> None:

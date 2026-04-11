@@ -88,5 +88,6 @@ class ToolBridge(PluginBridge):
                 f"start_equip_for_block failed: no block at ({x}, {y}, {z})"
             )
         self._controller.start_tool_equip_for_block(
-            js_block, require_harvest=require_harvest,
+            js_block,
+            require_harvest=require_harvest,
         )

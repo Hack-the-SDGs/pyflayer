@@ -46,9 +46,7 @@ class ArmorManagerBridge(PluginBridge):
         try:
             mod = self._runtime.require(self.NPM_NAME)
             self._js_bot.loadPlugin(mod)
-            self._helpers = self._runtime.require(
-                str(_JS_HELPERS_PATH.as_posix())
-            )
+            self._helpers = self._runtime.require(str(_JS_HELPERS_PATH.as_posix()))
         except Exception as exc:
             self._loaded = False
             raise BridgeError(

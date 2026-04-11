@@ -178,7 +178,9 @@ class TestWebInventoryServiceStop:
         service, _, _, relay = _make_service()
         relay.set_loop(asyncio.get_running_loop())
         await service.initialize()
-        service._running = True  # simulate prior start  # pyright: ignore[reportPrivateUsage]
+        service._running = (
+            True  # simulate prior start  # pyright: ignore[reportPrivateUsage]
+        )
 
         async def post_done() -> None:
             await asyncio.sleep(0.01)
@@ -194,7 +196,9 @@ class TestWebInventoryServiceStop:
         service, _, _, relay = _make_service()
         relay.set_loop(asyncio.get_running_loop())
         await service.initialize()
-        service._running = True  # simulate prior start  # pyright: ignore[reportPrivateUsage]
+        service._running = (
+            True  # simulate prior start  # pyright: ignore[reportPrivateUsage]
+        )
 
         async def post_error() -> None:
             await asyncio.sleep(0.01)
