@@ -78,6 +78,9 @@ pylint.max-statements = 65
     "ERA001",              # commented-out code OK while iterating
     "BLE001",              # broad except is fine for demo error handling
     "ASYNC110",            # sleep-in-loop keep-alive is idiomatic for bot examples
+    "TC001", "TC003",      # type-checking imports not needed in standalone scripts
+    "PLR0915",             # long test functions are expected for manual integration tests
+    "SIM113",              # enumerate not always clearer in test iteration patterns
 ]
 
 # bridge internals — JS interop constraints
