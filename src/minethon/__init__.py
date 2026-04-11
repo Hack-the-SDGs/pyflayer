@@ -3,6 +3,7 @@
 from minethon.api.navigation import NavigationAPI
 from minethon.api.observe import ObserveAPI
 from minethon.api.plugins import PluginAPI
+from minethon.api.tool import ToolAPI
 from minethon.bot import Bot
 from minethon.models.block import Block
 from minethon.models.entity import Entity, EntityKind
@@ -70,6 +71,7 @@ __all__ = [
     "Recipe",
     "SpawnEvent",
     "TimeState",
+    "ToolAPI",
     "TradeOffer",
     "Vec3",
     "VillagerSession",
