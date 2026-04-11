@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 from minethon._bridge._util import extract_js_stack
 from minethon._bridge.plugins.pathfinder import PathfinderBridge
+from minethon._bridge.plugins.tool_plugin import ToolBridge
 from minethon.models.errors import BridgeError, PluginError
 
 if TYPE_CHECKING:
@@ -54,6 +55,11 @@ class PluginRegistry:
             self._runtime, self._js_bot, self._relay, self._controller,
         )
         self._bridges[pf.NPM_NAME] = pf
+
+        tool = ToolBridge(
+            self._runtime, self._js_bot, self._relay, self._controller,
+        )
+        self._bridges[tool.NPM_NAME] = tool
 
     def _register(self, bridge_cls: type[PluginBridge]) -> None:
         """Register a simple plugin bridge by its NPM_NAME."""
@@ -99,6 +105,13 @@ class PluginRegistry:
         """Convenience: return the PathfinderBridge if registered."""
         bridge = self._bridges.get(PathfinderBridge.NPM_NAME)
         if isinstance(bridge, PathfinderBridge):
+            return bridge
+        return None
+
+    def get_tool(self) -> ToolBridge | None:
+        """Convenience: return the ToolBridge if registered."""
+        bridge = self._bridges.get(ToolBridge.NPM_NAME)
+        if isinstance(bridge, ToolBridge):
             return bridge
         return None
 
