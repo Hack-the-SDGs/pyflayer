@@ -9,8 +9,8 @@ Ref: mineflayer-web-inventory/index.js
 
 from __future__ import annotations
 
-import asyncio
 import logging
+import pathlib
 from typing import TYPE_CHECKING, Any
 
 from minethon._bridge._events import WebInvStartDoneEvent, WebInvStopDoneEvent
@@ -52,8 +52,6 @@ class WebInventoryService:
     def _ensure_helpers(self) -> Any:
         """Lazy-load helpers.js and cache the reference."""
         if self._helpers is None:
-            import pathlib
-
             helpers_path = pathlib.Path(__file__).parent.parent / "js" / "helpers.js"
             self._helpers = self._runtime.require(str(helpers_path))
         return self._helpers
