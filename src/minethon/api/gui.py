@@ -3,6 +3,7 @@
 Ref: mineflayer-gui/src/query.js — Query builder pattern
 """
 
+import asyncio
 from typing import TYPE_CHECKING, Any
 
 from minethon._bridge._events import GuiDropDoneEvent, GuiQueryDoneEvent
@@ -32,6 +33,8 @@ class GuiAPI:
     def __init__(self, bridge: GuiBridge, relay: EventRelay) -> None:
         self._bridge = bridge
         self._relay = relay
+        self._click_lock = asyncio.Lock()
+        self._drop_lock = asyncio.Lock()
 
     async def click_item(self, name: str, *, window: bool = False) -> bool:
         """Click first item matching *name* in hotbar or window.
@@ -53,13 +56,14 @@ class GuiAPI:
         Ref: mineflayer-gui/src/query.js — Query.Hotbar, Query.Window,
              Query.Equip, Query.Click
         """
-        self._bridge.start_click_by_name(name, window=window)
-        event: GuiQueryDoneEvent = await self._relay.wait_for(
-            GuiQueryDoneEvent, timeout=30.0
-        )
-        if event.error is not None:
-            raise BridgeError(f"click_item failed: {event.error}")
-        return event.result
+        async with self._click_lock:
+            self._bridge.start_click_by_name(name, window=window)
+            event: GuiQueryDoneEvent = await self._relay.wait_for(
+                GuiQueryDoneEvent, timeout=30.0
+            )
+            if event.error is not None:
+                raise BridgeError(f"click_item failed: {event.error}")
+            return event.result
 
     async def drop_item(self, name: str, count: int = 1) -> bool:
         """Drop item matching *name* from window.
@@ -79,13 +83,14 @@ class GuiAPI:
 
         Ref: mineflayer-gui/src/query.js — Query.Window, Query.Drop
         """
-        self._bridge.start_drop_by_name(name, count)
-        event: GuiDropDoneEvent = await self._relay.wait_for(
-            GuiDropDoneEvent, timeout=30.0
-        )
-        if event.error is not None:
-            raise BridgeError(f"drop_item failed: {event.error}")
-        return event.result
+        async with self._drop_lock:
+            self._bridge.start_drop_by_name(name, count)
+            event: GuiDropDoneEvent = await self._relay.wait_for(
+                GuiDropDoneEvent, timeout=30.0
+            )
+            if event.error is not None:
+                raise BridgeError(f"drop_item failed: {event.error}")
+            return event.result
 
     def raw_query(self) -> Any:
         """Get raw JS Query builder for advanced operations.

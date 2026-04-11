@@ -423,6 +423,3 @@ class GuiDropDoneEvent:
 
     error: str | None = None
     result: bool = False
-
-
-# -- Panorama plugin --
