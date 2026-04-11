@@ -80,11 +80,11 @@ class PanoramaBridge(PluginBridge):
             return
         try:
             self._js_bot.panoramaImage = None
-        except Exception:
+        except Exception:  # noqa: S110 — best-effort teardown
             pass
         try:
             self._js_bot.image = None
-        except Exception:
+        except Exception:  # noqa: S110 — best-effort teardown
             pass
         self._helpers = None
         self._loaded = False

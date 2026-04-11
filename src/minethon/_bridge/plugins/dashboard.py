@@ -89,11 +89,11 @@ class DashboardBridge(PluginBridge):
         try:
             ui_mod = self._runtime.require("@ssmidge/mineflayer-dashboard/src/ui")
             ui_mod.screen.destroy()
-        except Exception:
-            pass  # Best-effort: upstream may not expose screen
+        except Exception:  # noqa: S110 — best-effort: upstream may not expose screen
+            pass
         try:
-            self._js_bot.dashboard._ended = True
-        except Exception:
+            self._js_bot.dashboard._ended = True  # noqa: SLF001 — JS internal, no Python accessor
+        except Exception:  # noqa: S110 — best-effort teardown
             pass
         self._loaded = False
 

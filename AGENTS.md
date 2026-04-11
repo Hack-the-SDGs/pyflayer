@@ -26,6 +26,7 @@
 ```bash
 uv run pytest -m "not integration" --tb=short -q
 uv run ruff format --check src/ tests/
+uv run ruff check src/
 ```
 
 ## 專案定義

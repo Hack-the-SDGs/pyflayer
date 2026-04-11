@@ -1569,7 +1569,7 @@ class Bot:
         """
         ctrl = self._ensure_connected()
         if self._viewer_api is None:
-            from minethon._bridge.services.viewer import ViewerService
+            from minethon._bridge.services.viewer import ViewerService  # noqa: PLC0415
 
             assert self._runtime is not None
             self._viewer_svc = ViewerService(
@@ -1592,7 +1592,7 @@ class Bot:
         """
         ctrl = self._ensure_connected()
         if self._inv_viewer_api is None:
-            from minethon._bridge.services.web_inventory import (
+            from minethon._bridge.services.web_inventory import (  # noqa: PLC0415 — lazy to avoid circular import
                 WebInventoryService,
             )
 
