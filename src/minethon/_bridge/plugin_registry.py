@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 from minethon._bridge._util import extract_js_stack
 from minethon._bridge.plugins.armor_manager import ArmorManagerBridge
+from minethon._bridge.plugins.dashboard import DashboardBridge
 from minethon._bridge.plugins.hawkeye import HawkEyeBridge
 from minethon._bridge.plugins.panorama import PanoramaBridge
 from minethon._bridge.plugins.pathfinder import PathfinderBridge
@@ -60,6 +61,7 @@ class PluginRegistry:
         self._bridges[pf.NPM_NAME] = pf
         self._register(ArmorManagerBridge)
         self._register(PanoramaBridge)
+        self._register(DashboardBridge)
 
         tool = ToolBridge(
             self._runtime, self._js_bot, self._relay, self._controller,
@@ -129,6 +131,13 @@ class PluginRegistry:
         """Convenience: return the ToolBridge if registered."""
         bridge = self._bridges.get(ToolBridge.NPM_NAME)
         if isinstance(bridge, ToolBridge):
+            return bridge
+        return None
+
+    def get_dashboard(self) -> DashboardBridge | None:
+        """Convenience: return the DashboardBridge if registered."""
+        bridge = self._bridges.get(DashboardBridge.NPM_NAME)
+        if isinstance(bridge, DashboardBridge):
             return bridge
         return None
 

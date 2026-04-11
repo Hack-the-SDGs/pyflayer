@@ -2,6 +2,7 @@
 
 from minethon.api.armor import ArmorAPI
 from minethon.api.combat import CombatAPI
+from minethon.api.dashboard import DashboardAPI
 from minethon.api.navigation import NavigationAPI
 from minethon.api.observe import ObserveAPI
 from minethon.api.panorama import PanoramaAPI
@@ -54,6 +55,7 @@ __all__ = [
     "ChatEvent",
     "CollectCompletedEvent",
     "CombatAPI",
+    "DashboardAPI",
     "DeathEvent",
     "EndEvent",
     "Entity",

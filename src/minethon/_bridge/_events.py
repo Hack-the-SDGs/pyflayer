@@ -335,6 +335,31 @@ class ToolEquipDoneEvent:
     error: str | None = None
 
 
+# -- Panorama --
+
+
+@dataclass(frozen=True, slots=True)
+class PanoramaDoneEvent:
+    """Panorama capture finished (result is JPEG stream proxy on success).
+
+    Ref: mineflayer-panorama/lib/camera.js — ``panoramaImage``
+    """
+
+    error: str | None = None
+    result: Any = None
+
+
+@dataclass(frozen=True, slots=True)
+class PictureDoneEvent:
+    """Single picture capture finished (result is JPEG stream proxy on success).
+
+    Ref: mineflayer-panorama/lib/camera.js — ``takePicture``
+    """
+
+    error: str | None = None
+    result: Any = None
+
+
 # -- HawkEye --
 
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PySourceRootDetectionService">
+    <option name="sourcePathsSet">
+      <set>
+        <option value="$PROJECT_DIR$/.claude/worktrees/agent-ab8eba35/src" />
+        <option value="$PROJECT_DIR$/.claude/worktrees/agent-acfe9173/src" />
+      </set>
+    </option>
+  </component>
+</project>

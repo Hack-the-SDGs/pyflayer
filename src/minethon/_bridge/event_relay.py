@@ -31,6 +31,8 @@ from minethon._bridge._events import (
     OpenEnchantmentTableDoneEvent,
     OpenFurnaceDoneEvent,
     OpenVillagerDoneEvent,
+    PanoramaDoneEvent,
+    PictureDoneEvent,
     PlaceDoneEvent,
     PlaceEntityDoneEvent,
     PutAwayDoneEvent,
@@ -337,6 +339,9 @@ _STATIC_BRIDGED_EVENTS: frozenset[str] = frozenset(
         "_minethon:placeEntityDone",
         "_minethon:armorEquipDone",
         "_minethon:toolEquipDone",
+        # Panorama
+        "_minethon:panoramaDone",
+        "_minethon:pictureDone",
         # HawkEye
         "_minethon:simplyShotDone",
         "auto_shot_stopped",
@@ -1732,6 +1737,32 @@ class EventRelay:
                 )
 
             self._post_built(js_bot, WebInvStopDoneEvent, builder, *args)
+
+        # -- Panorama (mineflayer-panorama) --
+
+        @on_fn(js_bot, "_minethon:panoramaDone")
+        def _on_panorama_done(*args: Any) -> None:
+            def builder(
+                error: Any | None = None, result: Any | None = None
+            ) -> PanoramaDoneEvent:
+                return PanoramaDoneEvent(
+                    error=str(error) if error is not None else None,
+                    result=result,
+                )
+
+            self._post_built(js_bot, PanoramaDoneEvent, builder, *args)
+
+        @on_fn(js_bot, "_minethon:pictureDone")
+        def _on_picture_done(*args: Any) -> None:
+            def builder(
+                error: Any | None = None, result: Any | None = None
+            ) -> PictureDoneEvent:
+                return PictureDoneEvent(
+                    error=str(error) if error is not None else None,
+                    result=result,
+                )
+
+            self._post_built(js_bot, PictureDoneEvent, builder, *args)
 
         # -- HawkEye --
 

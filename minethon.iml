@@ -11,6 +11,8 @@
       <excludeFolder url="file://$MODULE_DIR$/.claude/worktrees/agent-ab8eba35/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/.claude/worktrees/agent-acfe9173/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude/worktrees/agent-a77154cf/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude/worktrees/agent-ab96994a/.venv" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

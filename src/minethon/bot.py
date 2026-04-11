@@ -57,6 +57,7 @@ from minethon._bridge.services.viewer import ViewerService
 from minethon._bridge.services.web_inventory import WebInventoryService
 from minethon.api.armor import ArmorAPI
 from minethon.api.combat import CombatAPI
+from minethon.api.dashboard import DashboardAPI
 from minethon.api.navigation import NavigationAPI
 from minethon.api.observe import ObserveAPI
 from minethon.api.panorama import PanoramaAPI
@@ -217,6 +218,7 @@ class Bot:
         self._armor: ArmorAPI | None = None
         self._combat: CombatAPI | None = None
         self._panorama: PanoramaAPI | None = None
+        self._dashboard: DashboardAPI | None = None
         self._tool: ToolAPI | None = None
         self._viewer_service: ViewerService | None = None
         self._web_inventory_service: WebInventoryService | None = None
@@ -661,6 +663,7 @@ class Bot:
         self._armor = None
         self._combat = None
         self._panorama = None
+        self._dashboard = None
         self._tool = None
         self._registry = None
         if self._runtime is not None:
@@ -1367,6 +1370,38 @@ class Bot:
             )
         self._armor = ArmorAPI(bridge, self._relay)
         return self._armor
+
+    @property
+    def dashboard(self) -> DashboardAPI:
+        """Dashboard terminal UI API.
+
+        Requires ``@ssmidge/mineflayer-dashboard`` to be loaded first::
+
+            await bot.plugins.load("@ssmidge/mineflayer-dashboard")
+            bot.dashboard.log("Hello!")
+
+        .. warning:: **Experimental.** This plugin targets mineflayer
+           ^2.28.1 and uses blessed terminal UI which may conflict with
+           Python's stdout/stderr.
+
+        Raises:
+            MinethonConnectionError: If the bot is not connected.
+            BridgeError: If the dashboard plugin is not loaded.
+
+        Ref: @ssmidge/mineflayer-dashboard/index.js — ``bot.dashboard``
+        """
+        if self._registry is None:
+            raise MinethonConnectionError("Bot is not connected.")
+        if self._dashboard is not None:
+            return self._dashboard
+        bridge = self._registry.get_dashboard()
+        if bridge is None or not bridge.is_loaded:
+            raise BridgeError(
+                "dashboard plugin is not loaded. "
+                'Call await bot.plugins.load("@ssmidge/mineflayer-dashboard") first.'
+            )
+        self._dashboard = DashboardAPI(bridge)
+        return self._dashboard
 
     @property
     def combat(self) -> CombatAPI:

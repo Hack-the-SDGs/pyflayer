@@ -306,6 +306,20 @@ module.exports = {
             .catch(err => bot.emit("_minethon:toolEquipDone", _err(err)));
     },
 
+    // -- Panorama (mineflayer-panorama) --
+
+    startPanorama(bot, camPos) {
+        bot.panoramaImage(camPos)
+            .then(stream => bot.emit("_minethon:panoramaDone", null, stream))
+            .catch(err => bot.emit("_minethon:panoramaDone", _err(err)));
+    },
+
+    startPicture(bot, point, direction) {
+        bot.image.takePicture(point, direction)
+            .then(stream => bot.emit("_minethon:pictureDone", null, stream))
+            .catch(err => bot.emit("_minethon:pictureDone", _err(err)));
+    },
+
     // -- HawkEye (minecrafthawkeye) --
 
     startSimplyShot(bot, yaw, pitch) {
