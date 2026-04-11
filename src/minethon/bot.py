@@ -51,7 +51,7 @@ from minethon._bridge.marshalling import (
     js_window_to_window_handle,
     villager_snapshot_to_session,
 )
-from minethon._bridge.plugin_host import PluginHost
+from minethon._bridge.plugin_registry import PluginRegistry
 from minethon._bridge.runtime import BridgeRuntime
 from minethon.api.navigation import NavigationAPI
 from minethon.api.observe import ObserveAPI
@@ -206,7 +206,7 @@ class Bot:
         self._recipe_registry: dict[int, Any] = {}
         self._recipe_counter: int = 0
         self._resolved_username: str | None = None
-        self._plugin_host: PluginHost | None = None
+        self._registry: PluginRegistry | None = None
         self._navigation: NavigationAPI | None = None
         self._on_end_handler: object | None = None
         # Serialize long-running operations that use global completion
@@ -577,11 +577,13 @@ class Bot:
         self._controller = JSBotController(self._runtime, self._config)
         self._controller.create_bot()
 
-        self._plugin_host = PluginHost(self._runtime, self._controller.js_bot)
-        self._plugin_host.load_pathfinder()
-        self._navigation = NavigationAPI(
-            self._plugin_host, self._controller, self._relay
+        self._registry = PluginRegistry(
+            self._runtime, self._controller.js_bot, self._relay
         )
+        self._registry.load("mineflayer-pathfinder")
+        pf = self._registry.get_pathfinder()
+        assert pf is not None  # just loaded above
+        self._navigation = NavigationAPI(pf, self._controller, self._relay)
 
         self._relay.register_js_events(
             self._controller.js_bot,
@@ -625,14 +627,14 @@ class Bot:
             self._on_end_handler = None
         self._relay.reset()
         self._observe._reset_state()  # pyright: ignore[reportPrivateUsage]
-        if self._plugin_host is not None:
-            self._plugin_host.stop_pathfinder()
+        if self._registry is not None:
+            self._registry.teardown_all()
         if self._controller is not None:
             if self._connected:
                 self._controller.quit()
             self._controller = None
         self._navigation = None
-        self._plugin_host = None
+        self._registry = None
         if self._runtime is not None:
             self._runtime.shutdown()
             self._runtime = None
@@ -648,8 +650,10 @@ class Bot:
         await self._observe.wait_for(SpawnEvent, timeout=timeout)
         self._spawned = True
         self._refresh_spawn_state_cache()
-        if self._plugin_host is not None:
-            self._plugin_host.setup_pathfinder_movements()
+        if self._registry is not None:
+            pf = self._registry.get_pathfinder()
+            if pf is not None and pf.is_loaded:
+                pf.setup_movements()
 
     # -- State properties --
 
@@ -1325,7 +1329,7 @@ class Bot:
         """
         ctrl = self._ensure_connected()
         plugin_loader = (
-            self._plugin_host.raw_plugin if self._plugin_host is not None else None
+            self._registry.raw_require if self._registry is not None else None
         )
         return RawBotHandle(
             ctrl.js_bot,
@@ -1340,9 +1344,9 @@ class Bot:
 
         Exposes only typed, supported plugin operations.
         """
-        if self._plugin_host is None:
+        if self._registry is None:
             raise MinethonConnectionError("Bot is not connected.")
-        return PluginAPI(self._plugin_host)
+        return PluginAPI(self._registry)
 
     # -- Sleep / Wake --
 

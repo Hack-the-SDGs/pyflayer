@@ -76,7 +76,7 @@ class TestNavigationGoto:
         with pytest.raises(NavigationError, match="noPath"):
             await nav.goto(10, 64, 20)
 
-        host.stop_pathfinder.assert_called()
+        host.stop.assert_called()
         assert nav.is_navigating is False
 
     @pytest.mark.asyncio
@@ -203,7 +203,7 @@ class TestNavigationFollow:
 
         await nav.follow("Bob")
         # stop_pathfinder called once for stopping Alice
-        host.stop_pathfinder.assert_called_once()
+        host.stop.assert_called_once()
         assert nav.is_navigating is True
 
 
@@ -223,7 +223,7 @@ class TestNavigationStop:
         assert nav.is_navigating is True
 
         await nav.stop()
-        host.stop_pathfinder.assert_called_once()
+        host.stop.assert_called_once()
         assert nav.is_navigating is False
 
     def test_is_navigating_default_false(self) -> None:
@@ -242,5 +242,5 @@ class TestNavigationStop:
         nav = NavigationAPI(host, ctrl, relay)
 
         await nav.stop()  # should not raise
-        host.stop_pathfinder.assert_called_once()
+        host.stop.assert_called_once()
         assert nav.is_navigating is False
