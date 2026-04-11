@@ -228,6 +228,7 @@ class Bot:
         self._inv_viewer_svc: Any = (
             None  # _bridge.services.web_inventory.WebInventoryService
         )
+        self._plugins_api: PluginAPI | None = None
         self._on_end_handler: object | None = None
         # Serialize long-running operations that use global completion
         # events, preventing concurrent calls from stealing each other's
@@ -676,6 +677,7 @@ class Bot:
         self._panorama = None
         self._dashboard = None
         self._tool = None
+        self._plugins_api = None
         self._registry = None
         if self._runtime is not None:
             self._runtime.shutdown()
@@ -1554,7 +1556,9 @@ class Bot:
         """
         if self._registry is None:
             raise MinethonConnectionError("Bot is not connected.")
-        return PluginAPI(self._registry)
+        if self._plugins_api is None:
+            self._plugins_api = PluginAPI(self._registry)
+        return self._plugins_api
 
     @property
     def viewer(self) -> ViewerAPI:

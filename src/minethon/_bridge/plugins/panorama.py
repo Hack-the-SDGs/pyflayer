@@ -37,6 +37,7 @@ class PanoramaBridge(PluginBridge):
     ) -> None:
         super().__init__(runtime, js_bot, relay)
         self._helpers: Any = None
+        self._faulted: bool = False
 
     def _ensure_helpers(self) -> Any:
         """Lazy-load helpers.js and cache the reference."""
@@ -52,12 +53,16 @@ class PanoramaBridge(PluginBridge):
 
         Ref: mineflayer-panorama/index.js:23-26 — ``module.exports = { panoramaImage, image }``
         """
+        if self._faulted:
+            raise BridgeError(
+                "panorama bridge is permanently faulted from a prior partial load failure"
+            )
         try:
             mod = self._runtime.require(self.NPM_NAME)
             self._js_bot.loadPlugin(mod.panoramaImage)
             self._js_bot.loadPlugin(mod.image)
         except Exception as exc:
-            self._loaded = False
+            self._faulted = True
             raise BridgeError(
                 f"load panorama failed: {exc}",
                 js_stack=extract_js_stack(exc),

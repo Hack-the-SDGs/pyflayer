@@ -172,3 +172,4 @@ class HawkEyeBridge(PluginBridge):
     def teardown(self) -> None:
         """Stop auto-attacking on disconnect."""
         self.stop()
+        self._loaded = False
