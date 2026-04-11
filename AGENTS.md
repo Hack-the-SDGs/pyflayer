@@ -54,8 +54,6 @@
 - mineflayer-tool
 - mineflayer-hawkeye
 - mineflayer-gui
-- mineflayer-blockfinder
-- mineflayer-scaffold
 - mineflayer-panorama
 
 插件系統需要有明確的擴充介面，讓上述插件以及未來的第三方插件能以一致的方式接入。
