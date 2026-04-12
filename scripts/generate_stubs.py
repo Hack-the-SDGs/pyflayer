@@ -251,6 +251,30 @@ def inject_docstrings(text: str, descriptions: dict[str, str]) -> str:
             i += 1
             continue
 
+        # Single-line signature whose body is on the next line:
+        #   `<indent>def name(args) -> T:`
+        #   `<indent>    pass`
+        # This is the default shape render_method emits for Bot methods now
+        # that arrow-typed properties are rewritten to real defs. Missing
+        # this branch previously silently dropped every Bot-method docstring.
+        m_method_passbody = re.match(
+            r"^( +)def (\w+)\([^)]*\)(?:\s*->\s*[^:]+)?:\s*$", line
+        )
+        if m_method_passbody and i + 1 < n:
+            m_indent = m_method_passbody.group(1)
+            next_line = lines[i + 1]
+            if next_line.rstrip() == f"{m_indent}    pass":
+                name = m_method_passbody.group(2)
+                key = key_for_member(name)
+                doc = descriptions.get(key)
+                out.append(line)
+                if doc:
+                    out.extend(format_doc_block(doc, m_indent + "    "))
+                else:
+                    out.append(next_line)
+                i += 2
+                continue
+
         # Multi-line method: `<indent>def name(` then continuation lines
         m_method_start = re.match(r"^( +)def (\w+)\(\s*$", line)
         if m_method_start:

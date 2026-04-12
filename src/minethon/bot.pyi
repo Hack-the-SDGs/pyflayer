@@ -1283,17 +1283,25 @@ class Chest:
     """繼承 `Window`，`bot.openChest(...)` 的回傳型別"""
 
     def close(self) -> None:
-        pass
+        """關閉這個箱子
+        等同 `bot.closeWindow(chest)`
+        """
 
     def deposit(
         self, item_type: float, metadata: float | None, count: float | None
     ) -> None:
-        pass
+        """從物品欄存入箱子
+
+        Args:
+            itemType: 物品 ID 整數
+            metadata: 選擇特定 metadata，不關心傳 `None`
+            count: 要存入的數量
+        """
 
     def withdraw(
         self, item_type: float, metadata: float | None, count: float | None
     ) -> None:
-        pass
+        """從箱子取出到物品欄"""
 
 class Dispenser:
     """繼承 `Window`，發射器 / 投擲器
@@ -1301,17 +1309,17 @@ class Dispenser:
     """
 
     def close(self) -> None:
-        pass
+        """關閉這個發射器"""
 
     def deposit(
         self, item_type: float, metadata: float | None, count: float | None
     ) -> None:
-        pass
+        """從物品欄存入發射器"""
 
     def withdraw(
         self, item_type: float, metadata: float | None, count: float | None
     ) -> None:
-        pass
+        """從發射器取出"""
 
 class Furnace:
     """繼承 `Window`，`bot.openFurnace(...)` 回傳型別"""
@@ -1322,31 +1330,37 @@ class Furnace:
     """目前冶煉進度"""
 
     def close(self) -> None:
-        pass
+        """關閉熔爐"""
 
     def takeInput(self) -> Item:
-        pass
+        """取出輸入槽的物品"""
 
     def takeFuel(self) -> Item:
-        pass
+        """取出燃料槽的物品"""
 
     def takeOutput(self) -> Item:
-        pass
+        """取出輸出槽的物品"""
 
     def putInput(self, item_type: float, metadata: float | None, count: float) -> None:
-        pass
+        """放入指定物品到輸入槽"""
 
     def putFuel(self, item_type: float, metadata: float | None, count: float) -> None:
-        pass
+        """放入指定燃料到燃料槽"""
 
     def inputItem(self) -> Item:
-        pass
+        """Returns:
+        輸入槽目前的 `Item`
+        """
 
     def fuelItem(self) -> Item:
-        pass
+        """Returns:
+        燃料槽目前的 `Item`
+        """
 
     def outputItem(self) -> Item:
-        pass
+        """Returns:
+        輸出槽目前的 `Item`
+        """
 
 class EnchantmentTable:
     """繼承 `Window`，附魔台"""
@@ -1355,31 +1369,48 @@ class EnchantmentTable:
     """目前顯示的三個附魔選項陣列，每個元素含 `level` 和 `expected`"""
 
     def close(self) -> None:
-        pass
+        """關閉附魔台"""
 
     def targetItem(self) -> Item:
-        pass
+        """Returns:
+        目前放在附魔台上的 `Item`
+        """
 
     def enchant(self, choice: str | float) -> Item:
-        pass
+        """選擇某個附魔選項進行附魔
+
+        Args:
+            choice: 選項編號 `0` / `1` / `2`，或對應的字串名稱
+        """
 
     def takeTargetItem(self) -> Item:
-        pass
+        """把附魔好的物品拿出來"""
 
     def putTargetItem(self, item: Item) -> Item:
-        pass
+        """把要附魔的物品放進附魔台"""
 
     def putLapis(self, item: Item) -> Item:
-        pass
+        """放青金石進去"""
 
 class Anvil:
     """鐵砧視窗"""
 
     def combine(self, item_one: Item, item_two: Item, name: str | None = ...) -> None:
-        pass
+        """把兩個物品在鐵砧上合併（修復 / 附魔合併），可順便改名
+
+        Args:
+            itemOne: 左槽物品
+            itemTwo: 右槽物品
+            name: (選填) 新名稱字串
+        """
 
     def rename(self, item: Item, name: str | None = ...) -> None:
-        pass
+        """重新命名一個物品
+
+        Args:
+            item: 要改名的物品
+            name: 新名稱
+        """
 
 class Villager:
     """繼承 `Window`，村民交易面板"""
@@ -1388,7 +1419,7 @@ class Villager:
     """村民目前的交易選項陣列，每筆是 `VillagerTrade`"""
 
     def close(self) -> None:
-        pass
+        """關閉交易面板"""
 
 class ScoreBoard:
     """Ref: mineflayer/index.d.ts — ScoreBoard"""
@@ -1806,7 +1837,12 @@ class Bot:
     """
 
     def connect(self, options: BotOptions) -> None:
-        pass
+        """對已建立但尚未連線的 bot 做一次 reconnect
+        一般腳本用不到——`create_bot(...)` 已自動連線
+
+        Args:
+            options: `BotOptions` dict
+        """
     supportFeature: object
     """查詢當前連線的協定版本是否支援某個功能字串
     用於跨版本相容邏輯
@@ -1817,20 +1853,45 @@ class Bot:
     """
 
     def end(self, reason: str | None = ...) -> None:
-        pass
+        """主動關掉連線
+        `bot.quit(...)` 是把協定層的 quit 送出再關；`bot.end(...)` 比較直接，伺服器可能看不到離線原因
+        除非明白兩者差異，建議優先用 `bot.quit(...)`
+
+        Args:
+            reason: (選填) 原因字串
+        """
 
     def blockAt(self, point: Vec3, extra_infos: bool | None = ...) -> Block | None:
-        pass
+        """查詢世界中某個座標的方塊
+
+        Args:
+            point: 要查的 `Vec3`（整數座標）
+            extraInfos: 預設 `True`，會多解析一些屬性（招牌文字、箱子內容等 metadata）；設 `False` 可以省一點效能
+
+        Returns:
+            `Block` 或 `None`（該區塊尚未載入時）
+        """
 
     def blockInSight(self, max_steps: float, vector_length: float) -> Block | None:
-        pass
+        """沿機器人視線往前逐步推進，回傳第一個碰到的方塊；超過範圍或沒碰到就回 `None`
+
+        Args:
+            maxSteps: 最多走幾步取樣
+            vectorLength: 每一步的向量長度
+        """
 
     def blockAtCursor(
         self,
         max_distance: float | None = ...,
         matcher: Callable[..., object] | None = ...,
     ) -> Block | None:
-        pass
+        """從機器人的視線方向投射，回傳視線末端所指的方塊
+        `bot.blockInSight(...)` 的高階版本
+
+        Args:
+            maxDistance: 最遠測距（預設 `256`）
+            matcher: 自訂篩選函式，接受 `Block` 回傳布林；預設收下所有方塊
+        """
 
     def blockAtEntityCursor(
         self,
@@ -1838,19 +1899,61 @@ class Bot:
         max_distance: float | None = ...,
         matcher: Callable[..., object] | None = ...,
     ) -> Block | None:
-        pass
+        """跟 `blockAtCursor` 類似，但從指定實體的視線出發
+        常用來偵測別人正在看的方塊
+
+        Args:
+            entity: 觀察者 `Entity`，預設是機器人自己
+            maxDistance: 最遠測距
+            matcher: 篩選函式
+        """
 
     def canSeeBlock(self, block: Block) -> bool:
-        pass
+        """檢查機器人目前是否能「看到」某方塊
+
+        Args:
+            block: 要檢查的 `Block`
+
+        Returns:
+            布林
+        """
 
     def findBlock(self, options: FindBlockOptions) -> Block | None:
-        pass
+        """從附近尋找一個符合條件的方塊
+
+        Args:
+            options: 字典，至少需要 `matching`：
+                - `matching`：方塊 ID 整數、ID 整數的陣列、或接受 `Block` 回傳布林的函式
+                - `maxDistance`：(選填) 搜尋半徑，預設 16
+                - `count`：(選填) 傳給 `findBlocks` 用，`findBlock` 通常不用設
+                - `point`：(選填) 搜尋中心座標，預設為機器人當前位置
+
+        Returns:
+            第一個找到的 `Block`，沒找到回 `None`
+
+        ```python
+        diamond = bot.findBlock({"matching": 56, "maxDistance": 32})
+        if diamond is not None:
+            print("找到鑽石礦在", diamond.position)
+        ```
+        """
 
     def findBlocks(self, options: FindBlockOptions) -> list[Vec3]:
-        pass
+        """跟 `bot.findBlock` 同樣的參數結構，但會回傳**所有**符合的方塊 `Vec3` 座標的列表
+
+        Args:
+            options: 見 `bot.findBlock`；多加一個 `count` 限制回傳數量（預設 `1`）
+        """
 
     def canDigBlock(self, block: Block) -> bool:
-        pass
+        """檢查當前手上的工具能不能挖動該方塊
+
+        Args:
+            block: 要檢查的 `Block`
+
+        Returns:
+            布林
+        """
 
     def recipesFor(
         self,
@@ -1859,7 +1962,14 @@ class Bot:
         min_result_count: float | None,
         crafting_table: Block | bool | None,
     ) -> list[Recipe]:
-        pass
+        """查詢目前物品欄能合成指定物品的配方列表
+
+        Args:
+            itemType: 目標物品 ID 整數
+            metadata: 目標的 metadata；不關心傳 `None`
+            minResultCount: 最少要產出幾個才列入結果
+            craftingTable: 傳 `Block` 代表用該工作台；`True` 代表允許 3x3 配方；`False` / `None` 代表只找玩家 2x2
+        """
 
     def recipesAll(
         self,
@@ -1867,10 +1977,15 @@ class Bot:
         metadata: float | None,
         crafting_table: Block | bool | None,
     ) -> list[Recipe]:
-        pass
+        """同 `recipesFor`，但回傳**所有**可能的配方"""
 
     def quit(self, reason: str | None = ...) -> None:
-        pass
+        """送出協定層的斷線封包再關閉連線，`"end"` 事件會隨後觸發
+        對伺服器比較友善
+
+        Args:
+            reason: 顯示在機器人自己 log 的字串；可省略
+        """
 
     def tabComplete(
         self,
@@ -1879,51 +1994,136 @@ class Bot:
         send_block_in_sight: bool | None = ...,
         timeout: float | None = ...,
     ) -> list[str]:
-        pass
+        """請伺服器回傳聊天框 Tab 自動補全結果
+
+        Args:
+            str: 要補全的開頭字串
+            assumeCommand: 是否當作指令補全（斜線後面的字串）
+            sendBlockInSight: 是否附帶視線所指方塊（伺服器上下文提示用）
+            timeout: 等待伺服器回覆的毫秒數
+        """
 
     def chat(self, message: str) -> None:
-        pass
+        """在公開聊天中發送一則訊息
+
+        Args:
+            message: 要送出的內容字串；以 `/` 開頭會被當作指令送出。單則訊息超過伺服器長度限制時，會自動切成多則送出
+
+        ```python
+        bot.chat("大家好")
+        bot.chat("/time set day")  # 以斜線開頭會被當作指令
+        ```
+        """
 
     def whisper(self, username: str, message: str) -> None:
-        pass
+        """對指定玩家傳送私聊訊息
+        （相當於 `/tell`、`/msg`）
+
+        Args:
+            username: 目標玩家的遊戲名稱
+            message: 訊息內容
+        """
 
     def chatAddPattern(
         self, pattern: object, chat_type: str, description: str | None = ...
     ) -> float:
-        pass
+        """新增一個 chat pattern，符合 pattern 的聊天訊息會以 `chatType` 指定的事件名觸
+        **已停用**，請改用 `addChatPattern(name, pattern, options)`
+        """
 
     def setSettings(self, options: GameSettings) -> None:
-        pass
+        """更新 `bot.settings`
+
+        Args:
+            options: `GameSettings` 的部分欄位 dict
+        """
 
     def loadPlugin(self, plugin: Callable[..., object]) -> None:
-        pass
+        """`bot.load_plugin(...)` 的原生版本：直接接收 mineflayer 風格的 `(bot, options) => void` 函式
+        **學生請改用 `bot.load_plugin(name)`**，這個是給進階使用者／minethon 內部用的
+
+        Args:
+            plugin: 插件 installer 函式
+        """
 
     def loadPlugins(self, plugins: list[Callable[..., object]]) -> None:
-        pass
+        """`bot.load_plugin(...)` 的原生版本：直接接收 mineflayer 風格的 `(bot, options) => void` 函式
+        **學生請改用 `bot.load_plugin(name)`**，這個是給進階使用者／minethon 內部用的
+
+        Args:
+            plugins: 插件 installer 函式的陣列
+        """
 
     def hasPlugin(self, plugin: Callable[..., object]) -> bool:
-        pass
+        """查詢某個 installer 函式是否已載入
+
+        Returns:
+            布林
+        """
 
     def sleep(self, bed_block: Block) -> None:
-        pass
+        """讓機器人躺上床睡覺
+        **只在夜晚或雷雨時有效**，白天呼叫會出錯
+
+        Args:
+            bedBlock: 目標床（`Block`）
+        """
 
     def isABed(self, bed_block: Block) -> bool:
-        pass
+        """判斷指定方塊是不是床
+
+        Args:
+            bedBlock: 要檢查的 `Block`
+                - 回傳布林
+        """
 
     def wake(self) -> None:
-        pass
+        """從床上起床
+        一般白天會自動醒，這個方法是強制提前起
+        """
 
     def elytraFly(self) -> None:
-        pass
+        """張開鞘翅開始滑翔
+        要已站在空中且穿著鞘翅
+        """
 
     def setControlState(self, control: ControlState, state: bool) -> None:
-        pass
+        """按下或放開一個移動鍵，效果會**一直持續**直到下次設定變更
+        搭配事件使用，在想停下的時機再把狀態設回 `False`
+
+        Args:
+            control: `"forward"` / `"back"` / `"left"` / `"right"` / `"jump"` / `"sprint"` / `"sneak"` 其中之一
+            state: `True` 按下、`False` 放開
+
+        範例：進入世界後一直往前走，收到 `"stop"` 訊息才停下
+
+        ```python
+
+        @bot.on_spawn
+        def on_spawn():
+            bot.setControlState("forward", True)
+
+        @bot.on_chat
+        def on_chat(username, message, *_):
+            if message == "stop":
+                bot.setControlState("forward", False)
+        ```
+        """
 
     def getControlState(self, control: ControlState) -> bool:
-        pass
+        """讀取當前某個移動按鍵的按住狀態
+
+        Args:
+            control: 同 `setControlState` 的按鍵名
+
+        Returns:
+            布林
+        """
 
     def clearControlStates(self) -> None:
-        pass
+        """一次放開所有移動鍵，回到靜止狀態
+        出事時「全部停下」的緊急按鈕
+        """
 
     def getExplosionDamages(
         self,
@@ -1932,97 +2132,216 @@ class Bot:
         radius: float,
         raw_damages: bool | None = ...,
     ) -> float | None:
-        pass
+        """計算如果在 `position` 發生爆炸，指定實體會吃到多少傷害
+
+        Args:
+            targetEntity: 受害 `Entity`
+            position: 爆炸中心 `Vec3`
+            radius: 爆炸半徑
+            rawDamages: `True` 回傳原始傷害；`False`（預設）回傳考慮護甲後的實際傷害
+
+        Returns:
+            浮點數或 `None`
+        """
 
     def lookAt(self, point: Vec3, force: bool | None = ...) -> None:
-        pass
+        """讓機器人轉頭看向世界座標中的某個點
+
+        Args:
+            point: 目標 `Vec3`（世界絕對座標）。看玩家臉的話常傳 `target.position.offset(0, target.height, 0)`
+            force: 是否強制瞬間轉向；預設 `False` 會以物理角速度平滑轉動，設 `True` 立即到位（比較適合自動化場景）
+        """
 
     def look(self, yaw: float, pitch: float, force: bool | None = ...) -> None:
-        pass
+        """直接設定機器人的視角角度
+
+        Args:
+            yaw: 水平角度
+            pitch: 俯仰角度
+            force: `True` 瞬間到位；`False`（預設）平滑轉動
+        """
 
     def updateSign(self, block: Block, text: str, back: bool | None = ...) -> None:
-        pass
+        """改寫一個招牌的文字內容
+
+        Args:
+            block: 招牌 `Block`
+            text: 新文字（可用 `\n` 分行）
+            back: `True` 寫到背面（1.20+）；預設寫正面
+        """
 
     def equip(
         self, item: Item | float, destination: EquipmentDestination | None
     ) -> None:
-        pass
+        """把某個物品裝備到指定裝備槽
+
+        Args:
+            item: 要裝備的 `Item`，或它的數字 ID
+            destination: `"hand"` / `"head"` / `"torso"` / `"legs"` / `"feet"` / `"off-hand"`；傳 `None` 代表用預設對應
+        """
 
     def unequip(self, destination: EquipmentDestination | None) -> None:
-        pass
+        """卸下指定裝備槽的裝備
+
+        Args:
+            destination: `"hand"` / `"head"` / `"torso"` / `"legs"` / `"feet"` / `"off-hand"`，或 `None` 用預設
+        """
 
     def tossStack(self, item: Item) -> None:
-        pass
+        """整疊丟出某個物品
+
+        Args:
+            item: 物品欄中的 `Item`
+        """
 
     def toss(
         self, item_type: float, metadata: float | None, count: float | None
     ) -> None:
-        pass
+        """丟出指定數量的物品
+
+        Args:
+            itemType: 物品 ID 整數
+            metadata: 物品的 metadata 值，不關心就傳 `None`
+            count: 要丟的數量
+        """
 
     def dig(
         self, block: Block, force_look: bool | Literal["ignore"] | None = ...
     ) -> None:
-        pass
+        """對指定方塊進行挖掘
+        完成或失敗會透過 `"diggingCompleted"` / `"diggingAborted"` 事件回報
+        **handler 內呼叫會阻塞**當下的 callback thread，建議在主執行流程呼叫
+
+        Args:
+            block: 目標 `Block` 物件（用 `bot.blockAt(pos)` 或 `bot.findBlock(...)` 取得）
+            forceLook: `True` / `False` / `"ignore"`；`"ignore"` 代表完全不轉頭，直接挖（通常是呼叫者已自己對準過）
+            digFace: `"auto"`（預設）、`"raycast"`，或傳一個 `Vec3` 指定從哪個方向打。多數情況留預設即可
+        """
 
     def stopDigging(self) -> None:
-        pass
+        """停止當前挖掘動作
+        會觸發 `"diggingAborted"` 事件
+        """
 
     def digTime(self, block: Block) -> float:
-        pass
+        """估算挖完指定方塊需要的毫秒數
+
+        Args:
+            block: 目標 `Block`
+                - 回傳毫秒整數
+        """
 
     def placeBlock(self, reference_block: Block, face_vector: Vec3) -> None:
-        pass
+        """對著 `referenceBlock` 的某一面放下一個方塊
+        （放的是目前手上的物品）
+
+        Args:
+            referenceBlock: 當作「貼著」的現存方塊
+            faceVector: 單位向量，指出要貼在哪一面（例如 `Vec3(0, 1, 0)` 是貼在上表面）
+        """
 
     def placeEntity(self, reference_block: Block, face_vector: Vec3) -> Entity:
-        pass
+        """同 `placeBlock`，但放置的是實體（例如終界箱蓋、盔甲架、船），回傳放出的 `Entity`"""
 
     def activateBlock(
         self, block: Block, direction: Vec3 | None = ..., cursor_pos: Vec3 | None = ...
     ) -> None:
-        pass
+        """對方塊「使用」（右鍵點擊），例如拉桿、按鈕、打開門
+
+        Args:
+            block: 目標 `Block`
+            direction: 點擊的面向量；省略會自動判斷
+            cursorPos: 精細的點擊位置；一般省略即可
+        """
 
     def activateEntity(self, entity: Entity) -> None:
-        pass
+        """對實體「使用」（右鍵）——例如騎馬、交易、上色羊
+
+        Args:
+            entity: 目標 `Entity`
+        """
 
     def activateEntityAt(self, entity: Entity, position: Vec3) -> None:
-        pass
+        """同 `activateEntity`，但指定精細的點擊位置
+
+        Args:
+            entity: 目標 `Entity`
+            position: 點擊座標 `Vec3`
+        """
 
     def consume(self) -> None:
-        pass
+        """吃掉當前手持的食物或喝掉藥水
+        等同於長按右鍵直到完成
+        """
 
     def fish(self) -> None:
-        pass
+        """執行釣魚動作：在手持釣竿時拋出、等魚上鉤、收竿
+        整個流程用一次呼叫完成，過程中若要中斷請呼叫 `bot.activateItem()` 收竿或直接換槽
+        """
 
     def activateItem(self, offhand: bool | None = ...) -> None:
-        pass
+        """使用目前手上的物品（相當於按右鍵）——吃東西、拉弓、擋盾、喝藥水都用這個
+        要「停下」請呼叫 `bot.deactivateItem()`
+
+        Args:
+            offhand: `True` 使用副手物品；預設 `False` 用主手
+        """
 
     def deactivateItem(self) -> None:
-        pass
+        """停止「持續使用」的物品動作
+        （停止拉弓、放下盾等等）
+        """
 
     def useOn(self, target_entity: Entity) -> None:
-        pass
+        """對實體使用手上物品
+
+        Args:
+            targetEntity: 目標 `Entity`
+        """
 
     def attack(self, entity: Entity) -> None:
-        pass
+        """對指定實體進行一次近戰攻擊
+
+        Args:
+            entity: 目標 `Entity`
+        """
 
     def swingArm(
         self,
         hand: Literal["left"] | Literal["right"] | None,
         show_hand: bool | None = ...,
     ) -> None:
-        pass
+        """播放揮手動畫
+
+        Args:
+            hand: `"left"` / `"right"` 或省略（預設主手）
+            showHand: `True` 實際播動畫；`False` 靜默
+        """
 
     def mount(self, entity: Entity) -> None:
-        pass
+        """騎上指定載具
+
+        Args:
+            entity: 載具 `Entity`（馬、船、礦車等）
+        """
 
     def dismount(self) -> None:
-        pass
+        """下目前所騎載具"""
 
     def moveVehicle(self, left: float, forward: float) -> None:
-        pass
+        """控制目前所騎載具的移動
+
+        Args:
+            left: 左右方向（`-1` ~ `1`）
+            forward: 前後方向（`-1` ~ `1`）
+        """
 
     def setQuickBarSlot(self, slot: float) -> None:
-        pass
+        """切換快捷欄槽位
+
+        Args:
+            slot: `0` 到 `8` 的整數
+        """
 
     def craft(
         self,
@@ -2030,10 +2349,22 @@ class Bot:
         count: float | None = ...,
         crafting_table: Block | None = ...,
     ) -> None:
-        pass
+        """用指定配方合成物品
+        要有對應材料
+
+        Args:
+            recipe: 從 `bot.recipesFor(...)` 取得的 `Recipe`
+            count: 要合成幾次（每次產出 recipe 定義的量），省略為 1
+            craftingTable: 若是 3x3 配方，指定要使用的工作台 `Block`
+        """
 
     def writeBook(self, slot: float, pages: list[str]) -> None:
-        pass
+        """把一本「未寫字的書」（write book）寫滿內容
+
+        Args:
+            slot: 物品欄中空白書所在的槽位整數
+            pages: 每一頁的文字字串陣列
+        """
 
     def openContainer(
         self,
@@ -2041,7 +2372,13 @@ class Bot:
         direction: Vec3 | None = ...,
         cursor_pos: Vec3 | None = ...,
     ) -> Chest | Dispenser:
-        pass
+        """打開任意容器方塊或實體
+
+        Args:
+            chest: 目標 `Block` 或 `Entity`
+            direction: 點擊的面；通常不需指定
+            cursorPos: 精細點擊座標
+        """
 
     def openChest(
         self,
@@ -2049,22 +2386,26 @@ class Bot:
         direction: float | None = ...,
         cursor_pos: Vec3 | None = ...,
     ) -> Chest:
-        pass
+        """打開箱子，回傳 `Chest` 物件"""
 
     def openFurnace(self, furnace: Block) -> Furnace:
-        pass
+        """打開熔爐，回傳 `Furnace`"""
 
     def openDispenser(self, dispenser: Block) -> Dispenser:
-        pass
+        """打開發射器或投擲器，回傳 `Dispenser`"""
 
     def openEnchantmentTable(self, enchantment_table: Block) -> EnchantmentTable:
-        pass
+        """打開附魔台，回傳 `EnchantmentTable`"""
 
     def openAnvil(self, anvil: Block) -> Anvil:
-        pass
+        """打開鐵砧，回傳 `Anvil`"""
 
     def openVillager(self, villager: Entity) -> Villager:
-        pass
+        """與村民互動打開交易面板，回傳 `Villager`
+
+        Args:
+            villager: 村民 `Entity`
+        """
 
     def trade(
         self,
@@ -2072,65 +2413,124 @@ class Bot:
         trade_index: str | float,
         times: float | None = ...,
     ) -> None:
-        pass
+        """跟村民完成一筆交易
+
+        Args:
+            villagerInstance: `bot.openVillager` 回傳的 `Villager`
+            tradeIndex: 交易列表中的第幾筆（0-based，可用字串名稱或整數）
+            times: 要交易幾次，省略為 1
+        """
 
     def setCommandBlock(
         self, pos: Vec3, command: str, options: CommandBlockOptions
     ) -> None:
-        pass
+        """修改指令方塊內容
+
+        Args:
+            pos: 指令方塊座標 `Vec3`
+            command: 要寫入的指令字串（不需要開頭 `/`）
+            options: `{mode, trackOutput, conditional, alwaysActive}` 設定字典
+        """
 
     def clickWindow(self, slot: float, mouse_button: float, mode: float) -> None:
-        pass
+        """低階視窗點擊——直接模擬滑鼠事件
+        一般請用更高階的 `bot.equip` / `bot.toss` 等
+
+        Args:
+            slot: 槽位整數
+            mouseButton: `0` 左鍵、`1` 右鍵
+            mode: 點擊模式 `0` ~ `6`（協定層定義）
+        """
 
     def putSelectedItemRange(
         self, start: float, end: float, window: Window, slot: object
     ) -> None:
-        pass
+        """把當前游標上的物品塞進某視窗指定槽位範圍"""
 
     def putAway(self, slot: float) -> None:
-        pass
+        """把視窗裡 `slot` 的物品收回到物品欄"""
 
     def closeWindow(self, window: Window) -> None:
-        pass
+        """關掉指定視窗
+
+        Args:
+            window: 由 `openX` 方法取得的 `Window`
+        """
 
     def transfer(self, options: TransferOptions) -> None:
-        pass
+        """在視窗內移動物品
+
+        Args:
+            options: 含 `window`、`itemType`、`metadata`、`count`、`sourceStart` / `sourceEnd`、`destStart` / `destEnd` 的 dict
+        """
 
     def openBlock(
         self, block: Block, direction: Vec3 | None = ..., cursor_pos: Vec3 | None = ...
     ) -> Window:
-        pass
+        """開啟任意有視窗的方塊；實際回傳型別依方塊而定"""
 
     def openEntity(self, block: Entity, class_: object) -> Window:
-        pass
+        """使用指定 Class 構造視窗，用在自訂實體或非標準 Interactive Entity
+        進階用法
+        """
 
     def moveSlotItem(self, source_slot: float, dest_slot: float) -> None:
-        pass
+        """在物品欄裡把某槽物品移到另一槽"""
 
     def updateHeldItem(self) -> None:
-        pass
+        """立即將「目前快捷欄選中」的變更同步到伺服器
+        多數情況不用手動呼叫
+        """
 
     def getEquipmentDestSlot(self, destination: str) -> float:
-        pass
+        """查詢裝備類型對應的槽位編號
+
+        Args:
+            destination: `"hand"` / `"head"` / `"torso"` / `"legs"` / `"feet"` / `"off-hand"`
+                - 回傳整數槽位
+        """
 
     def waitForChunksToLoad(self) -> None:
-        pass
+        """阻塞等周遭的區塊全部載入完成再繼續
+        `spawn` 事件後呼叫可確保 `bot.blockAt` 之類都有結果
+        """
 
     def entityAtCursor(self, max_distance: float | None = ...) -> Entity | None:
-        pass
+        """從機器人視線方向投射，回傳第一個碰到的實體
+        沒找到則回傳 `None`
+
+        Args:
+            maxDistance: 最遠測距，預設 `3`
+        """
 
     def nearestEntity(
         self, filter_: Callable[[Entity], bool] | None = ...
     ) -> Entity | None:
-        pass
+        """找出最近的一個實體，可自訂篩選函式
+        沒找到則回傳 `None`
+
+        Args:
+            filter: (選填) 接受 `Entity` 回傳布林的函式
+        """
 
     def waitForTicks(self, ticks: float) -> None:
-        pass
+        """等指定 tick 數（每 tick 約 50ms）
+        阻塞式：會卡住呼叫它的執行緒，**handler 內不要用**
+
+        Args:
+            ticks: 要等的 tick 數整數
+        """
 
     def addChatPattern(
         self, name: str, pattern: object, options: chatPatternOptions | None = ...
     ) -> float:
-        pass
+        """註冊一個 chat pattern，讓特定格式的聊天訊息觸發自訂事件
+
+        Args:
+            name: 事件名稱（會觸發 `f"chat:{name}"` 事件）
+            pattern: 正則表達式物件（使用 JavaScript 的 `RegExp`）
+            options: (選填) `{repeat: bool, parse: bool}`。`parse=True` 時會把 regex 捕獲組傳進事件；`repeat=True` 表示事件可多次觸發事件
+        """
 
     def addChatPatternSet(
         self,
@@ -2138,22 +2538,35 @@ class Bot:
         patterns: list[object],
         options: chatPatternOptions | None = ...,
     ) -> float:
-        pass
+        """同 `addChatPattern`，但傳入多個 pattern 當一組（全部順序比中才觸發）
+        適合跨行訊息
+        """
 
     def removeChatPattern(self, name: str | float) -> None:
-        pass
+        """移除之前註冊的 chat pattern
+
+        Args:
+            name: pattern 名稱，或 `addChatPattern` 回傳的整數 ID
+        """
 
     def awaitMessage(self, args: list[str] | list[object]) -> str:
-        pass
+        """阻塞等待第一則符合任一 pattern 的聊天訊息
+
+        Args:
+            *patterns: 一到多個字串或 `RegExp`
+
+        Returns:
+            符合的字串
+        """
 
     def acceptResourcePack(self) -> None:
-        pass
+        """同意伺服器的資源包請求"""
 
     def denyResourcePack(self) -> None:
-        pass
+        """拒絕伺服器的資源包請求"""
 
     def respawn(self) -> None:
-        pass
+        """死後手動重生"""
 
     # --- Typed event overloads (generated from BotEvents) ---
     @overload
