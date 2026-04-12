@@ -118,6 +118,10 @@ reportUnknownMemberType = "none"
 reportUnknownVariableType = "none"
 reportUnknownArgumentType = "none"
 reportUnknownParameterType = "none"
+# `@bot.on(event)` decorates inner functions whose names are only referenced
+# by the decorator — strict mode flags every handler as unused. Disable the
+# rule project-wide so student scripts don't drown in false positives.
+reportUnusedFunction = "none"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
