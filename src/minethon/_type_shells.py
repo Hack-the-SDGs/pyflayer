@@ -12,169 +12,224 @@ class _Shell:
     """Runtime type shell. See `minethon.bot` stubs for members."""
 
 
-class Vec3(_Shell): ...
+class Vec3(_Shell):
+    pass
 
 
-class ChatMessageScore(_Shell): ...
+class ChatMessageScore(_Shell):
+    pass
 
 
-class ChatMessage(_Shell): ...
+class ChatMessage(_Shell):
+    pass
 
 
-class Effect(_Shell): ...
+class Effect(_Shell):
+    pass
 
 
-class Entity(_Shell): ...
+class Entity(_Shell):
+    pass
 
 
-class Block(_Shell): ...
+class Block(_Shell):
+    pass
 
 
-class Item(_Shell): ...
+class Item(_Shell):
+    pass
 
 
-class Window(_Shell): ...
+class Window(_Shell):
+    pass
 
 
-class Recipe(_Shell): ...
+class Recipe(_Shell):
+    pass
 
 
-class Move(_Shell): ...
+class Move(_Shell):
+    pass
 
 
-class Goal(_Shell): ...
+class Goal(_Shell):
+    pass
 
 
-class GoalBlock(_Shell): ...
+class GoalBlock(_Shell):
+    pass
 
 
-class GoalNear(_Shell): ...
+class GoalNear(_Shell):
+    pass
 
 
-class GoalXZ(_Shell): ...
+class GoalXZ(_Shell):
+    pass
 
 
-class GoalNearXZ(_Shell): ...
+class GoalNearXZ(_Shell):
+    pass
 
 
-class GoalY(_Shell): ...
+class GoalY(_Shell):
+    pass
 
 
-class GoalGetToBlock(_Shell): ...
+class GoalGetToBlock(_Shell):
+    pass
 
 
-class GoalFollow(_Shell): ...
+class GoalFollow(_Shell):
+    pass
 
 
-class GoalCompositeAll(_Shell): ...
+class GoalCompositeAll(_Shell):
+    pass
 
 
-class GoalCompositeAny(_Shell): ...
+class GoalCompositeAny(_Shell):
+    pass
 
 
-class GoalInvert(_Shell): ...
+class GoalInvert(_Shell):
+    pass
 
 
-class GoalPlaceBlock(_Shell): ...
+class GoalPlaceBlock(_Shell):
+    pass
 
 
-class GoalLookAtBlock(_Shell): ...
+class GoalLookAtBlock(_Shell):
+    pass
 
 
-class GoalBreakBlock(_Shell): ...
+class GoalBreakBlock(_Shell):
+    pass
 
 
-class Goals(_Shell): ...
+class Goals(_Shell):
+    pass
 
 
-class Movements(_Shell): ...
+class Movements(_Shell):
+    pass
 
 
-class Pathfinder(_Shell): ...
+class Pathfinder(_Shell):
+    pass
 
 
-class ComputedPath(_Shell): ...
+class ComputedPath(_Shell):
+    pass
 
 
-class PartiallyComputedPath(_Shell): ...
+class PartiallyComputedPath(_Shell):
+    pass
 
 
-class PathfinderModule(_Shell): ...
+class PathfinderModule(_Shell):
+    pass
 
 
-class Player(_Shell): ...
+class Player(_Shell):
+    pass
 
 
-class ChatPattern(_Shell): ...
+class ChatPattern(_Shell):
+    pass
 
 
-class SkinParts(_Shell): ...
+class SkinParts(_Shell):
+    pass
 
 
-class GameSettings(_Shell): ...
+class GameSettings(_Shell):
+    pass
 
 
-class GameState(_Shell): ...
+class GameState(_Shell):
+    pass
 
 
-class Experience(_Shell): ...
+class Experience(_Shell):
+    pass
 
 
-class PhysicsOptions(_Shell): ...
+class PhysicsOptions(_Shell):
+    pass
 
 
-class Time(_Shell): ...
+class Time(_Shell):
+    pass
 
 
-class ControlStateStatus(_Shell): ...
+class ControlStateStatus(_Shell):
+    pass
 
 
-class Instrument(_Shell): ...
+class Instrument(_Shell):
+    pass
 
 
-class FindBlockOptions(_Shell): ...
+class FindBlockOptions(_Shell):
+    pass
 
 
-class TransferOptions(_Shell): ...
+class TransferOptions(_Shell):
+    pass
 
 
-class creativeMethods(_Shell): ...  # noqa: N801
+class creativeMethods(_Shell):  # noqa: N801
+    pass
 
 
-class simpleClick(_Shell): ...  # noqa: N801
+class simpleClick(_Shell):  # noqa: N801
+    pass
 
 
-class Tablist(_Shell): ...
+class Tablist(_Shell):
+    pass
 
 
-class chatPatternOptions(_Shell): ...  # noqa: N801
+class chatPatternOptions(_Shell):  # noqa: N801
+    pass
 
 
-class CommandBlockOptions(_Shell): ...
+class CommandBlockOptions(_Shell):
+    pass
 
 
-class VillagerTrade(_Shell): ...
+class VillagerTrade(_Shell):
+    pass
 
 
-class Enchantment(_Shell): ...
+class Enchantment(_Shell):
+    pass
 
 
-class Chest(_Shell): ...
+class Chest(_Shell):
+    pass
 
 
-class Dispenser(_Shell): ...
+class Dispenser(_Shell):
+    pass
 
 
-class Furnace(_Shell): ...
+class Furnace(_Shell):
+    pass
 
 
-class EnchantmentTable(_Shell): ...
+class EnchantmentTable(_Shell):
+    pass
 
 
-class Anvil(_Shell): ...
+class Anvil(_Shell):
+    pass
 
 
-class Villager(_Shell): ...
+class Villager(_Shell):
+    pass
 
 
 TYPE_SHELL_NAMES = (
