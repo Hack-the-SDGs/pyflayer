@@ -21,15 +21,47 @@ Run: uv run python scripts/generate_stubs.py
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DTS_ROOT = REPO_ROOT / "src/mineflayer/js/node_modules"
-MF_INDEX = DTS_ROOT / "mineflayer/index.d.ts"
+VENDORED_DTS_ROOT = REPO_ROOT / "src/mineflayer/js/node_modules"
 OUT_PATH = REPO_ROOT / "src/minethon/bot.pyi"
+OUT_EVENTS_PATH = REPO_ROOT / "src/minethon/_events.py"
 STUBS_DOC = REPO_ROOT / "docs/stubs_zh_tw.md"
+
+
+def _find_runtime_node_modules() -> Path | None:
+    candidates = sorted(
+        REPO_ROOT.glob(".venv/lib/python*/site-packages/javascript/js/node_modules")
+    )
+    return candidates[0] if candidates else None
+
+
+RUNTIME_DTS_ROOT = _find_runtime_node_modules()
+
+
+def _resolve_package_dir(package: str) -> Path:
+    """Resolve a package directory, preferring the pinned runtime install."""
+    if RUNTIME_DTS_ROOT is not None:
+        aliased = sorted(RUNTIME_DTS_ROOT.glob(f"{package}--*"))
+        if aliased:
+            return aliased[0]
+        runtime_plain = RUNTIME_DTS_ROOT / package
+        if runtime_plain.exists():
+            return runtime_plain
+    vendored = VENDORED_DTS_ROOT / package
+    if vendored.exists():
+        return vendored
+    raise FileNotFoundError(f"Cannot resolve npm package directory for {package!r}")
+
+
+MF_DIR = _resolve_package_dir("mineflayer")
+PATHFINDER_DIR = _resolve_package_dir("mineflayer-pathfinder")
+MF_INDEX = MF_DIR / "index.d.ts"
+PATHFINDER_INDEX = PATHFINDER_DIR / "index.d.ts"
 
 
 # --------------------------------------------------------------------------- #
@@ -249,9 +281,7 @@ def inject_docstrings(text: str, descriptions: dict[str, str]) -> str:
             continue
 
         # Module-level function: `def create_bot(...) -> Bot: ...`
-        m_func = re.match(
-            r"^def (\w+)\([^)]*\)(?:\s*->\s*[^:]+)?:\s*\.\.\.\s*$", line
-        )
+        m_func = re.match(r"^def (\w+)\([^)]*\)(?:\s*->\s*[^:]+)?:\s*\.\.\.\s*$", line)
         if m_func:
             name = m_func.group(1)
             doc = descriptions.get(name)
@@ -305,17 +335,25 @@ TS_PRIMITIVES = {
     "Team": "object",
     "BossBar": "object",
     "Particle": "object",
+    "World": "object",
+    "AStar": "object",
     "DisplaySlot": "str",
     "SkinData": "object",
     "ChatPattern": "object",
     "GameSettings": "object",
     "PluginOptions": "dict[str, object]",
     "Plugin": "Callable[..., object]",
+    "Callback": "Callable[..., None]",
 }
 
 # Re-exported name overrides
 TS_NAME_REMAP = {
     "TypedEmitter": "object",  # TS utility; irrelevant for Python stubs
+}
+
+EVENT_CALLBACK_OVERRIDES = {
+    "message": "Callable[[ChatMessage, MessagePosition], None]",
+    "messagestr": "Callable[[str, MessagePosition, ChatMessage], None]",
 }
 
 
@@ -418,6 +456,21 @@ def ts_to_py(ts: str) -> str:
     arr_g = re.match(r"^Array<(.+)>$", ts)
     if arr_g:
         return f"list[{ts_to_py(arr_g.group(1))}]"
+
+    # Set<T>
+    set_g = re.match(r"^Set<(.+)>$", ts)
+    if set_g:
+        return f"set[{ts_to_py(set_g.group(1))}]"
+
+    # Record<K, V>
+    record_g = re.match(r"^Record<.+?,\s*(.+)>$", ts)
+    if record_g:
+        return f"dict[str, {ts_to_py(record_g.group(1))}]"
+
+    # IterableIterator<T>
+    iterator_g = re.match(r"^IterableIterator<(.+)>$", ts)
+    if iterator_g:
+        return f"Iterator[{ts_to_py(iterator_g.group(1))}]"
 
     # Promise<T> — strip, sync return
     prom = re.match(r"^Promise<(.+)>$", ts)
@@ -540,8 +593,8 @@ def strip_ts_comments(text: str) -> str:
 
 
 def find_interface(text: str, name: str) -> str | None:
-    """Extract the body of `export interface NAME { ... }` (balanced braces)."""
-    pattern = rf"export\s+interface\s+{re.escape(name)}\b[^{{]*\{{"
+    """Extract the body of `interface NAME { ... }` (balanced braces)."""
+    pattern = rf"(?:export\s+)?interface\s+{re.escape(name)}\b[^{{]*\{{"
     m = re.search(pattern, text)
     if not m:
         return None
@@ -560,7 +613,7 @@ def find_interface(text: str, name: str) -> str | None:
 
 
 def find_interface_extends(text: str, name: str) -> list[str]:
-    pattern = rf"export\s+interface\s+{re.escape(name)}\s+extends\s+([^{{]+)\{{"
+    pattern = rf"(?:export\s+)?interface\s+{re.escape(name)}\s+extends\s+([^{{]+)\{{"
     m = re.search(pattern, text)
     if not m:
         return []
@@ -833,6 +886,15 @@ class Vec3:
     def toArray(self) -> tuple[float, float, float]: ...
 
 
+class ChatMessageScore:
+    """Score payload inside a `ChatMessage`.
+
+    Ref: prismarine-chat/index.d.ts — ChatMessage.score
+    """
+    name: str
+    objective: str
+
+
 class ChatMessage:
     """Minecraft chat message (from `prismarine-chat` package).
 
@@ -843,7 +905,7 @@ class ChatMessage:
     translate: str | None
     selector: str | None
     keybind: str | None
-    score: object | None
+    score: ChatMessageScore | None
     def append(self, *messages: object) -> None: ...
     def clone(self) -> ChatMessage: ...
     def toString(self, language: object = ...) -> str: ...
@@ -853,6 +915,10 @@ class ChatMessage:
     def length(self) -> int: ...
     def getText(self, idx: int, language: object = ...) -> str: ...
     def valueOf(self) -> str: ...
+    @staticmethod
+    def fromNotch(str: str) -> ChatMessage: ...
+    @staticmethod
+    def fromNetwork(messageType: int, parameters: dict[str, object]) -> ChatMessage: ...
 
 
 EntityType = Literal['player', 'mob', 'object', 'global', 'orb', 'projectile', 'hostile', 'other']
@@ -1027,12 +1093,16 @@ class Move:
     z: float
     cost: float
     remainingBlocks: int
+    toBreak: list[Move]
+    toPlace: list[Move]
     parkour: bool
     hash: str
 
 
 class Goal:
     """Base class for all pathfinder goals."""
+    def heuristic(self, node: Move) -> float: ...
+    def isEnd(self, node: Move) -> bool: ...
     def hasChanged(self) -> bool: ...
     def isValid(self) -> bool: ...
 
@@ -1110,6 +1180,25 @@ class GoalInvert(Goal):
     def __init__(self, goal: Goal) -> None: ...
 
 
+class GoalPlaceBlock(Goal):
+    pos: Vec3
+    world: object
+    options: object
+    def __init__(self, pos: Vec3, world: object, options: object) -> None: ...
+
+
+class GoalLookAtBlock(Goal):
+    pos: Vec3
+    reach: float
+    entityHeight: float
+    world: object
+    def __init__(self, pos: Vec3, world: object, options: object | None = ...) -> None: ...
+
+
+class GoalBreakBlock(GoalLookAtBlock):
+    pass
+
+
 class Goals:
     """Container exposing pathfinder's goal constructors.
 
@@ -1127,6 +1216,9 @@ class Goals:
     GoalCompositeAll: type[GoalCompositeAll]
     GoalCompositeAny: type[GoalCompositeAny]
     GoalInvert: type[GoalInvert]
+    GoalPlaceBlock: type[GoalPlaceBlock]
+    GoalLookAtBlock: type[GoalLookAtBlock]
+    GoalBreakBlock: type[GoalBreakBlock]
 
 
 class Movements:
@@ -1142,10 +1234,20 @@ class Movements:
     allowParkour: bool
     allowSprinting: bool
     allowEntityDetection: bool
+    dontCreateFlow: bool
+    dontMineUnderFallingBlock: bool
     digCost: float
     placeCost: float
+    entityCost: float
     maxDropDown: int
+    exclusionAreasStep: list[Callable[[Block], float]]
+    exclusionAreasBreak: list[Callable[[Block], float]]
+    exclusionAreasPlace: list[Callable[[Block], float]]
     def __init__(self, bot: object) -> None: ...
+    def countScaffoldingItems(self) -> int: ...
+    def getScaffoldingItem(self) -> Item | None: ...
+    def clearCollisionIndex(self) -> None: ...
+    def updateCollisionIndex(self) -> None: ...
 
 
 class Pathfinder:
@@ -1156,8 +1258,20 @@ class Pathfinder:
     """
     thinkTimeout: int
     tickTimeout: int
+    goal: Goal | None
+    movements: Movements
     def setGoal(self, goal: Goal | None, dynamic: bool = ...) -> None: ...
     def setMovements(self, movements: Movements) -> None: ...
+    def getPathTo(
+        self, movements: Movements, goal: Goal, timeout: float | None = ...
+    ) -> ComputedPath: ...
+    def getPathFromTo(
+        self,
+        movements: Movements,
+        startPos: Vec3 | None,
+        goal: Goal,
+        options: object | None = ...,
+    ) -> Iterator[object]: ...
     def goto(self, goal: Goal) -> None: ...
     def stop(self) -> None: ...
     def isMoving(self) -> bool: ...
@@ -1166,12 +1280,45 @@ class Pathfinder:
     def bestHarvestTool(self, block: Block) -> Item | None: ...
 
 
+PathComputationStatus = Literal['noPath', 'timeout', 'success']
+PartialPathComputationStatus = Literal['noPath', 'timeout', 'success', 'partial']
+PathResetReason = Literal[
+    'goal_updated',
+    'movements_updated',
+    'block_updated',
+    'chunk_loaded',
+    'goal_moved',
+    'dig_error',
+    'no_scaffolding_blocks',
+    'place_error',
+    'stuck',
+]
+
+
+class ComputedPath:
+    cost: float
+    time: float
+    visitedNodes: int
+    generatedNodes: int
+    path: list[Move]
+    status: PathComputationStatus
+
+
+class PartiallyComputedPath:
+    cost: float
+    time: float
+    visitedNodes: int
+    generatedNodes: int
+    path: list[Move]
+    status: PartialPathComputationStatus
+
+
 class PathfinderModule:
     """The npm module returned by `bot.load_plugin('mineflayer-pathfinder')`.
 
     Ref: node_modules/mineflayer-pathfinder/index.d.ts — top-level exports
     """
-    pathfinder: Callable[..., None]
+    pathfinder: Callable[[Bot], None]
     goals: Goals
     Movements: type[Movements]
 '''
@@ -1199,11 +1346,13 @@ def render_method(member: Member) -> str:
     return f"    def {member.name}({', '.join(parts)}) -> {ret_py}: ..."
 
 
-def render_interface(name: str, body: str) -> list[str]:
+def render_interface(
+    name: str, body: str, *, ref_path: str = "mineflayer/index.d.ts"
+) -> list[str]:
     """Render a mineflayer interface body as a Python class."""
     members = parse_members(body)
     lines = [f"class {name}:"]
-    lines.append(f'    """Ref: mineflayer/index.d.ts — {name}"""')
+    lines.append(f'    """Ref: {ref_path} — {name}"""')
     if not members:
         lines.append("    pass")
         return lines
@@ -1233,6 +1382,12 @@ def render_bot_events(events_body: str) -> tuple[list[str], list[tuple[str, str]
     for m in members:
         if not m.is_method and not m.ts_type:
             continue
+        override = EVENT_CALLBACK_OVERRIDES.get(m.name)
+        if override is not None:
+            alias = f"_OnEvent_{_sanitize_alias(m.name)}"
+            lines.append(f"{alias} = {override}")
+            event_callbacks.append((m.name, alias))
+            continue
         # Each event is declared as a property whose type is a function:
         # `chat: (username: string, message: string, ...) => Promise<void> | void`
         # But our parse_members may emit it as `is_method=True` if we catch the "("...
@@ -1261,20 +1416,53 @@ def _sanitize_alias(name: str) -> str:
     return re.sub(r"\W", "_", name)
 
 
+def _event_member_name(event: str) -> str:
+    snake = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", event)
+    snake = re.sub(r"\W+", "_", snake).strip("_")
+    return snake.upper()
+
+
+def _event_attr_name(event: str, *, prefix: str) -> str:
+    snake = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", event)
+    snake = re.sub(r"\W+", "_", snake).strip("_").lower()
+    return f"{prefix}_{snake}"
+
+
+def render_event_enum(event_callbacks: list[tuple[str, str]]) -> list[str]:
+    lines = [
+        "class BotEvent(StrEnum):",
+        '    """Source-verified mineflayer event names."""',
+    ]
+    for event, _ in event_callbacks:
+        lines.append(f'    {_event_member_name(event)} = "{event}"')
+    return lines
+
+
+def render_event_decorator_aliases(
+    event_callbacks: list[tuple[str, str]], method: str
+) -> list[str]:
+    lines: list[str] = []
+    for event, alias in event_callbacks:
+        attr_name = _event_attr_name(event, prefix=method)
+        member = _event_member_name(event)
+        lines.append(f"    {attr_name}: Callable[[{alias}], {alias}]")
+        lines.append(f'    """Same as `bot.{method}(BotEvent.{member})`. """')
+    return lines
+
+
 def render_on_overloads(
     event_callbacks: list[tuple[str, str]], method: str
 ) -> list[str]:
     """Emit @overload defs for `on` or `once`."""
     lines: list[str] = []
     for event, alias in event_callbacks:
+        member = _event_member_name(event)
         lines.append("    @overload")
         lines.append(
-            f'    def {method}(self, event: Literal["{event}"]) -> '
+            f"    def {method}(self, event: Literal[BotEvent.{member}]) -> "
             f"Callable[[{alias}], {alias}]: ..."
         )
-    # No `event: str` fallback on purpose — forces students to use a known event
-    # name and get IDE completion. Custom events from plugins should go through
-    # `bot.raw.on(...)` (reserved for a future raw escape hatch).
+    # No string overload on purpose — public API only accepts BotEvent.
     return lines
 
 
@@ -1291,6 +1479,7 @@ def render_bot(bot_body: str, event_callbacks: list[tuple[str, str]]) -> list[st
         "    Every property and method below mirrors mineflayer's Bot interface.\n\n"
         '    Ref: mineflayer/index.d.ts — interface Bot\n    """'
     )
+    lines.append("    def __init__(self, js_bot: object) -> None: ...")
     # Skip private `_client` field (exposed as raw JS only)
     for m in members:
         if m.name.startswith("_"):
@@ -1305,7 +1494,14 @@ def render_bot(bot_body: str, event_callbacks: list[tuple[str, str]]) -> list[st
     lines.append("    # --- Typed event overloads (generated from BotEvents) ---")
     lines.extend(render_on_overloads(event_callbacks, "on"))
     lines.append("")
+    lines.append(
+        "    # Shortcut decorators for better IDE completion in JetBrains/Pylance"
+    )
+    lines.extend(render_event_decorator_aliases(event_callbacks, "on"))
+    lines.append("")
     lines.extend(render_on_overloads(event_callbacks, "once"))
+    lines.append("")
+    lines.extend(render_event_decorator_aliases(event_callbacks, "once"))
     lines.append("")
     # Minethon-specific additions — defined in bot.py at runtime.
     lines.append("    # --- Minethon-specific methods (defined in bot.py) ---")
@@ -1330,7 +1526,9 @@ def render_bot(bot_body: str, event_callbacks: list[tuple[str, str]]) -> list[st
     lines.append("        export_key: str | None = ...,")
     lines.append("        **options: object,")
     lines.append("    ) -> object: ...")
-    lines.append("    def require(self, name: str, version: str | None = ...) -> object: ...")
+    lines.append(
+        "    def require(self, name: str, version: str | None = ...) -> object: ..."
+    )
     lines.append("    def run_forever(self) -> None: ...")
     return lines
 
@@ -1389,18 +1587,21 @@ HEADER = """\
 # This file is the IDE completion overlay for src/minethon/bot.py.
 # Runtime behavior lives in bot.py; types live here.
 #
-# Ref: src/mineflayer/js/node_modules/mineflayer/index.d.ts
-# Ref: src/mineflayer/js/node_modules/vec3/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-entity/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-block/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-item/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-chat/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-windows/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-recipe/index.d.ts
+# Ref: {mf_index}
+# Ref: {vec3_index}
+# Ref: {entity_index}
+# Ref: {block_index}
+# Ref: {item_index}
+# Ref: {chat_index}
+# Ref: {windows_index}
+# Ref: {recipe_index}
+# Ref: {pathfinder_index}
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Literal, Self, TypedDict, overload
+
+from minethon._events import BotEvent
 
 """
 
@@ -1489,11 +1690,69 @@ def extract_type_alias(text: str, name: str) -> str | None:
     return None
 
 
+def render_events_module(event_callbacks: list[tuple[str, str]]) -> str:
+    lines = [
+        "# GENERATED FROM mineflayer/index.d.ts — DO NOT EDIT MANUALLY.",
+        "# Regenerate via: uv run python scripts/generate_stubs.py",
+        "from __future__ import annotations",
+        "",
+        "from enum import StrEnum",
+        "",
+        "",
+        "class BotEvent(StrEnum):",
+        '    """Source-verified event names for `bot.on(...)`."""',
+    ]
+    for event, _ in event_callbacks:
+        lines.append(f'    {_event_member_name(event)} = "{event}"')
+    lines.extend(
+        [
+            "",
+            "EVENT_ATTRIBUTE_MAP = {",
+        ]
+    )
+    for event, _ in event_callbacks:
+        lines.append(
+            f'    "{_event_attr_name(event, prefix="on")[3:]}": '
+            f"BotEvent.{_event_member_name(event)},"
+        )
+    lines.extend(
+        [
+            "}",
+            "",
+            '__all__ = ["BotEvent", "EVENT_ATTRIBUTE_MAP"]',
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def format_generated_files(*paths: Path) -> None:
+    subprocess.run(
+        [sys.executable, "-m", "ruff", "format", *(str(path) for path in paths)],
+        check=True,
+    )
+
+
 def main() -> None:
     mf_text = MF_INDEX.read_text()
     mf_text = strip_ts_comments(mf_text)
+    pathfinder_text = strip_ts_comments(PATHFINDER_INDEX.read_text())
 
-    out: list[str] = [HEADER, EXTERNAL_STUBS, ""]
+    out: list[str] = [
+        HEADER.format(
+            mf_index=MF_INDEX,
+            vec3_index=_resolve_package_dir("vec3") / "index.d.ts",
+            entity_index=_resolve_package_dir("prismarine-entity") / "index.d.ts",
+            block_index=_resolve_package_dir("prismarine-block") / "index.d.ts",
+            item_index=_resolve_package_dir("prismarine-item") / "index.d.ts",
+            chat_index=_resolve_package_dir("prismarine-chat") / "index.d.ts",
+            windows_index=_resolve_package_dir("prismarine-windows") / "index.d.ts",
+            recipe_index=_resolve_package_dir("prismarine-recipe") / "index.d.ts",
+            pathfinder_index=PATHFINDER_INDEX,
+        ),
+        EXTERNAL_STUBS,
+        "",
+    ]
 
     # Type aliases
     out.append("# --- Mineflayer type aliases ---")
@@ -1503,6 +1762,7 @@ def main() -> None:
             print(f"warn: type alias {alias} not found", file=sys.stderr)
             continue
         out.append(render_type_alias(alias, expr))
+    out.append('MessagePosition = Literal["chat", "system", "game_info"]')
     out.append("")
 
     # Supporting interfaces
@@ -1532,6 +1792,12 @@ def main() -> None:
     if events_body is None:
         raise SystemExit("Cannot find BotEvents interface")
     ev_lines, event_callbacks = render_bot_events(events_body)
+    pathfinder_events_body = find_interface(pathfinder_text, "BotEvents")
+    if pathfinder_events_body is not None:
+        pf_ev_lines, pf_event_callbacks = render_bot_events(pathfinder_events_body)
+        ev_lines.extend(pf_ev_lines[1:])
+        event_callbacks.extend(pf_event_callbacks)
+    event_callbacks.sort(key=lambda item: item[0])
     out.extend(ev_lines)
     out.append("")
 
@@ -1559,14 +1825,19 @@ def main() -> None:
     if descriptions:
         final_text = inject_docstrings(raw_text, descriptions)
         print(
-            f"injected docstrings for {len(descriptions)} symbols "
-            f"from {STUBS_DOC.name}"
+            f"injected docstrings for {len(descriptions)} symbols from {STUBS_DOC.name}"
         )
     else:
         final_text = raw_text
         print(f"no stubs doc at {STUBS_DOC}; skipping docstring injection")
     OUT_PATH.write_text(final_text)
+    events_text = render_events_module(event_callbacks)
+    OUT_EVENTS_PATH.write_text(events_text)
+    format_generated_files(OUT_PATH, OUT_EVENTS_PATH)
+    final_text = OUT_PATH.read_text(encoding="utf-8")
+    events_text = OUT_EVENTS_PATH.read_text(encoding="utf-8")
     print(f"Wrote {OUT_PATH} ({len(final_text.splitlines())} lines)")
+    print(f"Wrote {OUT_EVENTS_PATH} ({len(events_text.splitlines())} lines)")
 
 
 if __name__ == "__main__":

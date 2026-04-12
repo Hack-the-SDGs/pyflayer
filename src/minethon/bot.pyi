@@ -4,19 +4,21 @@
 # This file is the IDE completion overlay for src/minethon/bot.py.
 # Runtime behavior lives in bot.py; types live here.
 #
-# Ref: src/mineflayer/js/node_modules/mineflayer/index.d.ts
-# Ref: src/mineflayer/js/node_modules/vec3/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-entity/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-block/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-item/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-chat/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-windows/index.d.ts
-# Ref: src/mineflayer/js/node_modules/prismarine-recipe/index.d.ts
+# Ref: /Users/xinshou/IdeaProjects/minethon/.venv/lib/python3.14/site-packages/javascript/js/node_modules/mineflayer--342e33372e30/index.d.ts
+# Ref: /Users/xinshou/IdeaProjects/minethon/.venv/lib/python3.14/site-packages/javascript/js/node_modules/vec3--302e312e3130/index.d.ts
+# Ref: /Users/xinshou/IdeaProjects/minethon/.venv/lib/python3.14/site-packages/javascript/js/node_modules/prismarine-entity/index.d.ts
+# Ref: /Users/xinshou/IdeaProjects/minethon/.venv/lib/python3.14/site-packages/javascript/js/node_modules/prismarine-block/index.d.ts
+# Ref: /Users/xinshou/IdeaProjects/minethon/.venv/lib/python3.14/site-packages/javascript/js/node_modules/prismarine-item/index.d.ts
+# Ref: /Users/xinshou/IdeaProjects/minethon/.venv/lib/python3.14/site-packages/javascript/js/node_modules/prismarine-chat/index.d.ts
+# Ref: /Users/xinshou/IdeaProjects/minethon/.venv/lib/python3.14/site-packages/javascript/js/node_modules/prismarine-windows/index.d.ts
+# Ref: /Users/xinshou/IdeaProjects/minethon/.venv/lib/python3.14/site-packages/javascript/js/node_modules/prismarine-recipe/index.d.ts
+# Ref: /Users/xinshou/IdeaProjects/minethon/.venv/lib/python3.14/site-packages/javascript/js/node_modules/mineflayer-pathfinder--322e342e35/index.d.ts
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Literal, Self, TypedDict, overload
 
+from minethon._events import BotEvent
 
 # --- External types (from vec3 / prismarine-* packages) ---
 # These are Protocol stubs mirroring the fields/methods used by mineflayer.
@@ -27,6 +29,7 @@ class Vec3:
     Minecraft 的位置、速度、方向都用這個類
     支援各種位移、距離、算術運算；**多數「帶 `ed` 結尾」的 method 回傳新物件，不會修改自身**；不帶的多為 in-place 修改
     """
+
     x: float
     """X 軸座標"""
     y: float
@@ -58,7 +61,7 @@ class Vec3:
         ...
     def xzy(self) -> Vec3:
         """Returns:
-            一個新 `Vec3`，y 與 z 互換（座標變 `(x, z, y)`）
+        一個新 `Vec3`，y 與 z 互換（座標變 `(x, z, y)`）
         """
         ...
     def set(self, x: float, y: float, z: float) -> Self:
@@ -79,7 +82,7 @@ class Vec3:
         ...
     def rounded(self) -> Vec3:
         """Returns:
-            一個新 `Vec3`，各軸四捨五入到整數
+        一個新 `Vec3`，各軸四捨五入到整數
         """
         ...
     def round(self) -> Self:
@@ -87,7 +90,7 @@ class Vec3:
         ...
     def floored(self) -> Vec3:
         """Returns:
-            一個新 `Vec3`，各軸向下取整。用來把浮點位置對齊到所屬方塊座標時常用
+        一個新 `Vec3`，各軸向下取整。用來把浮點位置對齊到所屬方塊座標時常用
         """
         ...
     def floor(self) -> Self:
@@ -135,42 +138,42 @@ class Vec3:
         ...
     def plus(self, other: Vec3) -> Vec3:
         """Returns:
-            新的 `Vec3`，座標是自身加上 `other` 的各軸值
+        新的 `Vec3`，座標是自身加上 `other` 的各軸值
         """
         ...
     def minus(self, other: Vec3) -> Vec3:
         """Returns:
-            新的 `Vec3`，座標是自身減去 `other`
+        新的 `Vec3`，座標是自身減去 `other`
         """
         ...
     def scaled(self, scalar: float) -> Vec3:
         """Returns:
-            新的 `Vec3`，各軸座標都乘上 `scalar`
+        新的 `Vec3`，各軸座標都乘上 `scalar`
         """
         ...
     def abs(self) -> Vec3:
         """Returns:
-            一個新 `Vec3`，各軸取絕對值
+        一個新 `Vec3`，各軸取絕對值
         """
         ...
     def volume(self) -> float:
         """Returns:
-            `x * y * z` 的體積
+        `x * y * z` 的體積
         """
         ...
     def modulus(self, other: Vec3) -> Vec3:
         """Returns:
-            一個新 `Vec3`，對 `other` 取 modulo
+        一個新 `Vec3`，對 `other` 取 modulo
         """
         ...
     def distanceTo(self, other: Vec3) -> float:
         """Returns:
-            到另一個向量的歐氏距離
+        到另一個向量的歐氏距離
         """
         ...
     def distanceSquared(self, other: Vec3) -> float:
         """Returns:
-            到另一向量的歐氏距離**平方**
+        到另一向量的歐氏距離**平方**
         """
         ...
     def equals(self, other: Vec3, error: float = ...) -> bool:
@@ -183,42 +186,42 @@ class Vec3:
         ...
     def toString(self) -> str:
         """Returns:
-            `"(x, y, z)"` 格式的字串
+        `"(x, y, z)"` 格式的字串
         """
         ...
     def clone(self) -> Vec3:
         """Returns:
-            一個和自身相同座標的新 `Vec3`。避免意外修改共用物件時使用
+        一個和自身相同座標的新 `Vec3`。避免意外修改共用物件時使用
         """
         ...
     def min(self, other: Vec3) -> Vec3:
         """Returns:
-            新 `Vec3`，各軸取兩者最小值
+        新 `Vec3`，各軸取兩者最小值
         """
         ...
     def max(self, other: Vec3) -> Vec3:
         """Returns:
-            新 `Vec3`，各軸取兩者最大值
+        新 `Vec3`，各軸取兩者最大值
         """
         ...
     def norm(self) -> float:
         """Returns:
-            向量長度
+        向量長度
         """
         ...
     def dot(self, other: Vec3) -> float:
         """Returns:
-            與另一向量的點積
+        與另一向量的點積
         """
         ...
     def cross(self, other: Vec3) -> Vec3:
         """Returns:
-            與另一向量的外積結果新 `Vec3`
+        與另一向量的外積結果新 `Vec3`
         """
         ...
     def unit(self) -> Vec3:
         """Returns:
-            單位化後的新 `Vec3`（方向相同、長度 1）；零向量會回傳零向量
+        單位化後的新 `Vec3`（方向相同、長度 1）；零向量會回傳零向量
         """
         ...
     def normalize(self) -> Vec3:
@@ -244,25 +247,34 @@ class Vec3:
         ...
     def innerProduct(self, other: Vec3) -> float:
         """Returns:
-            內積
+        內積
         """
         ...
     def manhattanDistanceTo(self, other: Vec3) -> float:
         """Returns:
-            曼哈頓距離
+        曼哈頓距離
         """
         ...
     def toArray(self) -> tuple[float, float, float]:
         """Returns:
-            `[x, y, z]` 的 tuple
+        `[x, y, z]` 的 tuple
         """
         ...
 
+class ChatMessageScore:
+    """Score payload inside a `ChatMessage`.
+
+    Ref: prismarine-chat/index.d.ts — ChatMessage.score
+    """
+
+    name: str
+    objective: str
 
 class ChatMessage:
     """Minecraft 聊天訊息物件
     伺服器 emit 的事件參數多半是這個類型；需要印字時用 `.toString()` 或 `.toAnsi()`
     """
+
     json: object
     """原始的 JSON 物件"""
     extra: list[ChatMessage] | None
@@ -271,13 +283,13 @@ class ChatMessage:
     """(選填) 訊息對應的翻譯 key，例如 `"chat.type.text"`"""
     selector: str | None
     keybind: str | None
-    score: object | None
+    score: ChatMessageScore | None
     def append(self, *messages: object) -> None:
         """把一到多個子訊息或字串附加到自身"""
         ...
     def clone(self) -> ChatMessage:
         """Returns:
-            一個同內容的新 `ChatMessage`
+        一個同內容的新 `ChatMessage`
         """
         ...
     def toString(self, language: object = ...) -> str:
@@ -306,13 +318,18 @@ class ChatMessage:
     def valueOf(self) -> str:
         """同 `toString()`，供 `str()` / `+` 字串拼接使用"""
         ...
+    @staticmethod
+    def fromNotch(str: str) -> ChatMessage: ...
+    @staticmethod
+    def fromNetwork(messageType: int, parameters: dict[str, object]) -> ChatMessage: ...
 
-
-EntityType = Literal['player', 'mob', 'object', 'global', 'orb', 'projectile', 'hostile', 'other']
-
+EntityType = Literal[
+    "player", "mob", "object", "global", "orb", "projectile", "hostile", "other"
+]
 
 class Effect:
     """狀態效果物件"""
+
     id: int
     """狀態效果的數字 ID"""
     amplifier: int
@@ -322,11 +339,11 @@ class Effect:
     duration: int
     """剩餘持續時間"""
 
-
 class Entity:
     """世界中任意實體的抽象
     玩家、怪物、掉落物、箭、船、末影珍珠等都是 `Entity`
     """
+
     id: int
     """實體在當前世界中的整數 ID"""
     type: EntityType
@@ -408,16 +425,16 @@ class Entity:
         ...
     def getCustomName(self) -> ChatMessage | None:
         """Returns:
-            實體的自訂名稱 `ChatMessage`，沒有則為 `None`
+        實體的自訂名稱 `ChatMessage`，沒有則為 `None`
         """
         ...
     def getDroppedItem(self) -> Item | None:
         """若此實體是掉落物 entity，回傳其物品 `Item`，否則為 `None`"""
         ...
 
-
 class Block:
     """世界中一格方塊的表示"""
+
     stateId: int
     """方塊的 state 數字 ID（1.13+ flattening 後的真正唯一識別碼）
     新版 pattern 請優先用這個
@@ -446,7 +463,7 @@ class Block:
     """方塊的碰撞形狀陣列，每個元素是 `[xmin, ymin, zmin, xmax, ymax, zmax]` 的邊界盒"""
     hardness: float
     """方塊的硬度值（浮點數）；愈大代表空手打愈久"""
-    boundingBox: Literal['block', 'empty']
+    boundingBox: Literal["block", "empty"]
     """物理判定的大致形狀字串：`"block"`（實心 / 半實心）或 `"empty"`"""
     transparent: bool
     """方塊視覺上是否半透明"""
@@ -497,9 +514,9 @@ class Block:
         """
         ...
 
-
 class Item:
     """物品堆疊的表示"""
+
     type: int
     """物品的數字 ID"""
     slot: int
@@ -541,9 +558,9 @@ class Item:
     spawnEggMobName: str
     """若為生怪蛋，這裡是它會生出的生物名稱字串"""
 
-
 class Window:
     """開啟的任意容器 / 視窗"""
+
     id: int
     """視窗的協定 ID"""
     type: int | str
@@ -596,12 +613,12 @@ class Window:
         ...
     def items(self) -> list[Item]:
         """Returns:
-            玩家物品欄中的所有物品 `Item` 陣列
+        玩家物品欄中的所有物品 `Item` 陣列
         """
         ...
     def containerItems(self) -> list[Item]:
         """Returns:
-            容器區所有物品 `Item` 陣列
+        容器區所有物品 `Item` 陣列
         """
         ...
     def count(self, itemType: int | str, metadata: int | None) -> int:
@@ -616,11 +633,11 @@ class Window:
         """玩家物品欄中空槽的數量"""
         ...
 
-
 class Recipe:
     """合成配方物件
     由 `bot.recipesFor(...)` 取得
     """
+
     result: object
     """合成產出的 `RecipeItem`"""
     inShape: list[list[object]]
@@ -636,7 +653,6 @@ class Recipe:
     `False` 代表玩家 2x2 合成區就能做
     """
 
-
 # --- mineflayer-pathfinder stubs ---
 # Only pathfinder gets a typed wrapper (AGENTS.md: all other plugins go
 # through `bot.require(...)` and their own README).
@@ -648,14 +664,17 @@ class Move:
     z: float
     cost: float
     remainingBlocks: int
+    toBreak: list[Move]
+    toPlace: list[Move]
     parkour: bool
     hash: str
-
 
 class Goal:
     """所有目標類別的基底
     學生通常直接用 `GoalNear` 等子類而不是這個
     """
+    def heuristic(self, node: Move) -> float: ...
+    def isEnd(self, node: Move) -> bool: ...
     def hasChanged(self) -> bool:
         """目標參數是否自上次尋路後有改動"""
         ...
@@ -663,16 +682,15 @@ class Goal:
         """目標是否仍然可以作為有效目標"""
         ...
 
-
 class GoalBlock(Goal):
     """抵達指定整數座標那格方塊上
     需要精確落地時使用
     """
+
     x: float
     y: float
     z: float
     def __init__(self, x: float, y: float, z: float) -> None: ...
-
 
 class GoalNear(Goal):
     """最常用的目標：抵達 `(x, y, z)` 附近 `range` 格內即算到達
@@ -685,19 +703,19 @@ class GoalNear(Goal):
     Args:
         range: 容許的半徑（方塊為單位）
     """
+
     x: float
     y: float
     z: float
     rangeSq: float
     def __init__(self, x: float, y: float, z: float, range: float) -> None: ...
 
-
 class GoalXZ(Goal):
     """抵達指定 X / Z 平面，Y 不限"""
+
     x: float
     z: float
     def __init__(self, x: float, z: float) -> None: ...
-
 
 class GoalNearXZ(Goal):
     """同 `GoalXZ` 但帶距離容許值：抵達 `(x, z)` 平面 `range` 格內即算達成，Y 不限
@@ -709,27 +727,27 @@ class GoalNearXZ(Goal):
     Args:
         range: 容許半徑
     """
+
     x: float
     z: float
     rangeSq: float
     def __init__(self, x: float, z: float, range: float) -> None: ...
 
-
 class GoalY(Goal):
     """爬升 / 下降到指定 Y 高度；X、Z 不限"""
+
     y: float
     def __init__(self, y: float) -> None: ...
-
 
 class GoalGetToBlock(Goal):
     """抵達指定整數座標**旁邊**
     適合用來走到箱子前、工作台前這類需要「站旁邊操作」的物件
     """
+
     x: float
     y: float
     z: float
     def __init__(self, x: float, y: float, z: float) -> None: ...
-
 
 class GoalFollow(Goal):
     """持續跟著某個實體，保持距離在 `range` 格內
@@ -739,13 +757,13 @@ class GoalFollow(Goal):
         entity: 要跟隨的 `Entity`
         range: 保持的距離上限
     """
+
     x: float
     y: float
     z: float
     entity: Entity
     rangeSq: float
     def __init__(self, entity: Entity, range: float) -> None: ...
-
 
 class GoalCompositeAll(Goal):
     """只有全部子目標都滿足時才算達成
@@ -754,7 +772,6 @@ class GoalCompositeAll(Goal):
     def __init__(self, goals: list[Goal] = ...) -> None: ...
     def push(self, goal: Goal) -> None: ...
 
-
 class GoalCompositeAny(Goal):
     """任一子目標達成就結束
     適合「到達任一地標即可」的需求
@@ -762,11 +779,27 @@ class GoalCompositeAny(Goal):
     def __init__(self, goals: list[Goal] = ...) -> None: ...
     def push(self, goal: Goal) -> None: ...
 
-
 class GoalInvert(Goal):
     """把一個「抵達某點」目標翻轉成「遠離某點」——會朝讓啟發式最大化的方向移動"""
     def __init__(self, goal: Goal) -> None: ...
 
+class GoalPlaceBlock(Goal):
+    pos: Vec3
+    world: object
+    options: object
+    def __init__(self, pos: Vec3, world: object, options: object) -> None: ...
+
+class GoalLookAtBlock(Goal):
+    pos: Vec3
+    reach: float
+    entityHeight: float
+    world: object
+    def __init__(
+        self, pos: Vec3, world: object, options: object | None = ...
+    ) -> None: ...
+
+class GoalBreakBlock(GoalLookAtBlock):
+    pass
 
 class Goals:
     """Container exposing pathfinder's goal constructors.
@@ -774,6 +807,7 @@ class Goals:
     Accessed via `pf.goals.GoalNear(...)` where
     `pf = bot.load_plugin('mineflayer-pathfinder')`.
     """
+
     Goal: type[Goal]
     GoalBlock: type[GoalBlock]
     GoalNear: type[GoalNear]
@@ -785,12 +819,15 @@ class Goals:
     GoalCompositeAll: type[GoalCompositeAll]
     GoalCompositeAny: type[GoalCompositeAny]
     GoalInvert: type[GoalInvert]
-
+    GoalPlaceBlock: type[GoalPlaceBlock]
+    GoalLookAtBlock: type[GoalLookAtBlock]
+    GoalBreakBlock: type[GoalBreakBlock]
 
 class Movements:
     """尋路的移動規則集合
     決定機器人能挖、能跳、能游、能跑、允許哪些方塊放置等
     """
+
     canDig: bool
     """是否允許為了開路而挖方塊"""
     canOpenDoors: bool
@@ -809,29 +846,41 @@ class Movements:
     """是否偵測會阻擋路徑的實體（布林）
     開啟後尋路每次會重新掃附近實體，耗一點效能但比較安全
     """
+    dontCreateFlow: bool
+    dontMineUnderFallingBlock: bool
     digCost: float
     """為了開路而挖方塊時加在路徑成本上的懲罰值
     預設較大以降低挖路傾向
     """
     placeCost: float
     """為了開路而放置方塊時的成本懲罰"""
+    entityCost: float
     maxDropDown: int
     """允許直接向下跳躍的最大高度（方塊數）
     超過這個值會找別的路或不通
     """
+    exclusionAreasStep: list[Callable[[Block], float]]
+    exclusionAreasBreak: list[Callable[[Block], float]]
+    exclusionAreasPlace: list[Callable[[Block], float]]
     def __init__(self, bot: object) -> None: ...
-
+    def countScaffoldingItems(self) -> int: ...
+    def getScaffoldingItem(self) -> Item | None: ...
+    def clearCollisionIndex(self) -> None: ...
+    def updateCollisionIndex(self) -> None: ...
 
 class Pathfinder:
     """尋路插件提供給機器人的執行時 API
     載入插件後會自動掛在 `bot.pathfinder` 上
     """
+
     thinkTimeout: int
     """尋路總思考時間上限（毫秒）
     超過會停下來並 emit `path_update` 回報 timeout
     """
     tickTimeout: int
     """每個 tick 內思考時間上限"""
+    goal: Goal | None
+    movements: Movements
     def setGoal(self, goal: Goal | None, dynamic: bool = ...) -> None:
         """設定機器人要去的目標；會在背景持續尋路並移動
         傳 `None` 可取消當前任務
@@ -849,6 +898,16 @@ class Pathfinder:
             movements: `Movements` 實例
         """
         ...
+    def getPathTo(
+        self, movements: Movements, goal: Goal, timeout: float | None = ...
+    ) -> ComputedPath: ...
+    def getPathFromTo(
+        self,
+        movements: Movements,
+        startPos: Vec3 | None,
+        goal: Goal,
+        options: object | None = ...,
+    ) -> Iterator[object]: ...
     def goto(self, goal: Goal) -> None:
         """阻塞直到抵達目標或失敗
         **慎用**：在 JSPyBridge 下會阻塞當前執行緒；若放在事件 handler 裡會卡住 callback 執行緒，通常只建議在主程式使用
@@ -875,32 +934,67 @@ class Pathfinder:
         """
         ...
 
+PathComputationStatus = Literal["noPath", "timeout", "success"]
+PartialPathComputationStatus = Literal["noPath", "timeout", "success", "partial"]
+PathResetReason = Literal[
+    "goal_updated",
+    "movements_updated",
+    "block_updated",
+    "chunk_loaded",
+    "goal_moved",
+    "dig_error",
+    "no_scaffolding_blocks",
+    "place_error",
+    "stuck",
+]
+
+class ComputedPath:
+    cost: float
+    time: float
+    visitedNodes: int
+    generatedNodes: int
+    path: list[Move]
+    status: PathComputationStatus
+
+class PartiallyComputedPath:
+    cost: float
+    time: float
+    visitedNodes: int
+    generatedNodes: int
+    path: list[Move]
+    status: PartialPathComputationStatus
 
 class PathfinderModule:
     """The npm module returned by `bot.load_plugin('mineflayer-pathfinder')`.
 
     Ref: node_modules/mineflayer-pathfinder/index.d.ts — top-level exports
     """
-    pathfinder: Callable[..., None]
+
+    pathfinder: Callable[[Bot], None]
     goals: Goals
     Movements: type[Movements]
 
-
 # --- Mineflayer type aliases ---
-ChatLevel = Literal['enabled', 'commandsOnly', 'disabled']
-ViewDistance = Literal['far'] | Literal['normal'] | Literal['short'] | Literal['tiny'] | float
-MainHands = Literal['left', 'right']
-LevelType = Literal['default', 'flat', 'largeBiomes', 'amplified', 'customized', 'buffet', 'default_1_1']
-GameMode = Literal['survival', 'creative', 'adventure', 'spectator']
-Dimension = Literal['the_nether', 'overworld', 'the_end']
-Difficulty = Literal['peaceful', 'easy', 'normal', 'hard']
-ControlState = Literal['forward', 'back', 'left', 'right', 'jump', 'sprint', 'sneak']
-EquipmentDestination = Literal['hand', 'head', 'torso', 'legs', 'feet', 'off-hand']
+ChatLevel = Literal["enabled", "commandsOnly", "disabled"]
+ViewDistance = (
+    Literal["far"] | Literal["normal"] | Literal["short"] | Literal["tiny"] | float
+)
+MainHands = Literal["left", "right"]
+LevelType = Literal[
+    "default", "flat", "largeBiomes", "amplified", "customized", "buffet", "default_1_1"
+]
+GameMode = Literal["survival", "creative", "adventure", "spectator"]
+Dimension = Literal["the_nether", "overworld", "the_end"]
+Difficulty = Literal["peaceful", "easy", "normal", "hard"]
+ControlState = Literal["forward", "back", "left", "right", "jump", "sprint", "sneak"]
+EquipmentDestination = Literal["hand", "head", "torso", "legs", "feet", "off-hand"]
+MessagePosition = Literal["chat", "system", "game_info"]
 
 # --- Mineflayer aux interfaces ---
 
 class Player:
     """伺服器玩家名單中的一筆資料；由 `bot.players[username]` 取得"""
+
     uuid: str
     """玩家 UUID 字串"""
     username: str
@@ -919,12 +1013,14 @@ class Player:
 
 class ChatPattern:
     """Ref: mineflayer/index.d.ts — ChatPattern"""
+
     pattern: object
     type: str
     description: str
 
 class SkinParts:
     """Ref: mineflayer/index.d.ts — SkinParts"""
+
     showCape: bool
     showJacket: bool
     showLeftSleeve: bool
@@ -935,6 +1031,7 @@ class SkinParts:
 
 class GameSettings:
     """Ref: mineflayer/index.d.ts — GameSettings"""
+
     chat: ChatLevel
     colorsEnabled: bool
     viewDistance: ViewDistance
@@ -944,6 +1041,7 @@ class GameSettings:
 
 class GameState:
     """Ref: mineflayer/index.d.ts — GameState"""
+
     levelType: LevelType
     gameMode: GameMode
     hardcore: bool
@@ -954,12 +1052,14 @@ class GameState:
 
 class Experience:
     """Ref: mineflayer/index.d.ts — Experience"""
+
     level: float
     points: float
     progress: float
 
 class PhysicsOptions:
     """Ref: mineflayer/index.d.ts — PhysicsOptions"""
+
     maxGroundSpeed: float
     terminalVelocity: float
     walkingAcceleration: float
@@ -976,6 +1076,7 @@ class PhysicsOptions:
 
 class Time:
     """Ref: mineflayer/index.d.ts — Time"""
+
     doDaylightCycle: bool
     bigTime: int
     time: float
@@ -988,6 +1089,7 @@ class Time:
 
 class ControlStateStatus:
     """Ref: mineflayer/index.d.ts — ControlStateStatus"""
+
     forward: bool
     back: bool
     left: bool
@@ -998,11 +1100,13 @@ class ControlStateStatus:
 
 class Instrument:
     """Ref: mineflayer/index.d.ts — Instrument"""
+
     id: float
-    name: Literal['harp', 'doubleBass', 'snareDrum', 'sticks', 'bassDrum']
+    name: Literal["harp", "doubleBass", "snareDrum", "sticks", "bassDrum"]
 
 class FindBlockOptions:
     """Ref: mineflayer/index.d.ts — FindBlockOptions"""
+
     point: Vec3 | None
     matching: float | list[float] | Callable[[object], object]
     maxDistance: float | None
@@ -1011,6 +1115,7 @@ class FindBlockOptions:
 
 class TransferOptions:
     """Ref: mineflayer/index.d.ts — TransferOptions"""
+
     window: Window
     itemType: float
     metadata: float | None
@@ -1022,6 +1127,7 @@ class TransferOptions:
 
 class creativeMethods:
     """Ref: mineflayer/index.d.ts — creativeMethods"""
+
     setInventorySlot: Callable[[float, Item | None], None]
     clearSlot: Callable[[float], None]
     clearInventory: Callable[[], None]
@@ -1031,21 +1137,25 @@ class creativeMethods:
 
 class simpleClick:
     """Ref: mineflayer/index.d.ts — simpleClick"""
+
     leftMouse: Callable[[float], None]
     rightMouse: Callable[[float], None]
 
 class Tablist:
     """Ref: mineflayer/index.d.ts — Tablist"""
+
     header: ChatMessage
     footer: ChatMessage
 
 class chatPatternOptions:
     """Ref: mineflayer/index.d.ts — chatPatternOptions"""
+
     repeat: bool
     parse: bool
 
 class CommandBlockOptions:
     """Ref: mineflayer/index.d.ts — CommandBlockOptions"""
+
     mode: float
     trackOutput: bool
     conditional: bool
@@ -1053,6 +1163,7 @@ class CommandBlockOptions:
 
 class VillagerTrade:
     """Ref: mineflayer/index.d.ts — VillagerTrade"""
+
     inputItem1: Item
     outputItem: Item
     inputItem2: Item | None
@@ -1068,6 +1179,7 @@ class VillagerTrade:
 
 class Enchantment:
     """Ref: mineflayer/index.d.ts — Enchantment"""
+
     level: float
     expected: object
 
@@ -1080,7 +1192,9 @@ class Chest:
         等同 `bot.closeWindow(chest)`
         """
         ...
-    def deposit(self, itemType: float, metadata: float | None, count: float | None) -> None:
+    def deposit(
+        self, itemType: float, metadata: float | None, count: float | None
+    ) -> None:
         """從物品欄存入箱子
 
         Args:
@@ -1089,7 +1203,9 @@ class Chest:
             count: 要存入的數量
         """
         ...
-    def withdraw(self, itemType: float, metadata: float | None, count: float | None) -> None:
+    def withdraw(
+        self, itemType: float, metadata: float | None, count: float | None
+    ) -> None:
         """從箱子取出到物品欄"""
         ...
 
@@ -1100,15 +1216,20 @@ class Dispenser:
     def close(self) -> None:
         """關閉這個發射器"""
         ...
-    def deposit(self, itemType: float, metadata: float | None, count: float | None) -> None:
+    def deposit(
+        self, itemType: float, metadata: float | None, count: float | None
+    ) -> None:
         """從物品欄存入發射器"""
         ...
-    def withdraw(self, itemType: float, metadata: float | None, count: float | None) -> None:
+    def withdraw(
+        self, itemType: float, metadata: float | None, count: float | None
+    ) -> None:
         """從發射器取出"""
         ...
 
 class Furnace:
     """繼承 `Window`，`bot.openFurnace(...)` 回傳型別"""
+
     fuel: float
     """目前燃料進度"""
     progress: float
@@ -1133,22 +1254,23 @@ class Furnace:
         ...
     def inputItem(self) -> Item:
         """Returns:
-            輸入槽目前的 `Item`
+        輸入槽目前的 `Item`
         """
         ...
     def fuelItem(self) -> Item:
         """Returns:
-            燃料槽目前的 `Item`
+        燃料槽目前的 `Item`
         """
         ...
     def outputItem(self) -> Item:
         """Returns:
-            輸出槽目前的 `Item`
+        輸出槽目前的 `Item`
         """
         ...
 
 class EnchantmentTable:
     """繼承 `Window`，附魔台"""
+
     enchantments: list[Enchantment]
     """目前顯示的三個附魔選項陣列，每個元素含 `level` 和 `expected`"""
     def close(self) -> None:
@@ -1156,7 +1278,7 @@ class EnchantmentTable:
         ...
     def targetItem(self) -> Item:
         """Returns:
-            目前放在附魔台上的 `Item`
+        目前放在附魔台上的 `Item`
         """
         ...
     def enchant(self, choice: str | float) -> Item:
@@ -1198,6 +1320,7 @@ class Anvil:
 
 class Villager:
     """繼承 `Window`，村民交易面板"""
+
     trades: list[VillagerTrade]
     """村民目前的交易選項陣列，每筆是 `VillagerTrade`"""
     def close(self) -> None:
@@ -1209,8 +1332,8 @@ _OnEvent_chat = Callable[[str, str, str | None, ChatMessage, list[str] | None], 
 _OnEvent_whisper = Callable[[str, str, str | None, ChatMessage, list[str] | None], None]
 _OnEvent_actionBar = Callable[[ChatMessage], None]
 _OnEvent_error = Callable[[Exception], None]
-_OnEvent_message = Callable[[ChatMessage, str], None]
-_OnEvent_messagestr = Callable[[str, str, ChatMessage], None]
+_OnEvent_message = Callable[[ChatMessage, MessagePosition], None]
+_OnEvent_messagestr = Callable[[str, MessagePosition, ChatMessage], None]
 _OnEvent_unmatchedMessage = Callable[[str, ChatMessage], None]
 _OnEvent_inject_allowed = Callable[[], None]
 _OnEvent_login = Callable[[], None]
@@ -1298,12 +1421,31 @@ _OnEvent_bossBarDeleted = Callable[[object], None]
 _OnEvent_bossBarUpdated = Callable[[object], None]
 _OnEvent_resourcePack = Callable[[str, str | None, str | None], None]
 _OnEvent_particle = Callable[[object], None]
+_OnEvent_goal_reached = Callable[[Goal], None]
+_OnEvent_path_update = Callable[[PartiallyComputedPath], None]
+_OnEvent_goal_updated = Callable[[Goal, bool], None]
+_OnEvent_path_reset = Callable[
+    [
+        object
+        | Literal["movements_updated"]
+        | Literal["block_updated"]
+        | Literal["chunk_loaded"]
+        | Literal["goal_moved"]
+        | Literal["dig_error"]
+        | Literal["no_scaffolding_blocks"]
+        | Literal["place_error"]
+        | Literal["stuck"]
+    ],
+    None,
+]
+_OnEvent_path_stop = Callable[[], None]
 
 class BotOptions(TypedDict, total=False):
     """Options accepted by `create_bot(**opts)`.
 
     Ref: mineflayer/index.d.ts — interface BotOptions
     """
+
     logErrors: bool
     hideErrors: bool
     loadInternalPlugins: bool
@@ -1325,7 +1467,7 @@ class BotOptions(TypedDict, total=False):
     username: str
     password: str
     version: str
-    auth: Literal['mojang', 'microsoft', 'offline']
+    auth: Literal["mojang", "microsoft", "offline"]
     authServer: str
     sessionServer: str
     onMsaCode: Callable[[object], None]
@@ -1338,6 +1480,7 @@ class Bot:
     機器人連線完成後會非同步地進入世界
     **請務必等 `spawn` 事件觸發後**，再呼叫跟位置 / 世界有關的 API；在此之前 `bot.entity` 等屬性尚未就緒
     """
+    def __init__(self, js_bot: object) -> None: ...
     username: str
     """機器人登入伺服器用的遊戲名稱
     登入前可能還是 `None`
@@ -1503,7 +1646,9 @@ class Bot:
         maxDistance: 最遠測距（預設 `256`）
         matcher: 自訂篩選函式，接受 `Block` 回傳布林；預設收下所有方塊
     """
-    blockAtEntityCursor: Callable[[Entity | None, float | None, Callable[..., object] | None], Block | None]
+    blockAtEntityCursor: Callable[
+        [Entity | None, float | None, Callable[..., object] | None], Block | None
+    ]
     """跟 `blockAtCursor` 類似，但從指定實體的視線出發
     常用來偵測別人正在看的方塊
 
@@ -1555,7 +1700,9 @@ class Bot:
     Returns:
         布林
     """
-    recipesFor: Callable[[float, float | None, float | None, Block | bool | None], list[Recipe]]
+    recipesFor: Callable[
+        [float, float | None, float | None, Block | bool | None], list[Recipe]
+    ]
     """查詢目前物品欄能合成指定物品的配方列表
 
     Args:
@@ -1664,11 +1811,11 @@ class Bot:
     範例：進入世界後一直往前走，收到 `"stop"` 訊息才停下
 
     ```python
-    @bot.on("spawn")
+    @bot.on_spawn
     def on_spawn():
         bot.setControlState("forward", True)
 
-    @bot.on("chat")
+    @bot.on_chat
     def on_chat(username, message, *_):
         if message == "stop":
             bot.setControlState("forward", False)
@@ -1749,7 +1896,7 @@ class Bot:
         metadata: 物品的 metadata 值，不關心就傳 `None`
         count: 要丟的數量
     """
-    dig: Callable[[Callable[[Block, bool | Literal['ignore'] | None], object]], object]
+    dig: Callable[[Callable[[Block, bool | Literal["ignore"] | None], object]], object]
     """對指定方塊進行挖掘
     完成或失敗會透過 `"diggingCompleted"` / `"diggingAborted"` 事件回報
     **handler 內呼叫會阻塞**當下的 callback thread，建議在主執行流程呼叫
@@ -1832,7 +1979,7 @@ class Bot:
     Args:
         entity: 目標 `Entity`
     """
-    swingArm: Callable[[Literal['left'] | Literal['right'] | None, bool | None], None]
+    swingArm: Callable[[Literal["left"] | Literal["right"] | None, bool | None], None]
     """播放揮手動畫
 
     Args:
@@ -1876,7 +2023,9 @@ class Bot:
         slot: 物品欄中空白書所在的槽位整數
         pages: 每一頁的文字字串陣列
     """
-    openContainer: Callable[[Block | Entity, Vec3 | None, Vec3 | None], Chest | Dispenser]
+    openContainer: Callable[
+        [Block | Entity, Vec3 | None, Vec3 | None], Chest | Dispenser
+    ]
     """打開任意容器方塊或實體
 
     Args:
@@ -2021,1616 +2170,3631 @@ class Bot:
 
     # --- Typed event overloads (generated from BotEvents) ---
     @overload
-    def on(self, event: Literal["chat"]) -> Callable[[_OnEvent_chat], _OnEvent_chat]:
-        """頻道上有公開聊天訊息時觸發事件
-        **自己發的訊息也會觸發**，需自行以 `username == bot.username` 比對忽略
+    def on(
+        self, event: Literal[BotEvent.ACTION_BAR]
+    ) -> Callable[[_OnEvent_actionBar], _OnEvent_actionBar]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
 
-        Args:
-            username: 發話者的遊戲名稱
-            message: 已去除顏色碼與控制字元的純文字
-            translate: 聊天類型字串（例如 `chat.type.text`）；多數 Bukkit 系伺服器會是 `None`
-            jsonMsg: 伺服器原始的 JSON 訊息物件，保留顏色、點擊事件等 metadata
-            matches: 若有自訂 chat pattern 且比中時，是捕獲的字串陣列；否則為 `None`
-
-        See Also:
-            `"whisper"`
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
 
         ```python
-        @bot.on("chat")
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
         def on_chat(username, message, *_):
-            if username == bot.username:
-                return
-            if message == "hi":
-                bot.chat("哈囉")
+            print(username, message)
         ```
-        """
-        ...
-    @overload
-    def on(self, event: Literal["whisper"]) -> Callable[[_OnEvent_whisper], _OnEvent_whisper]:
-        """有玩家對你私聊（`/tell`、`/msg` 指令）時觸發事件
-
-        Args:
-            username: 發話者的遊戲名稱
-            message: 已去除顏色碼與控制字元的純文字
-            translate: 聊天類型字串（例如 `chat.type.text`）；多數 Bukkit 系伺服器會是 `None`
-            jsonMsg: 伺服器原始的 JSON 訊息物件，保留顏色、點擊事件等 metadata
-            matches: 若有自訂 chat pattern 且比中時，是捕獲的字串陣列；否則為 `None`
-
-        See Also:
-            `"chat"`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["actionBar"]) -> Callable[[_OnEvent_actionBar], _OnEvent_actionBar]:
-        """伺服器在動作列推送訊息時觸發事件
-        （血條上方的懸浮文字）
-
-        Args:
-            jsonMsg: 伺服器原始的 JSON 訊息物件
-        """
-        ...
-    @overload
-    def on(self, event: Literal["error"]) -> Callable[[_OnEvent_error], _OnEvent_error]:
-        """機器人遇到不致命的例外（例如解析封包失敗）時觸發事件
-        把這個事件印出來有助於 debug
-
-        Args:
-            err: `Error` 物件
-        """
-        ...
-    @overload
-    def on(self, event: Literal["message"]) -> Callable[[_OnEvent_message], _OnEvent_message]:
-        """**任何**文字訊息抵達時觸發事件
-        公開聊天、私聊、系統訊息、指令輸出都涵蓋
-        用來記錄所有進入機器人的文字
-
-        Args:
-            jsonMsg: 伺服器原始的 JSON 訊息物件
-            position: 訊息來源位置字串：`"chat"`（一般聊天）、`"system"`（系統訊息）、`"game_info"`（動作列）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["messagestr"]) -> Callable[[_OnEvent_messagestr], _OnEvent_messagestr]:
-        """**任何**文字訊息抵達時觸發事件
-        公開聊天、私聊、系統訊息、指令輸出都涵蓋
-        用來記錄所有進入機器人的文字
-        同 `"message"` 但把內容用 `toString()` 攤平成純字串，方便直接印
-
-        Args:
-            message: 已攤平的字串訊息
-            position: 訊息來源位置字串：`"chat"`（一般聊天）、`"system"`（系統訊息）、`"game_info"`（動作列）
-            jsonMsg: 伺服器原始的 JSON 訊息物件
-        """
-        ...
-    @overload
-    def on(self, event: Literal["unmatchedMessage"]) -> Callable[[_OnEvent_unmatchedMessage], _OnEvent_unmatchedMessage]:
-        """系統訊息沒有對應到任何已註冊的 chat pattern 時觸發事件
-        一般玩家很少用到，多半是開發自訂 pattern 時才會監聽
-
-        Args:
-            stringMsg: 原始純文字訊息
-            jsonMsg: 原始 JSON 訊息物件
-        """
-        ...
-    @overload
-    def on(self, event: Literal["inject_allowed"]) -> Callable[[_OnEvent_inject_allowed], _OnEvent_inject_allowed]:
-        """mineflayer 載入 `minecraft-data` 並允許插件 inject 時觸發事件（無參數）
-        這是**插件開發**的 hook，一般腳本不需要監聽；建議還是等 `"spawn"` 事件觸發後再動作
-        """
-        ...
-    @overload
-    def on(self, event: Literal["login"]) -> Callable[[_OnEvent_login], _OnEvent_login]:
-        """成功登入伺服器但**尚未進入世界**時觸發事件（無參數）
-        此時世界尚未載入，請勿呼叫位置相關的 API，要等待 `"spawn"` 事件觸發後才可以呼叫
-        此事件通常只拿來印 log 或做連線成功的標記
-        """
-        ...
-    @overload
-    def on(self, event: Literal["spawn"]) -> Callable[[_OnEvent_spawn], _OnEvent_spawn]:
-        """機器人在世界中生成（或重新生成）後觸發事件（無參數）
-        這是可以真正開始移動的時機
-
-        可查詢 `bot.entity.position`、發聊天訊息、載入插件等都應該在這個事件**之後**進行
-
-        死亡重生、跨維度傳送也會再次觸發事件
-        """
-        ...
-    @overload
-    def on(self, event: Literal["respawn"]) -> Callable[[_OnEvent_respawn], _OnEvent_respawn]:
-        """機器人重生進入世界時觸發事件（無參數）
-        （`"death"` 後會先觸發此事件，接著才是 `"spawn"`）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["game"]) -> Callable[[_OnEvent_game], _OnEvent_game]:
-        """遊戲模式、維度、難度等 `bot.game` 欄位有變更時觸發事件（無參數）
-        要讀新值請直接看 `bot.game.*`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["title"]) -> Callable[[_OnEvent_title], _OnEvent_title]:
-        """伺服器推送大型標題或副標題時觸發事件
-
-        Args:
-            text: 標題文字
-            type: `"title"` 或 `"subtitle"`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["rain"]) -> Callable[[_OnEvent_rain], _OnEvent_rain]:
-        """天氣開始下雨或停雨時觸發事件（無參數）
-        要判斷現在狀態請讀 `bot.isRaining`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["time"]) -> Callable[[_OnEvent_time], _OnEvent_time]:
-        """世界時間有更新時觸發事件（無參數）
-        伺服器定時同步、或 `/time set` 指令
-        由於幾乎每個 tick 都會觸發，**不要在這裡做耗時工作**
-        """
-        ...
-    @overload
-    def on(self, event: Literal["kicked"]) -> Callable[[_OnEvent_kicked], _OnEvent_kicked]:
-        """被伺服器踢出時觸發事件
-        通常緊接著會觸發 `"end"` 事件
-
-        Args:
-            reason: 伺服器送出的踢出原因原始字串，由 mineflayer 原樣轉送未做解析；現代伺服器通常是 JSON 格式的 `ChatMessage`，要顯示給使用者時用 `ChatMessage.fromNotch(reason).toString()` 轉純文字
-            loggedIn: `True` 代表已登入後才被踢、`False` 代表握手階段就被拒絕
-        """
-        ...
-    @overload
-    def on(self, event: Literal["end"]) -> Callable[[_OnEvent_end], _OnEvent_end]:
-        """連線斷開時觸發事件
-        正常離線、被踢、網路中斷都會觸發事件
-        這也是 `bot.run_forever()` 結束阻塞並讓 script 退出的訊號
-
-        Args:
-            reason: 斷線原因
-        """
-        ...
-    @overload
-    def on(self, event: Literal["spawnReset"]) -> Callable[[_OnEvent_spawnReset], _OnEvent_spawnReset]:
-        """床被破壞 / 重生點重置時觸發事件（無參數）
-        例如睡覺用的床被人敲掉
-        """
-        ...
-    @overload
-    def on(self, event: Literal["death"]) -> Callable[[_OnEvent_death], _OnEvent_death]:
-        """機器人死亡時觸發事件（無參數）
-        mineflayer 會自動重生，稍後會再次觸發 `"spawn"` 事件
-        """
-        ...
-    @overload
-    def on(self, event: Literal["health"]) -> Callable[[_OnEvent_health], _OnEvent_health]:
-        """血量或飽食度有變動時觸發事件（無參數）
-        要讀取新值請直接看 `bot.health` / `bot.food`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["breath"]) -> Callable[[_OnEvent_breath], _OnEvent_breath]:
-        """氧氣量有變動時觸發（無參數）
-        要讀新值請看 `bot.oxygenLevel`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entitySwingArm"]) -> Callable[[_OnEvent_entitySwingArm], _OnEvent_entitySwingArm]:
-        """實體揮手時觸發事件
-        （近戰攻擊、採集動作）
-
-        Args:
-            entity: 揮手的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityHurt"]) -> Callable[[_OnEvent_entityHurt], _OnEvent_entityHurt]:
-        """實體受傷時觸發事件
-
-        Args:
-            entity: 受傷的 `Entity`
-            source: 傷害來源 `Entity`（可能是攻擊者或 `None`）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityDead"]) -> Callable[[_OnEvent_entityDead], _OnEvent_entityDead]:
-        """實體死亡時觸發事件
-
-        Args:
-            entity: 死亡的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityTaming"]) -> Callable[[_OnEvent_entityTaming], _OnEvent_entityTaming]:
-        """玩家正在嘗試馴服動物時觸發事件
-        （例如餵骨頭給狼）
-
-        Args:
-            entity: 被馴服中的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityTamed"]) -> Callable[[_OnEvent_entityTamed], _OnEvent_entityTamed]:
-        """動物成功被馴服時觸發事件
-
-        Args:
-            entity: 被馴服的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityShakingOffWater"]) -> Callable[[_OnEvent_entityShakingOffWater], _OnEvent_entityShakingOffWater]:
-        """動物抖水時觸發事件
-
-        Args:
-            entity: 抖水的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityEatingGrass"]) -> Callable[[_OnEvent_entityEatingGrass], _OnEvent_entityEatingGrass]:
-        """羊在吃草時觸發事件
-
-        Args:
-            entity: 吃草的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityHandSwap"]) -> Callable[[_OnEvent_entityHandSwap], _OnEvent_entityHandSwap]:
-        """實體左右手物品互換時觸發事件
-
-        Args:
-            entity: 對應 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityWake"]) -> Callable[[_OnEvent_entityWake], _OnEvent_entityWake]:
-        """實體從床上醒來時觸發事件
-
-        Args:
-            entity: 對應 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityEat"]) -> Callable[[_OnEvent_entityEat], _OnEvent_entityEat]:
-        """實體在吃東西時觸發事件
-        伺服器每次送出吃東西動畫封包（`packet.animation` = 3）時觸發一次
-
-        Args:
-            entity: 吃東西的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityCriticalEffect"]) -> Callable[[_OnEvent_entityCriticalEffect], _OnEvent_entityCriticalEffect]:
-        """實體被打出暴擊時觸發事件
-        （有爆擊粒子效果）
-
-        Args:
-            entity: 對應 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityMagicCriticalEffect"]) -> Callable[[_OnEvent_entityMagicCriticalEffect], _OnEvent_entityMagicCriticalEffect]:
-        """附魔武器的特殊效果觸發時
-
-        Args:
-            entity: 對應 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityCrouch"]) -> Callable[[_OnEvent_entityCrouch], _OnEvent_entityCrouch]:
-        """實體開始蹲下時觸發事件
-        （按下 shift）
-
-        Args:
-            entity: 潛行中的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityUncrouch"]) -> Callable[[_OnEvent_entityUncrouch], _OnEvent_entityUncrouch]:
-        """實體結束蹲下時觸發事件
-
-        Args:
-            entity: 對應 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityEquip"]) -> Callable[[_OnEvent_entityEquip], _OnEvent_entityEquip]:
-        """實體換裝備或更換手持物品時觸發事件
-
-        Args:
-            entity: 對應 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entitySleep"]) -> Callable[[_OnEvent_entitySleep], _OnEvent_entitySleep]:
-        """實體上床睡覺時觸發事件
-
-        Args:
-            entity: 上床的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entitySpawn"]) -> Callable[[_OnEvent_entitySpawn], _OnEvent_entitySpawn]:
-        """視野中有新實體出現時觸發事件
-        若是玩家實體會另外觸發 `"playerJoined"`
-
-        Args:
-            entity: 新出現的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityElytraFlew"]) -> Callable[[_OnEvent_entityElytraFlew], _OnEvent_entityElytraFlew]:
-        """實體張開鞘翅飛行時觸發事件
-
-        Args:
-            entity: 飛行中的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["usedFirework"]) -> Callable[[_OnEvent_usedFirework], _OnEvent_usedFirework]:
-        """玩家使用煙火時觸發事件
-        （通常用於鞘翅推進）
-
-        Args:
-            fireworkEntityId: 煙火實體的數字 ID
-        """
-        ...
-    @overload
-    def on(self, event: Literal["itemDrop"]) -> Callable[[_OnEvent_itemDrop], _OnEvent_itemDrop]:
-        """實體丟出物品時觸發事件
-        （例如死亡時掉落）
-
-        Args:
-            entity: 被掉出的物品 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["playerCollect"]) -> Callable[[_OnEvent_playerCollect], _OnEvent_playerCollect]:
-        """玩家撿起掉落物或其他實體時觸發事件
-
-        Args:
-            collector: 撿拾的 `Entity`（通常是玩家）
-            collected: 被撿拾的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityAttributes"]) -> Callable[[_OnEvent_entityAttributes], _OnEvent_entityAttributes]:
-        """實體的屬性表變動時觸發事件
-        （移動速度、最大血量等）
-
-        Args:
-            entity: 被更新的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityGone"]) -> Callable[[_OnEvent_entityGone], _OnEvent_entityGone]:
-        """實體離開視野或被移除時觸發事件
-
-        Args:
-            entity: 消失的 `Entity`（讀取它的資料仍可，但不再更新）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityMoved"]) -> Callable[[_OnEvent_entityMoved], _OnEvent_entityMoved]:
-        """實體位置有變動時觸發事件
-        **這是高頻事件**，每 tick 都可能觸發，請勿在此做耗時工作
-
-        Args:
-            entity: 移動中的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityDetach"]) -> Callable[[_OnEvent_entityDetach], _OnEvent_entityDetach]:
-        """實體離開載具時觸發事件
-
-        Args:
-            entity: 乘員
-            vehicle: 載具
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityAttach"]) -> Callable[[_OnEvent_entityAttach], _OnEvent_entityAttach]:
-        """實體掛上載具時觸發事件
-        （騎上馬、船等）
-
-        Args:
-            entity: 乘員 `Entity`
-            vehicle: 載具 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityUpdate"]) -> Callable[[_OnEvent_entityUpdate], _OnEvent_entityUpdate]:
-        """實體的 metadata（旁枝屬性，如染色、坐騎狀態等）變動時觸發事件
-
-        Args:
-            entity: 被更新的 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityEffect"]) -> Callable[[_OnEvent_entityEffect], _OnEvent_entityEffect]:
-        """實體被套上狀態效果時觸發事件
-
-        Args:
-            entity: 對應 `Entity`
-            effect: `Effect` 物件（含 `id`、`amplifier`、`duration`）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["entityEffectEnd"]) -> Callable[[_OnEvent_entityEffectEnd], _OnEvent_entityEffectEnd]:
-        """實體身上的狀態效果消失時觸發事件
-
-        Args:
-            entity: 對應 `Entity`
-            effect: 剛結束的 `Effect`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["playerJoined"]) -> Callable[[_OnEvent_playerJoined], _OnEvent_playerJoined]:
-        """有玩家加入伺服器時觸發事件
-
-        Args:
-            player: 加入的 `Player` 物件（含 `.username`、`.uuid`、`.ping` 等）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["playerUpdated"]) -> Callable[[_OnEvent_playerUpdated], _OnEvent_playerUpdated]:
-        """玩家資訊更新時觸發事件
-        **這是高頻事件**，每 tick 都可能觸發，請勿在此做耗時工作
-        （延遲、顯示名稱、遊戲模式等）
-
-        Args:
-            player: 被更新的 `Player`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["playerLeft"]) -> Callable[[_OnEvent_playerLeft], _OnEvent_playerLeft]:
-        """有玩家離線時觸發事件
-
-        Args:
-            player: 離線的 `Player` 物件
-        """
-        ...
-    @overload
-    def on(self, event: Literal["blockUpdate"]) -> Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]:
-        """**任何**方塊變動時觸發事件
-        **這是高頻事件**，每 tick 都可能觸發，請勿在此做耗時工作
-
-        Args:
-            oldBlock: 變更前的 `Block`（可能為 `None`，如果原本是載入邊界）
-            newBlock: 變更後的 `Block`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["blockUpdate:(x, y, z)"]) -> Callable[[_OnEvent_blockUpdate__x__y__z_], _OnEvent_blockUpdate__x__y__z_]:
-        """特定座標的方塊發生變化時觸發事件
-        事件名裡的 `(x, y, z)` 要換成實際整數，例如 `"blockUpdate:(100,64,200)"`
-
-        Args:
-            oldBlock: 變更前 `Block`，可能為 `None`
-            newBlock: 變更後 `Block`，可能為 `None`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["chunkColumnLoad"]) -> Callable[[_OnEvent_chunkColumnLoad], _OnEvent_chunkColumnLoad]:
-        """區塊柱載入到機器人視野時觸發事件
-
-        Args:
-            position: 區塊柱的角落座標 `Vec3`（只有 x、z 有意義）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["chunkColumnUnload"]) -> Callable[[_OnEvent_chunkColumnUnload], _OnEvent_chunkColumnUnload]:
-        """區塊柱卸載時觸發事件
-
-        Args:
-            position: 區塊柱角落座標
-        """
-        ...
-    @overload
-    def on(self, event: Literal["soundEffectHeard"]) -> Callable[[_OnEvent_soundEffectHeard], _OnEvent_soundEffectHeard]:
-        """可識別的音效事件觸發時觸發事件
-
-        Args:
-            soundName: 音效名稱字串（例如 `"entity.creeper.primed"`）
-            position: 音效發生位置 `Vec3`
-            volume: 音量（浮點數）
-            pitch: 音高（浮點數）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["hardcodedSoundEffectHeard"]) -> Callable[[_OnEvent_hardcodedSoundEffectHeard], _OnEvent_hardcodedSoundEffectHeard]:
-        """舊版硬編碼音效觸發時觸發事件
-        多數情境下用 `"soundEffectHeard"` 就夠了
-
-        Args:
-            soundId: 音效的數字 ID
-            soundCategory: 類別 ID
-            position: 位置 `Vec3`
-            volume: 音量
-            pitch: 音高
-        """
-        ...
-    @overload
-    def on(self, event: Literal["noteHeard"]) -> Callable[[_OnEvent_noteHeard], _OnEvent_noteHeard]:
-        """音符盒被擊發時觸發事件
-
-        Args:
-            block: 音符盒 `Block`
-            instrument: 演奏的樂器（含 `id` 與 `name` 如 `"harp"`、`"bassDrum"`）
-            pitch: 音高 `0` ~ `24`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["pistonMove"]) -> Callable[[_OnEvent_pistonMove], _OnEvent_pistonMove]:
-        """任何活塞推/拉動作發生時觸發事件
-
-        Args:
-            block: 活塞方塊
-            isPulling: `1` 為拉、`0` 為推
-            direction: 方向編號 `0` ~ `5`（下、上、北、南、西、東）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["chestLidMove"]) -> Callable[[_OnEvent_chestLidMove], _OnEvent_chestLidMove]:
-        """任何箱子被打開或關上時觸發事件
-        （例如動畫狀態變化時）
-
-        Args:
-            block: 箱子方塊
-            isOpen: `1` 為開啟動畫、`0` 為關閉動畫
-            block2: 若為雙箱，另一半的方塊；單箱為 `None`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["blockBreakProgressObserved"]) -> Callable[[_OnEvent_blockBreakProgressObserved], _OnEvent_blockBreakProgressObserved]:
-        """看見附近有人在挖方塊時觸發（不是自己挖的）
-
-        Args:
-            block: 正在被挖的 `Block`
-            destroyStage: 破壞進度 `0` ~ `9`；`9` 時接近挖斷
-        """
-        ...
-    @overload
-    def on(self, event: Literal["blockBreakProgressEnd"]) -> Callable[[_OnEvent_blockBreakProgressEnd], _OnEvent_blockBreakProgressEnd]:
-        """挖掘動作結束時觸發（可能挖斷，也可能中途放棄）
-
-        Args:
-            block: 對應的 `Block`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["diggingCompleted"]) -> Callable[[_OnEvent_diggingCompleted], _OnEvent_diggingCompleted]:
-        """`bot.dig(block)` 成功挖掉方塊時觸發事件
-
-        Args:
-            block: 被挖掉的 `Block`（此時方塊類型多半已變成空氣，位置資訊仍可用）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["diggingAborted"]) -> Callable[[_OnEvent_diggingAborted], _OnEvent_diggingAborted]:
-        """`bot.dig(block)` 被中斷時觸發事件
-        例如玩家移動離開太遠、或方塊被他人搶挖
-
-        Args:
-            block: 中途放棄的目標方塊
-        """
-        ...
-    @overload
-    def on(self, event: Literal["move"]) -> Callable[[_OnEvent_move], _OnEvent_move]:
-        """機器人位置或視角改變時觸發事件
-        **這是高頻事件**，每 tick 都可能觸發，請勿在此做耗時工作
-
-        Args:
-            position: 移動前的 `Vec3`（可以和 `bot.entity.position` 比較得知移動方向 / 距離）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["forcedMove"]) -> Callable[[_OnEvent_forcedMove], _OnEvent_forcedMove]:
-        """被伺服器強制傳送時觸發事件（無參數）
-        （例如teleport、`/tp` 指令等）
-        重要：此事件觸發後，機器人的當前位置會跟路徑規劃的預期不符，常需重新規劃路線
-        """
-        ...
-    @overload
-    def on(self, event: Literal["mount"]) -> Callable[[_OnEvent_mount], _OnEvent_mount]:
-        """機器人騎上載具時觸發事件（無參數）
-        （例如馬、船、礦車等）
-        可讀 `bot.vehicle` 看載具
-        """
-        ...
-    @overload
-    def on(self, event: Literal["dismount"]) -> Callable[[_OnEvent_dismount], _OnEvent_dismount]:
-        """機器人下載具時觸發事件
-
-        Args:
-            vehicle: 剛離開的載具 `Entity`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["windowOpen"]) -> Callable[[_OnEvent_windowOpen], _OnEvent_windowOpen]:
-        """物品欄之外的視窗被打開時觸發事件
-        （例如箱子、熔爐、鐵砧、交易面板等）
-
-        Args:
-            window: 剛開啟的 `Window`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["windowClose"]) -> Callable[[_OnEvent_windowClose], _OnEvent_windowClose]:
-        """視窗關閉時觸發事件
-
-        Args:
-            window: 剛關閉的 `Window`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["sleep"]) -> Callable[[_OnEvent_sleep], _OnEvent_sleep]:
-        """機器人自己進入睡眠狀態時觸發事件（無參數）"""
-        ...
-    @overload
-    def on(self, event: Literal["wake"]) -> Callable[[_OnEvent_wake], _OnEvent_wake]:
-        """機器人自己醒來時觸發事件（無參數）"""
-        ...
-    @overload
-    def on(self, event: Literal["experience"]) -> Callable[[_OnEvent_experience], _OnEvent_experience]:
-        """經驗值有變動時觸發（無參數）
-        要讀新值請看 `bot.experience`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["physicsTick"]) -> Callable[[_OnEvent_physicsTick], _OnEvent_physicsTick]:
-        """每個物理 tick（~20Hz）觸發一次（無參數）
-        **這是高頻事件**，每 tick 都可能觸發，請勿在此做耗時工作
-        """
-        ...
-    @overload
-    def on(self, event: Literal["physicTick"]) -> Callable[[_OnEvent_physicTick], _OnEvent_physicTick]:
-        """`"physicsTick"` 的舊別名（無參數）
-        新程式碼請用 `"physicsTick"`；保留只是為了相容老插件
-        """
-        ...
-    @overload
-    def on(self, event: Literal["scoreboardCreated"]) -> Callable[[_OnEvent_scoreboardCreated], _OnEvent_scoreboardCreated]:
-        """有新記分板被建立時觸發事件
-
-        Args:
-            scoreboard: 剛建立的 `ScoreBoard`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["scoreboardDeleted"]) -> Callable[[_OnEvent_scoreboardDeleted], _OnEvent_scoreboardDeleted]:
-        """記分板被刪除時觸發事件
-
-        Args:
-            scoreboard: 被刪除的 `ScoreBoard`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["scoreboardTitleChanged"]) -> Callable[[_OnEvent_scoreboardTitleChanged], _OnEvent_scoreboardTitleChanged]:
-        """記分板標題變動時觸發事件
-
-        Args:
-            scoreboard: 對應 `ScoreBoard`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["scoreUpdated"]) -> Callable[[_OnEvent_scoreUpdated], _OnEvent_scoreUpdated]:
-        """記分板裡某個項目的分數被更新時觸發事件
-
-        Args:
-            scoreboard: 對應 `ScoreBoard`
-            item: 被更新的條目編號
-        """
-        ...
-    @overload
-    def on(self, event: Literal["scoreRemoved"]) -> Callable[[_OnEvent_scoreRemoved], _OnEvent_scoreRemoved]:
-        """記分板裡某條目被移除時觸發事件
-
-        Args:
-            scoreboard: 對應 `ScoreBoard`
-            item: 被移除的條目編號
-        """
-        ...
-    @overload
-    def on(self, event: Literal["scoreboardPosition"]) -> Callable[[_OnEvent_scoreboardPosition], _OnEvent_scoreboardPosition]:
-        """記分板顯示位置被切換時觸發事件
-        （側邊欄、玩家名下方等）
-
-        Args:
-            position: 新的顯示位置（`DisplaySlot`）
-            scoreboard: 對應 `ScoreBoard`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["teamCreated"]) -> Callable[[_OnEvent_teamCreated], _OnEvent_teamCreated]:
-        """有隊伍被建立時觸發事件
-
-        Args:
-            team: 新的 `Team`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["teamRemoved"]) -> Callable[[_OnEvent_teamRemoved], _OnEvent_teamRemoved]:
-        """隊伍被移除時觸發事件
-
-        Args:
-            team: 被移除的 `Team`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["teamUpdated"]) -> Callable[[_OnEvent_teamUpdated], _OnEvent_teamUpdated]:
-        """隊伍資訊變動時觸發事件
-        （顏色、前綴等）
-
-        Args:
-            team: 被更新的 `Team`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["teamMemberAdded"]) -> Callable[[_OnEvent_teamMemberAdded], _OnEvent_teamMemberAdded]:
-        """有玩家被加進隊伍時觸發事件
-
-        Args:
-            team: 隊伍 `Team`（新成員列表可從 `team.members` 讀）
-        """
-        ...
-    @overload
-    def on(self, event: Literal["teamMemberRemoved"]) -> Callable[[_OnEvent_teamMemberRemoved], _OnEvent_teamMemberRemoved]:
-        """玩家被踢出隊伍時觸發事件
-
-        Args:
-            team: 對應 `Team`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["bossBarCreated"]) -> Callable[[_OnEvent_bossBarCreated], _OnEvent_bossBarCreated]:
-        """伺服器推送新的 Boss 血條時觸發事件
-
-        Args:
-            bossBar: 新的 `BossBar`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["bossBarDeleted"]) -> Callable[[_OnEvent_bossBarDeleted], _OnEvent_bossBarDeleted]:
-        """Boss 血條被移除時觸發事件
-
-        Args:
-            bossBar: 被移除的 `BossBar`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["bossBarUpdated"]) -> Callable[[_OnEvent_bossBarUpdated], _OnEvent_bossBarUpdated]:
-        """Boss 血條（血量、標題、顏色等）有變動時觸發事件
-
-        Args:
-            bossBar: 對應 `BossBar`
-        """
-        ...
-    @overload
-    def on(self, event: Literal["resourcePack"]) -> Callable[[_OnEvent_resourcePack], _OnEvent_resourcePack]:
-        """伺服器要求客戶端下載資源包時觸發事件
-        **注意**：mineflayer 三個呼叫點傳入的參數順序不一致（`resource_pack.js:23/43/46`），收到的資料語意會隨觸發路徑不同
-        需要使用此事件時，請對照 JS 原始碼判斷當下情境
-
-        Args:
-            url: 資源包網址（通常是，但不保證）
-            hash: SHA-1 雜湊值或 uuid，**順序視路徑而定**
-            uuid: 套件 UUID，**順序視路徑而定**
-        """
-        ...
-    @overload
-    def on(self, event: Literal["particle"]) -> Callable[[_OnEvent_particle], _OnEvent_particle]:
-        """伺服器在世界中生成粒子效果時觸發事件
-        （例如爆炸、煙霧、藥水光芒）
 
         Args:
-            particle: `Particle` 物件，含位置、類型等資訊
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
-
     @overload
-    def once(self, event: Literal["chat"]) -> Callable[[_OnEvent_chat], _OnEvent_chat]:
-        """頻道上有公開聊天訊息時觸發事件
-        **自己發的訊息也會觸發**，需自行以 `username == bot.username` 比對忽略
-
-        Args:
-            username: 發話者的遊戲名稱
-            message: 已去除顏色碼與控制字元的純文字
-            translate: 聊天類型字串（例如 `chat.type.text`）；多數 Bukkit 系伺服器會是 `None`
-            jsonMsg: 伺服器原始的 JSON 訊息物件，保留顏色、點擊事件等 metadata
-            matches: 若有自訂 chat pattern 且比中時，是捕獲的字串陣列；否則為 `None`
+    def on(
+        self, event: Literal[BotEvent.BLOCK_BREAK_PROGRESS_END]
+    ) -> Callable[[_OnEvent_blockBreakProgressEnd], _OnEvent_blockBreakProgressEnd]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
 
-        See Also:
-            `"whisper"`
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
 
         ```python
-        @bot.on("chat")
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
         def on_chat(username, message, *_):
-            if username == bot.username:
-                return
-            if message == "hi":
-                bot.chat("哈囉")
+            print(username, message)
         ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED]
+    ) -> Callable[
+        [_OnEvent_blockBreakProgressObserved], _OnEvent_blockBreakProgressObserved
+    ]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.BLOCK_UPDATE]
+    ) -> Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.BLOCK_UPDATE_X_Y_Z]
+    ) -> Callable[[_OnEvent_blockUpdate__x__y__z_], _OnEvent_blockUpdate__x__y__z_]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.BOSS_BAR_CREATED]
+    ) -> Callable[[_OnEvent_bossBarCreated], _OnEvent_bossBarCreated]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.BOSS_BAR_DELETED]
+    ) -> Callable[[_OnEvent_bossBarDeleted], _OnEvent_bossBarDeleted]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.BOSS_BAR_UPDATED]
+    ) -> Callable[[_OnEvent_bossBarUpdated], _OnEvent_bossBarUpdated]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.BREATH]
+    ) -> Callable[[_OnEvent_breath], _OnEvent_breath]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.CHAT]
+    ) -> Callable[[_OnEvent_chat], _OnEvent_chat]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.CHEST_LID_MOVE]
+    ) -> Callable[[_OnEvent_chestLidMove], _OnEvent_chestLidMove]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.CHUNK_COLUMN_LOAD]
+    ) -> Callable[[_OnEvent_chunkColumnLoad], _OnEvent_chunkColumnLoad]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.CHUNK_COLUMN_UNLOAD]
+    ) -> Callable[[_OnEvent_chunkColumnUnload], _OnEvent_chunkColumnUnload]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.DEATH]
+    ) -> Callable[[_OnEvent_death], _OnEvent_death]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.DIGGING_ABORTED]
+    ) -> Callable[[_OnEvent_diggingAborted], _OnEvent_diggingAborted]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.DIGGING_COMPLETED]
+    ) -> Callable[[_OnEvent_diggingCompleted], _OnEvent_diggingCompleted]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.DISMOUNT]
+    ) -> Callable[[_OnEvent_dismount], _OnEvent_dismount]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.END]
+    ) -> Callable[[_OnEvent_end], _OnEvent_end]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_ATTACH]
+    ) -> Callable[[_OnEvent_entityAttach], _OnEvent_entityAttach]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_ATTRIBUTES]
+    ) -> Callable[[_OnEvent_entityAttributes], _OnEvent_entityAttributes]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_CRITICAL_EFFECT]
+    ) -> Callable[[_OnEvent_entityCriticalEffect], _OnEvent_entityCriticalEffect]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_CROUCH]
+    ) -> Callable[[_OnEvent_entityCrouch], _OnEvent_entityCrouch]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_DEAD]
+    ) -> Callable[[_OnEvent_entityDead], _OnEvent_entityDead]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_DETACH]
+    ) -> Callable[[_OnEvent_entityDetach], _OnEvent_entityDetach]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_EAT]
+    ) -> Callable[[_OnEvent_entityEat], _OnEvent_entityEat]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_EATING_GRASS]
+    ) -> Callable[[_OnEvent_entityEatingGrass], _OnEvent_entityEatingGrass]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_EFFECT]
+    ) -> Callable[[_OnEvent_entityEffect], _OnEvent_entityEffect]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_EFFECT_END]
+    ) -> Callable[[_OnEvent_entityEffectEnd], _OnEvent_entityEffectEnd]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_ELYTRA_FLEW]
+    ) -> Callable[[_OnEvent_entityElytraFlew], _OnEvent_entityElytraFlew]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_EQUIP]
+    ) -> Callable[[_OnEvent_entityEquip], _OnEvent_entityEquip]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_GONE]
+    ) -> Callable[[_OnEvent_entityGone], _OnEvent_entityGone]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_HAND_SWAP]
+    ) -> Callable[[_OnEvent_entityHandSwap], _OnEvent_entityHandSwap]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_HURT]
+    ) -> Callable[[_OnEvent_entityHurt], _OnEvent_entityHurt]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_MAGIC_CRITICAL_EFFECT]
+    ) -> Callable[
+        [_OnEvent_entityMagicCriticalEffect], _OnEvent_entityMagicCriticalEffect
+    ]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_MOVED]
+    ) -> Callable[[_OnEvent_entityMoved], _OnEvent_entityMoved]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_SHAKING_OFF_WATER]
+    ) -> Callable[[_OnEvent_entityShakingOffWater], _OnEvent_entityShakingOffWater]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_SLEEP]
+    ) -> Callable[[_OnEvent_entitySleep], _OnEvent_entitySleep]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_SPAWN]
+    ) -> Callable[[_OnEvent_entitySpawn], _OnEvent_entitySpawn]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_SWING_ARM]
+    ) -> Callable[[_OnEvent_entitySwingArm], _OnEvent_entitySwingArm]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_TAMED]
+    ) -> Callable[[_OnEvent_entityTamed], _OnEvent_entityTamed]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_TAMING]
+    ) -> Callable[[_OnEvent_entityTaming], _OnEvent_entityTaming]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_UNCROUCH]
+    ) -> Callable[[_OnEvent_entityUncrouch], _OnEvent_entityUncrouch]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_UPDATE]
+    ) -> Callable[[_OnEvent_entityUpdate], _OnEvent_entityUpdate]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ENTITY_WAKE]
+    ) -> Callable[[_OnEvent_entityWake], _OnEvent_entityWake]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ERROR]
+    ) -> Callable[[_OnEvent_error], _OnEvent_error]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.EXPERIENCE]
+    ) -> Callable[[_OnEvent_experience], _OnEvent_experience]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.FORCED_MOVE]
+    ) -> Callable[[_OnEvent_forcedMove], _OnEvent_forcedMove]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.GAME]
+    ) -> Callable[[_OnEvent_game], _OnEvent_game]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.GOAL_REACHED]
+    ) -> Callable[[_OnEvent_goal_reached], _OnEvent_goal_reached]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.GOAL_UPDATED]
+    ) -> Callable[[_OnEvent_goal_updated], _OnEvent_goal_updated]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.HARDCODED_SOUND_EFFECT_HEARD]
+    ) -> Callable[
+        [_OnEvent_hardcodedSoundEffectHeard], _OnEvent_hardcodedSoundEffectHeard
+    ]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.HEALTH]
+    ) -> Callable[[_OnEvent_health], _OnEvent_health]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.INJECT_ALLOWED]
+    ) -> Callable[[_OnEvent_inject_allowed], _OnEvent_inject_allowed]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.ITEM_DROP]
+    ) -> Callable[[_OnEvent_itemDrop], _OnEvent_itemDrop]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.KICKED]
+    ) -> Callable[[_OnEvent_kicked], _OnEvent_kicked]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.LOGIN]
+    ) -> Callable[[_OnEvent_login], _OnEvent_login]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.MESSAGE]
+    ) -> Callable[[_OnEvent_message], _OnEvent_message]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.MESSAGESTR]
+    ) -> Callable[[_OnEvent_messagestr], _OnEvent_messagestr]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.MOUNT]
+    ) -> Callable[[_OnEvent_mount], _OnEvent_mount]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.MOVE]
+    ) -> Callable[[_OnEvent_move], _OnEvent_move]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.NOTE_HEARD]
+    ) -> Callable[[_OnEvent_noteHeard], _OnEvent_noteHeard]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PARTICLE]
+    ) -> Callable[[_OnEvent_particle], _OnEvent_particle]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PATH_RESET]
+    ) -> Callable[[_OnEvent_path_reset], _OnEvent_path_reset]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PATH_STOP]
+    ) -> Callable[[_OnEvent_path_stop], _OnEvent_path_stop]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PATH_UPDATE]
+    ) -> Callable[[_OnEvent_path_update], _OnEvent_path_update]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PHYSIC_TICK]
+    ) -> Callable[[_OnEvent_physicTick], _OnEvent_physicTick]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PHYSICS_TICK]
+    ) -> Callable[[_OnEvent_physicsTick], _OnEvent_physicsTick]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PISTON_MOVE]
+    ) -> Callable[[_OnEvent_pistonMove], _OnEvent_pistonMove]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PLAYER_COLLECT]
+    ) -> Callable[[_OnEvent_playerCollect], _OnEvent_playerCollect]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PLAYER_JOINED]
+    ) -> Callable[[_OnEvent_playerJoined], _OnEvent_playerJoined]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PLAYER_LEFT]
+    ) -> Callable[[_OnEvent_playerLeft], _OnEvent_playerLeft]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.PLAYER_UPDATED]
+    ) -> Callable[[_OnEvent_playerUpdated], _OnEvent_playerUpdated]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.RAIN]
+    ) -> Callable[[_OnEvent_rain], _OnEvent_rain]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.RESOURCE_PACK]
+    ) -> Callable[[_OnEvent_resourcePack], _OnEvent_resourcePack]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.RESPAWN]
+    ) -> Callable[[_OnEvent_respawn], _OnEvent_respawn]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.SCORE_REMOVED]
+    ) -> Callable[[_OnEvent_scoreRemoved], _OnEvent_scoreRemoved]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.SCORE_UPDATED]
+    ) -> Callable[[_OnEvent_scoreUpdated], _OnEvent_scoreUpdated]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.SCOREBOARD_CREATED]
+    ) -> Callable[[_OnEvent_scoreboardCreated], _OnEvent_scoreboardCreated]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.SCOREBOARD_DELETED]
+    ) -> Callable[[_OnEvent_scoreboardDeleted], _OnEvent_scoreboardDeleted]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.SCOREBOARD_POSITION]
+    ) -> Callable[[_OnEvent_scoreboardPosition], _OnEvent_scoreboardPosition]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.SCOREBOARD_TITLE_CHANGED]
+    ) -> Callable[[_OnEvent_scoreboardTitleChanged], _OnEvent_scoreboardTitleChanged]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.SLEEP]
+    ) -> Callable[[_OnEvent_sleep], _OnEvent_sleep]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.SOUND_EFFECT_HEARD]
+    ) -> Callable[[_OnEvent_soundEffectHeard], _OnEvent_soundEffectHeard]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.SPAWN]
+    ) -> Callable[[_OnEvent_spawn], _OnEvent_spawn]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.SPAWN_RESET]
+    ) -> Callable[[_OnEvent_spawnReset], _OnEvent_spawnReset]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.TEAM_CREATED]
+    ) -> Callable[[_OnEvent_teamCreated], _OnEvent_teamCreated]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.TEAM_MEMBER_ADDED]
+    ) -> Callable[[_OnEvent_teamMemberAdded], _OnEvent_teamMemberAdded]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.TEAM_MEMBER_REMOVED]
+    ) -> Callable[[_OnEvent_teamMemberRemoved], _OnEvent_teamMemberRemoved]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.TEAM_REMOVED]
+    ) -> Callable[[_OnEvent_teamRemoved], _OnEvent_teamRemoved]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.TEAM_UPDATED]
+    ) -> Callable[[_OnEvent_teamUpdated], _OnEvent_teamUpdated]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.TIME]
+    ) -> Callable[[_OnEvent_time], _OnEvent_time]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.TITLE]
+    ) -> Callable[[_OnEvent_title], _OnEvent_title]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.UNMATCHED_MESSAGE]
+    ) -> Callable[[_OnEvent_unmatchedMessage], _OnEvent_unmatchedMessage]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.USED_FIREWORK]
+    ) -> Callable[[_OnEvent_usedFirework], _OnEvent_usedFirework]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.WAKE]
+    ) -> Callable[[_OnEvent_wake], _OnEvent_wake]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.WHISPER]
+    ) -> Callable[[_OnEvent_whisper], _OnEvent_whisper]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.WINDOW_CLOSE]
+    ) -> Callable[[_OnEvent_windowClose], _OnEvent_windowClose]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def on(
+        self, event: Literal[BotEvent.WINDOW_OPEN]
+    ) -> Callable[[_OnEvent_windowOpen], _OnEvent_windowOpen]:
+        """註冊事件處理器的 decorator
+        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
+        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
+
+        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
+
+        ```python
+        from minethon import BotEvent
+
+        @bot.on(BotEvent.CHAT)
+        def on_chat(username, message, *_):
+            print(username, message)
+        ```
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+
+    # Shortcut decorators for better IDE completion in JetBrains/Pylance
+    on_action_bar: Callable[[_OnEvent_actionBar], _OnEvent_actionBar]
+    """Same as `bot.on(BotEvent.ACTION_BAR)`. """
+    on_block_break_progress_end: Callable[
+        [_OnEvent_blockBreakProgressEnd], _OnEvent_blockBreakProgressEnd
+    ]
+    """Same as `bot.on(BotEvent.BLOCK_BREAK_PROGRESS_END)`. """
+    on_block_break_progress_observed: Callable[
+        [_OnEvent_blockBreakProgressObserved], _OnEvent_blockBreakProgressObserved
+    ]
+    """Same as `bot.on(BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED)`. """
+    on_block_update: Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]
+    """Same as `bot.on(BotEvent.BLOCK_UPDATE)`. """
+    on_block_update_x_y_z: Callable[
+        [_OnEvent_blockUpdate__x__y__z_], _OnEvent_blockUpdate__x__y__z_
+    ]
+    """Same as `bot.on(BotEvent.BLOCK_UPDATE_X_Y_Z)`. """
+    on_boss_bar_created: Callable[[_OnEvent_bossBarCreated], _OnEvent_bossBarCreated]
+    """Same as `bot.on(BotEvent.BOSS_BAR_CREATED)`. """
+    on_boss_bar_deleted: Callable[[_OnEvent_bossBarDeleted], _OnEvent_bossBarDeleted]
+    """Same as `bot.on(BotEvent.BOSS_BAR_DELETED)`. """
+    on_boss_bar_updated: Callable[[_OnEvent_bossBarUpdated], _OnEvent_bossBarUpdated]
+    """Same as `bot.on(BotEvent.BOSS_BAR_UPDATED)`. """
+    on_breath: Callable[[_OnEvent_breath], _OnEvent_breath]
+    """Same as `bot.on(BotEvent.BREATH)`. """
+    on_chat: Callable[[_OnEvent_chat], _OnEvent_chat]
+    """Same as `bot.on(BotEvent.CHAT)`. """
+    on_chest_lid_move: Callable[[_OnEvent_chestLidMove], _OnEvent_chestLidMove]
+    """Same as `bot.on(BotEvent.CHEST_LID_MOVE)`. """
+    on_chunk_column_load: Callable[[_OnEvent_chunkColumnLoad], _OnEvent_chunkColumnLoad]
+    """Same as `bot.on(BotEvent.CHUNK_COLUMN_LOAD)`. """
+    on_chunk_column_unload: Callable[
+        [_OnEvent_chunkColumnUnload], _OnEvent_chunkColumnUnload
+    ]
+    """Same as `bot.on(BotEvent.CHUNK_COLUMN_UNLOAD)`. """
+    on_death: Callable[[_OnEvent_death], _OnEvent_death]
+    """Same as `bot.on(BotEvent.DEATH)`. """
+    on_digging_aborted: Callable[[_OnEvent_diggingAborted], _OnEvent_diggingAborted]
+    """Same as `bot.on(BotEvent.DIGGING_ABORTED)`. """
+    on_digging_completed: Callable[
+        [_OnEvent_diggingCompleted], _OnEvent_diggingCompleted
+    ]
+    """Same as `bot.on(BotEvent.DIGGING_COMPLETED)`. """
+    on_dismount: Callable[[_OnEvent_dismount], _OnEvent_dismount]
+    """Same as `bot.on(BotEvent.DISMOUNT)`. """
+    on_end: Callable[[_OnEvent_end], _OnEvent_end]
+    """Same as `bot.on(BotEvent.END)`. """
+    on_entity_attach: Callable[[_OnEvent_entityAttach], _OnEvent_entityAttach]
+    """Same as `bot.on(BotEvent.ENTITY_ATTACH)`. """
+    on_entity_attributes: Callable[
+        [_OnEvent_entityAttributes], _OnEvent_entityAttributes
+    ]
+    """Same as `bot.on(BotEvent.ENTITY_ATTRIBUTES)`. """
+    on_entity_critical_effect: Callable[
+        [_OnEvent_entityCriticalEffect], _OnEvent_entityCriticalEffect
+    ]
+    """Same as `bot.on(BotEvent.ENTITY_CRITICAL_EFFECT)`. """
+    on_entity_crouch: Callable[[_OnEvent_entityCrouch], _OnEvent_entityCrouch]
+    """Same as `bot.on(BotEvent.ENTITY_CROUCH)`. """
+    on_entity_dead: Callable[[_OnEvent_entityDead], _OnEvent_entityDead]
+    """Same as `bot.on(BotEvent.ENTITY_DEAD)`. """
+    on_entity_detach: Callable[[_OnEvent_entityDetach], _OnEvent_entityDetach]
+    """Same as `bot.on(BotEvent.ENTITY_DETACH)`. """
+    on_entity_eat: Callable[[_OnEvent_entityEat], _OnEvent_entityEat]
+    """Same as `bot.on(BotEvent.ENTITY_EAT)`. """
+    on_entity_eating_grass: Callable[
+        [_OnEvent_entityEatingGrass], _OnEvent_entityEatingGrass
+    ]
+    """Same as `bot.on(BotEvent.ENTITY_EATING_GRASS)`. """
+    on_entity_effect: Callable[[_OnEvent_entityEffect], _OnEvent_entityEffect]
+    """Same as `bot.on(BotEvent.ENTITY_EFFECT)`. """
+    on_entity_effect_end: Callable[[_OnEvent_entityEffectEnd], _OnEvent_entityEffectEnd]
+    """Same as `bot.on(BotEvent.ENTITY_EFFECT_END)`. """
+    on_entity_elytra_flew: Callable[
+        [_OnEvent_entityElytraFlew], _OnEvent_entityElytraFlew
+    ]
+    """Same as `bot.on(BotEvent.ENTITY_ELYTRA_FLEW)`. """
+    on_entity_equip: Callable[[_OnEvent_entityEquip], _OnEvent_entityEquip]
+    """Same as `bot.on(BotEvent.ENTITY_EQUIP)`. """
+    on_entity_gone: Callable[[_OnEvent_entityGone], _OnEvent_entityGone]
+    """Same as `bot.on(BotEvent.ENTITY_GONE)`. """
+    on_entity_hand_swap: Callable[[_OnEvent_entityHandSwap], _OnEvent_entityHandSwap]
+    """Same as `bot.on(BotEvent.ENTITY_HAND_SWAP)`. """
+    on_entity_hurt: Callable[[_OnEvent_entityHurt], _OnEvent_entityHurt]
+    """Same as `bot.on(BotEvent.ENTITY_HURT)`. """
+    on_entity_magic_critical_effect: Callable[
+        [_OnEvent_entityMagicCriticalEffect], _OnEvent_entityMagicCriticalEffect
+    ]
+    """Same as `bot.on(BotEvent.ENTITY_MAGIC_CRITICAL_EFFECT)`. """
+    on_entity_moved: Callable[[_OnEvent_entityMoved], _OnEvent_entityMoved]
+    """Same as `bot.on(BotEvent.ENTITY_MOVED)`. """
+    on_entity_shaking_off_water: Callable[
+        [_OnEvent_entityShakingOffWater], _OnEvent_entityShakingOffWater
+    ]
+    """Same as `bot.on(BotEvent.ENTITY_SHAKING_OFF_WATER)`. """
+    on_entity_sleep: Callable[[_OnEvent_entitySleep], _OnEvent_entitySleep]
+    """Same as `bot.on(BotEvent.ENTITY_SLEEP)`. """
+    on_entity_spawn: Callable[[_OnEvent_entitySpawn], _OnEvent_entitySpawn]
+    """Same as `bot.on(BotEvent.ENTITY_SPAWN)`. """
+    on_entity_swing_arm: Callable[[_OnEvent_entitySwingArm], _OnEvent_entitySwingArm]
+    """Same as `bot.on(BotEvent.ENTITY_SWING_ARM)`. """
+    on_entity_tamed: Callable[[_OnEvent_entityTamed], _OnEvent_entityTamed]
+    """Same as `bot.on(BotEvent.ENTITY_TAMED)`. """
+    on_entity_taming: Callable[[_OnEvent_entityTaming], _OnEvent_entityTaming]
+    """Same as `bot.on(BotEvent.ENTITY_TAMING)`. """
+    on_entity_uncrouch: Callable[[_OnEvent_entityUncrouch], _OnEvent_entityUncrouch]
+    """Same as `bot.on(BotEvent.ENTITY_UNCROUCH)`. """
+    on_entity_update: Callable[[_OnEvent_entityUpdate], _OnEvent_entityUpdate]
+    """Same as `bot.on(BotEvent.ENTITY_UPDATE)`. """
+    on_entity_wake: Callable[[_OnEvent_entityWake], _OnEvent_entityWake]
+    """Same as `bot.on(BotEvent.ENTITY_WAKE)`. """
+    on_error: Callable[[_OnEvent_error], _OnEvent_error]
+    """Same as `bot.on(BotEvent.ERROR)`. """
+    on_experience: Callable[[_OnEvent_experience], _OnEvent_experience]
+    """Same as `bot.on(BotEvent.EXPERIENCE)`. """
+    on_forced_move: Callable[[_OnEvent_forcedMove], _OnEvent_forcedMove]
+    """Same as `bot.on(BotEvent.FORCED_MOVE)`. """
+    on_game: Callable[[_OnEvent_game], _OnEvent_game]
+    """Same as `bot.on(BotEvent.GAME)`. """
+    on_goal_reached: Callable[[_OnEvent_goal_reached], _OnEvent_goal_reached]
+    """Same as `bot.on(BotEvent.GOAL_REACHED)`. """
+    on_goal_updated: Callable[[_OnEvent_goal_updated], _OnEvent_goal_updated]
+    """Same as `bot.on(BotEvent.GOAL_UPDATED)`. """
+    on_hardcoded_sound_effect_heard: Callable[
+        [_OnEvent_hardcodedSoundEffectHeard], _OnEvent_hardcodedSoundEffectHeard
+    ]
+    """Same as `bot.on(BotEvent.HARDCODED_SOUND_EFFECT_HEARD)`. """
+    on_health: Callable[[_OnEvent_health], _OnEvent_health]
+    """Same as `bot.on(BotEvent.HEALTH)`. """
+    on_inject_allowed: Callable[[_OnEvent_inject_allowed], _OnEvent_inject_allowed]
+    """Same as `bot.on(BotEvent.INJECT_ALLOWED)`. """
+    on_item_drop: Callable[[_OnEvent_itemDrop], _OnEvent_itemDrop]
+    """Same as `bot.on(BotEvent.ITEM_DROP)`. """
+    on_kicked: Callable[[_OnEvent_kicked], _OnEvent_kicked]
+    """Same as `bot.on(BotEvent.KICKED)`. """
+    on_login: Callable[[_OnEvent_login], _OnEvent_login]
+    """Same as `bot.on(BotEvent.LOGIN)`. """
+    on_message: Callable[[_OnEvent_message], _OnEvent_message]
+    """Same as `bot.on(BotEvent.MESSAGE)`. """
+    on_messagestr: Callable[[_OnEvent_messagestr], _OnEvent_messagestr]
+    """Same as `bot.on(BotEvent.MESSAGESTR)`. """
+    on_mount: Callable[[_OnEvent_mount], _OnEvent_mount]
+    """Same as `bot.on(BotEvent.MOUNT)`. """
+    on_move: Callable[[_OnEvent_move], _OnEvent_move]
+    """Same as `bot.on(BotEvent.MOVE)`. """
+    on_note_heard: Callable[[_OnEvent_noteHeard], _OnEvent_noteHeard]
+    """Same as `bot.on(BotEvent.NOTE_HEARD)`. """
+    on_particle: Callable[[_OnEvent_particle], _OnEvent_particle]
+    """Same as `bot.on(BotEvent.PARTICLE)`. """
+    on_path_reset: Callable[[_OnEvent_path_reset], _OnEvent_path_reset]
+    """Same as `bot.on(BotEvent.PATH_RESET)`. """
+    on_path_stop: Callable[[_OnEvent_path_stop], _OnEvent_path_stop]
+    """Same as `bot.on(BotEvent.PATH_STOP)`. """
+    on_path_update: Callable[[_OnEvent_path_update], _OnEvent_path_update]
+    """Same as `bot.on(BotEvent.PATH_UPDATE)`. """
+    on_physic_tick: Callable[[_OnEvent_physicTick], _OnEvent_physicTick]
+    """Same as `bot.on(BotEvent.PHYSIC_TICK)`. """
+    on_physics_tick: Callable[[_OnEvent_physicsTick], _OnEvent_physicsTick]
+    """Same as `bot.on(BotEvent.PHYSICS_TICK)`. """
+    on_piston_move: Callable[[_OnEvent_pistonMove], _OnEvent_pistonMove]
+    """Same as `bot.on(BotEvent.PISTON_MOVE)`. """
+    on_player_collect: Callable[[_OnEvent_playerCollect], _OnEvent_playerCollect]
+    """Same as `bot.on(BotEvent.PLAYER_COLLECT)`. """
+    on_player_joined: Callable[[_OnEvent_playerJoined], _OnEvent_playerJoined]
+    """Same as `bot.on(BotEvent.PLAYER_JOINED)`. """
+    on_player_left: Callable[[_OnEvent_playerLeft], _OnEvent_playerLeft]
+    """Same as `bot.on(BotEvent.PLAYER_LEFT)`. """
+    on_player_updated: Callable[[_OnEvent_playerUpdated], _OnEvent_playerUpdated]
+    """Same as `bot.on(BotEvent.PLAYER_UPDATED)`. """
+    on_rain: Callable[[_OnEvent_rain], _OnEvent_rain]
+    """Same as `bot.on(BotEvent.RAIN)`. """
+    on_resource_pack: Callable[[_OnEvent_resourcePack], _OnEvent_resourcePack]
+    """Same as `bot.on(BotEvent.RESOURCE_PACK)`. """
+    on_respawn: Callable[[_OnEvent_respawn], _OnEvent_respawn]
+    """Same as `bot.on(BotEvent.RESPAWN)`. """
+    on_score_removed: Callable[[_OnEvent_scoreRemoved], _OnEvent_scoreRemoved]
+    """Same as `bot.on(BotEvent.SCORE_REMOVED)`. """
+    on_score_updated: Callable[[_OnEvent_scoreUpdated], _OnEvent_scoreUpdated]
+    """Same as `bot.on(BotEvent.SCORE_UPDATED)`. """
+    on_scoreboard_created: Callable[
+        [_OnEvent_scoreboardCreated], _OnEvent_scoreboardCreated
+    ]
+    """Same as `bot.on(BotEvent.SCOREBOARD_CREATED)`. """
+    on_scoreboard_deleted: Callable[
+        [_OnEvent_scoreboardDeleted], _OnEvent_scoreboardDeleted
+    ]
+    """Same as `bot.on(BotEvent.SCOREBOARD_DELETED)`. """
+    on_scoreboard_position: Callable[
+        [_OnEvent_scoreboardPosition], _OnEvent_scoreboardPosition
+    ]
+    """Same as `bot.on(BotEvent.SCOREBOARD_POSITION)`. """
+    on_scoreboard_title_changed: Callable[
+        [_OnEvent_scoreboardTitleChanged], _OnEvent_scoreboardTitleChanged
+    ]
+    """Same as `bot.on(BotEvent.SCOREBOARD_TITLE_CHANGED)`. """
+    on_sleep: Callable[[_OnEvent_sleep], _OnEvent_sleep]
+    """Same as `bot.on(BotEvent.SLEEP)`. """
+    on_sound_effect_heard: Callable[
+        [_OnEvent_soundEffectHeard], _OnEvent_soundEffectHeard
+    ]
+    """Same as `bot.on(BotEvent.SOUND_EFFECT_HEARD)`. """
+    on_spawn: Callable[[_OnEvent_spawn], _OnEvent_spawn]
+    """Same as `bot.on(BotEvent.SPAWN)`. """
+    on_spawn_reset: Callable[[_OnEvent_spawnReset], _OnEvent_spawnReset]
+    """Same as `bot.on(BotEvent.SPAWN_RESET)`. """
+    on_team_created: Callable[[_OnEvent_teamCreated], _OnEvent_teamCreated]
+    """Same as `bot.on(BotEvent.TEAM_CREATED)`. """
+    on_team_member_added: Callable[[_OnEvent_teamMemberAdded], _OnEvent_teamMemberAdded]
+    """Same as `bot.on(BotEvent.TEAM_MEMBER_ADDED)`. """
+    on_team_member_removed: Callable[
+        [_OnEvent_teamMemberRemoved], _OnEvent_teamMemberRemoved
+    ]
+    """Same as `bot.on(BotEvent.TEAM_MEMBER_REMOVED)`. """
+    on_team_removed: Callable[[_OnEvent_teamRemoved], _OnEvent_teamRemoved]
+    """Same as `bot.on(BotEvent.TEAM_REMOVED)`. """
+    on_team_updated: Callable[[_OnEvent_teamUpdated], _OnEvent_teamUpdated]
+    """Same as `bot.on(BotEvent.TEAM_UPDATED)`. """
+    on_time: Callable[[_OnEvent_time], _OnEvent_time]
+    """Same as `bot.on(BotEvent.TIME)`. """
+    on_title: Callable[[_OnEvent_title], _OnEvent_title]
+    """Same as `bot.on(BotEvent.TITLE)`. """
+    on_unmatched_message: Callable[
+        [_OnEvent_unmatchedMessage], _OnEvent_unmatchedMessage
+    ]
+    """Same as `bot.on(BotEvent.UNMATCHED_MESSAGE)`. """
+    on_used_firework: Callable[[_OnEvent_usedFirework], _OnEvent_usedFirework]
+    """Same as `bot.on(BotEvent.USED_FIREWORK)`. """
+    on_wake: Callable[[_OnEvent_wake], _OnEvent_wake]
+    """Same as `bot.on(BotEvent.WAKE)`. """
+    on_whisper: Callable[[_OnEvent_whisper], _OnEvent_whisper]
+    """Same as `bot.on(BotEvent.WHISPER)`. """
+    on_window_close: Callable[[_OnEvent_windowClose], _OnEvent_windowClose]
+    """Same as `bot.on(BotEvent.WINDOW_CLOSE)`. """
+    on_window_open: Callable[[_OnEvent_windowOpen], _OnEvent_windowOpen]
+    """Same as `bot.on(BotEvent.WINDOW_OPEN)`. """
+
+    @overload
+    def once(
+        self, event: Literal[BotEvent.ACTION_BAR]
+    ) -> Callable[[_OnEvent_actionBar], _OnEvent_actionBar]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def once(
+        self, event: Literal[BotEvent.BLOCK_BREAK_PROGRESS_END]
+    ) -> Callable[[_OnEvent_blockBreakProgressEnd], _OnEvent_blockBreakProgressEnd]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def once(
+        self, event: Literal[BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED]
+    ) -> Callable[
+        [_OnEvent_blockBreakProgressObserved], _OnEvent_blockBreakProgressObserved
+    ]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def once(
+        self, event: Literal[BotEvent.BLOCK_UPDATE]
+    ) -> Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["whisper"]) -> Callable[[_OnEvent_whisper], _OnEvent_whisper]:
-        """有玩家對你私聊（`/tell`、`/msg` 指令）時觸發事件
+    def once(
+        self, event: Literal[BotEvent.BLOCK_UPDATE_X_Y_Z]
+    ) -> Callable[[_OnEvent_blockUpdate__x__y__z_], _OnEvent_blockUpdate__x__y__z_]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            username: 發話者的遊戲名稱
-            message: 已去除顏色碼與控制字元的純文字
-            translate: 聊天類型字串（例如 `chat.type.text`）；多數 Bukkit 系伺服器會是 `None`
-            jsonMsg: 伺服器原始的 JSON 訊息物件，保留顏色、點擊事件等 metadata
-            matches: 若有自訂 chat pattern 且比中時，是捕獲的字串陣列；否則為 `None`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def once(
+        self, event: Literal[BotEvent.BOSS_BAR_CREATED]
+    ) -> Callable[[_OnEvent_bossBarCreated], _OnEvent_bossBarCreated]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
-        See Also:
-            `"chat"`
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["actionBar"]) -> Callable[[_OnEvent_actionBar], _OnEvent_actionBar]:
-        """伺服器在動作列推送訊息時觸發事件
-        （血條上方的懸浮文字）
+    def once(
+        self, event: Literal[BotEvent.BOSS_BAR_DELETED]
+    ) -> Callable[[_OnEvent_bossBarDeleted], _OnEvent_bossBarDeleted]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            jsonMsg: 伺服器原始的 JSON 訊息物件
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["error"]) -> Callable[[_OnEvent_error], _OnEvent_error]:
-        """機器人遇到不致命的例外（例如解析封包失敗）時觸發事件
-        把這個事件印出來有助於 debug
+    def once(
+        self, event: Literal[BotEvent.BOSS_BAR_UPDATED]
+    ) -> Callable[[_OnEvent_bossBarUpdated], _OnEvent_bossBarUpdated]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            err: `Error` 物件
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["message"]) -> Callable[[_OnEvent_message], _OnEvent_message]:
-        """**任何**文字訊息抵達時觸發事件
-        公開聊天、私聊、系統訊息、指令輸出都涵蓋
-        用來記錄所有進入機器人的文字
+    def once(
+        self, event: Literal[BotEvent.BREATH]
+    ) -> Callable[[_OnEvent_breath], _OnEvent_breath]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            jsonMsg: 伺服器原始的 JSON 訊息物件
-            position: 訊息來源位置字串：`"chat"`（一般聊天）、`"system"`（系統訊息）、`"game_info"`（動作列）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["messagestr"]) -> Callable[[_OnEvent_messagestr], _OnEvent_messagestr]:
-        """**任何**文字訊息抵達時觸發事件
-        公開聊天、私聊、系統訊息、指令輸出都涵蓋
-        用來記錄所有進入機器人的文字
-        同 `"message"` 但把內容用 `toString()` 攤平成純字串，方便直接印
+    def once(
+        self, event: Literal[BotEvent.CHAT]
+    ) -> Callable[[_OnEvent_chat], _OnEvent_chat]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            message: 已攤平的字串訊息
-            position: 訊息來源位置字串：`"chat"`（一般聊天）、`"system"`（系統訊息）、`"game_info"`（動作列）
-            jsonMsg: 伺服器原始的 JSON 訊息物件
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["unmatchedMessage"]) -> Callable[[_OnEvent_unmatchedMessage], _OnEvent_unmatchedMessage]:
-        """系統訊息沒有對應到任何已註冊的 chat pattern 時觸發事件
-        一般玩家很少用到，多半是開發自訂 pattern 時才會監聽
+    def once(
+        self, event: Literal[BotEvent.CHEST_LID_MOVE]
+    ) -> Callable[[_OnEvent_chestLidMove], _OnEvent_chestLidMove]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            stringMsg: 原始純文字訊息
-            jsonMsg: 原始 JSON 訊息物件
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["inject_allowed"]) -> Callable[[_OnEvent_inject_allowed], _OnEvent_inject_allowed]:
-        """mineflayer 載入 `minecraft-data` 並允許插件 inject 時觸發事件（無參數）
-        這是**插件開發**的 hook，一般腳本不需要監聽；建議還是等 `"spawn"` 事件觸發後再動作
+    def once(
+        self, event: Literal[BotEvent.CHUNK_COLUMN_LOAD]
+    ) -> Callable[[_OnEvent_chunkColumnLoad], _OnEvent_chunkColumnLoad]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["login"]) -> Callable[[_OnEvent_login], _OnEvent_login]:
-        """成功登入伺服器但**尚未進入世界**時觸發事件（無參數）
-        此時世界尚未載入，請勿呼叫位置相關的 API，要等待 `"spawn"` 事件觸發後才可以呼叫
-        此事件通常只拿來印 log 或做連線成功的標記
+    def once(
+        self, event: Literal[BotEvent.CHUNK_COLUMN_UNLOAD]
+    ) -> Callable[[_OnEvent_chunkColumnUnload], _OnEvent_chunkColumnUnload]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["spawn"]) -> Callable[[_OnEvent_spawn], _OnEvent_spawn]:
-        """機器人在世界中生成（或重新生成）後觸發事件（無參數）
-        這是可以真正開始移動的時機
+    def once(
+        self, event: Literal[BotEvent.DEATH]
+    ) -> Callable[[_OnEvent_death], _OnEvent_death]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
-        可查詢 `bot.entity.position`、發聊天訊息、載入插件等都應該在這個事件**之後**進行
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
+        ...
+    @overload
+    def once(
+        self, event: Literal[BotEvent.DIGGING_ABORTED]
+    ) -> Callable[[_OnEvent_diggingAborted], _OnEvent_diggingAborted]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
-        死亡重生、跨維度傳送也會再次觸發事件
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["respawn"]) -> Callable[[_OnEvent_respawn], _OnEvent_respawn]:
-        """機器人重生進入世界時觸發事件（無參數）
-        （`"death"` 後會先觸發此事件，接著才是 `"spawn"`）
+    def once(
+        self, event: Literal[BotEvent.DIGGING_COMPLETED]
+    ) -> Callable[[_OnEvent_diggingCompleted], _OnEvent_diggingCompleted]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["game"]) -> Callable[[_OnEvent_game], _OnEvent_game]:
-        """遊戲模式、維度、難度等 `bot.game` 欄位有變更時觸發事件（無參數）
-        要讀新值請直接看 `bot.game.*`
+    def once(
+        self, event: Literal[BotEvent.DISMOUNT]
+    ) -> Callable[[_OnEvent_dismount], _OnEvent_dismount]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["title"]) -> Callable[[_OnEvent_title], _OnEvent_title]:
-        """伺服器推送大型標題或副標題時觸發事件
+    def once(
+        self, event: Literal[BotEvent.END]
+    ) -> Callable[[_OnEvent_end], _OnEvent_end]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            text: 標題文字
-            type: `"title"` 或 `"subtitle"`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["rain"]) -> Callable[[_OnEvent_rain], _OnEvent_rain]:
-        """天氣開始下雨或停雨時觸發事件（無參數）
-        要判斷現在狀態請讀 `bot.isRaining`
+    def once(
+        self, event: Literal[BotEvent.ENTITY_ATTACH]
+    ) -> Callable[[_OnEvent_entityAttach], _OnEvent_entityAttach]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["time"]) -> Callable[[_OnEvent_time], _OnEvent_time]:
-        """世界時間有更新時觸發事件（無參數）
-        伺服器定時同步、或 `/time set` 指令
-        由於幾乎每個 tick 都會觸發，**不要在這裡做耗時工作**
+    def once(
+        self, event: Literal[BotEvent.ENTITY_ATTRIBUTES]
+    ) -> Callable[[_OnEvent_entityAttributes], _OnEvent_entityAttributes]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["kicked"]) -> Callable[[_OnEvent_kicked], _OnEvent_kicked]:
-        """被伺服器踢出時觸發事件
-        通常緊接著會觸發 `"end"` 事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_CRITICAL_EFFECT]
+    ) -> Callable[[_OnEvent_entityCriticalEffect], _OnEvent_entityCriticalEffect]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            reason: 伺服器送出的踢出原因原始字串，由 mineflayer 原樣轉送未做解析；現代伺服器通常是 JSON 格式的 `ChatMessage`，要顯示給使用者時用 `ChatMessage.fromNotch(reason).toString()` 轉純文字
-            loggedIn: `True` 代表已登入後才被踢、`False` 代表握手階段就被拒絕
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["end"]) -> Callable[[_OnEvent_end], _OnEvent_end]:
-        """連線斷開時觸發事件
-        正常離線、被踢、網路中斷都會觸發事件
-        這也是 `bot.run_forever()` 結束阻塞並讓 script 退出的訊號
+    def once(
+        self, event: Literal[BotEvent.ENTITY_CROUCH]
+    ) -> Callable[[_OnEvent_entityCrouch], _OnEvent_entityCrouch]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            reason: 斷線原因
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["spawnReset"]) -> Callable[[_OnEvent_spawnReset], _OnEvent_spawnReset]:
-        """床被破壞 / 重生點重置時觸發事件（無參數）
-        例如睡覺用的床被人敲掉
+    def once(
+        self, event: Literal[BotEvent.ENTITY_DEAD]
+    ) -> Callable[[_OnEvent_entityDead], _OnEvent_entityDead]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["death"]) -> Callable[[_OnEvent_death], _OnEvent_death]:
-        """機器人死亡時觸發事件（無參數）
-        mineflayer 會自動重生，稍後會再次觸發 `"spawn"` 事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_DETACH]
+    ) -> Callable[[_OnEvent_entityDetach], _OnEvent_entityDetach]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["health"]) -> Callable[[_OnEvent_health], _OnEvent_health]:
-        """血量或飽食度有變動時觸發事件（無參數）
-        要讀取新值請直接看 `bot.health` / `bot.food`
+    def once(
+        self, event: Literal[BotEvent.ENTITY_EAT]
+    ) -> Callable[[_OnEvent_entityEat], _OnEvent_entityEat]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["breath"]) -> Callable[[_OnEvent_breath], _OnEvent_breath]:
-        """氧氣量有變動時觸發（無參數）
-        要讀新值請看 `bot.oxygenLevel`
+    def once(
+        self, event: Literal[BotEvent.ENTITY_EATING_GRASS]
+    ) -> Callable[[_OnEvent_entityEatingGrass], _OnEvent_entityEatingGrass]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entitySwingArm"]) -> Callable[[_OnEvent_entitySwingArm], _OnEvent_entitySwingArm]:
-        """實體揮手時觸發事件
-        （近戰攻擊、採集動作）
+    def once(
+        self, event: Literal[BotEvent.ENTITY_EFFECT]
+    ) -> Callable[[_OnEvent_entityEffect], _OnEvent_entityEffect]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 揮手的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityHurt"]) -> Callable[[_OnEvent_entityHurt], _OnEvent_entityHurt]:
-        """實體受傷時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_EFFECT_END]
+    ) -> Callable[[_OnEvent_entityEffectEnd], _OnEvent_entityEffectEnd]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 受傷的 `Entity`
-            source: 傷害來源 `Entity`（可能是攻擊者或 `None`）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityDead"]) -> Callable[[_OnEvent_entityDead], _OnEvent_entityDead]:
-        """實體死亡時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_ELYTRA_FLEW]
+    ) -> Callable[[_OnEvent_entityElytraFlew], _OnEvent_entityElytraFlew]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 死亡的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityTaming"]) -> Callable[[_OnEvent_entityTaming], _OnEvent_entityTaming]:
-        """玩家正在嘗試馴服動物時觸發事件
-        （例如餵骨頭給狼）
+    def once(
+        self, event: Literal[BotEvent.ENTITY_EQUIP]
+    ) -> Callable[[_OnEvent_entityEquip], _OnEvent_entityEquip]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 被馴服中的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityTamed"]) -> Callable[[_OnEvent_entityTamed], _OnEvent_entityTamed]:
-        """動物成功被馴服時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_GONE]
+    ) -> Callable[[_OnEvent_entityGone], _OnEvent_entityGone]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 被馴服的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityShakingOffWater"]) -> Callable[[_OnEvent_entityShakingOffWater], _OnEvent_entityShakingOffWater]:
-        """動物抖水時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_HAND_SWAP]
+    ) -> Callable[[_OnEvent_entityHandSwap], _OnEvent_entityHandSwap]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 抖水的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityEatingGrass"]) -> Callable[[_OnEvent_entityEatingGrass], _OnEvent_entityEatingGrass]:
-        """羊在吃草時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_HURT]
+    ) -> Callable[[_OnEvent_entityHurt], _OnEvent_entityHurt]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 吃草的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityHandSwap"]) -> Callable[[_OnEvent_entityHandSwap], _OnEvent_entityHandSwap]:
-        """實體左右手物品互換時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_MAGIC_CRITICAL_EFFECT]
+    ) -> Callable[
+        [_OnEvent_entityMagicCriticalEffect], _OnEvent_entityMagicCriticalEffect
+    ]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 對應 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityWake"]) -> Callable[[_OnEvent_entityWake], _OnEvent_entityWake]:
-        """實體從床上醒來時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_MOVED]
+    ) -> Callable[[_OnEvent_entityMoved], _OnEvent_entityMoved]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 對應 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityEat"]) -> Callable[[_OnEvent_entityEat], _OnEvent_entityEat]:
-        """實體在吃東西時觸發事件
-        伺服器每次送出吃東西動畫封包（`packet.animation` = 3）時觸發一次
+    def once(
+        self, event: Literal[BotEvent.ENTITY_SHAKING_OFF_WATER]
+    ) -> Callable[[_OnEvent_entityShakingOffWater], _OnEvent_entityShakingOffWater]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 吃東西的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityCriticalEffect"]) -> Callable[[_OnEvent_entityCriticalEffect], _OnEvent_entityCriticalEffect]:
-        """實體被打出暴擊時觸發事件
-        （有爆擊粒子效果）
+    def once(
+        self, event: Literal[BotEvent.ENTITY_SLEEP]
+    ) -> Callable[[_OnEvent_entitySleep], _OnEvent_entitySleep]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 對應 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityMagicCriticalEffect"]) -> Callable[[_OnEvent_entityMagicCriticalEffect], _OnEvent_entityMagicCriticalEffect]:
-        """附魔武器的特殊效果觸發時
+    def once(
+        self, event: Literal[BotEvent.ENTITY_SPAWN]
+    ) -> Callable[[_OnEvent_entitySpawn], _OnEvent_entitySpawn]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 對應 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityCrouch"]) -> Callable[[_OnEvent_entityCrouch], _OnEvent_entityCrouch]:
-        """實體開始蹲下時觸發事件
-        （按下 shift）
+    def once(
+        self, event: Literal[BotEvent.ENTITY_SWING_ARM]
+    ) -> Callable[[_OnEvent_entitySwingArm], _OnEvent_entitySwingArm]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 潛行中的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityUncrouch"]) -> Callable[[_OnEvent_entityUncrouch], _OnEvent_entityUncrouch]:
-        """實體結束蹲下時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_TAMED]
+    ) -> Callable[[_OnEvent_entityTamed], _OnEvent_entityTamed]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 對應 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityEquip"]) -> Callable[[_OnEvent_entityEquip], _OnEvent_entityEquip]:
-        """實體換裝備或更換手持物品時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_TAMING]
+    ) -> Callable[[_OnEvent_entityTaming], _OnEvent_entityTaming]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 對應 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entitySleep"]) -> Callable[[_OnEvent_entitySleep], _OnEvent_entitySleep]:
-        """實體上床睡覺時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_UNCROUCH]
+    ) -> Callable[[_OnEvent_entityUncrouch], _OnEvent_entityUncrouch]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 上床的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entitySpawn"]) -> Callable[[_OnEvent_entitySpawn], _OnEvent_entitySpawn]:
-        """視野中有新實體出現時觸發事件
-        若是玩家實體會另外觸發 `"playerJoined"`
+    def once(
+        self, event: Literal[BotEvent.ENTITY_UPDATE]
+    ) -> Callable[[_OnEvent_entityUpdate], _OnEvent_entityUpdate]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 新出現的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityElytraFlew"]) -> Callable[[_OnEvent_entityElytraFlew], _OnEvent_entityElytraFlew]:
-        """實體張開鞘翅飛行時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ENTITY_WAKE]
+    ) -> Callable[[_OnEvent_entityWake], _OnEvent_entityWake]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 飛行中的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["usedFirework"]) -> Callable[[_OnEvent_usedFirework], _OnEvent_usedFirework]:
-        """玩家使用煙火時觸發事件
-        （通常用於鞘翅推進）
+    def once(
+        self, event: Literal[BotEvent.ERROR]
+    ) -> Callable[[_OnEvent_error], _OnEvent_error]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            fireworkEntityId: 煙火實體的數字 ID
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["itemDrop"]) -> Callable[[_OnEvent_itemDrop], _OnEvent_itemDrop]:
-        """實體丟出物品時觸發事件
-        （例如死亡時掉落）
+    def once(
+        self, event: Literal[BotEvent.EXPERIENCE]
+    ) -> Callable[[_OnEvent_experience], _OnEvent_experience]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 被掉出的物品 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["playerCollect"]) -> Callable[[_OnEvent_playerCollect], _OnEvent_playerCollect]:
-        """玩家撿起掉落物或其他實體時觸發事件
+    def once(
+        self, event: Literal[BotEvent.FORCED_MOVE]
+    ) -> Callable[[_OnEvent_forcedMove], _OnEvent_forcedMove]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            collector: 撿拾的 `Entity`（通常是玩家）
-            collected: 被撿拾的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityAttributes"]) -> Callable[[_OnEvent_entityAttributes], _OnEvent_entityAttributes]:
-        """實體的屬性表變動時觸發事件
-        （移動速度、最大血量等）
+    def once(
+        self, event: Literal[BotEvent.GAME]
+    ) -> Callable[[_OnEvent_game], _OnEvent_game]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 被更新的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityGone"]) -> Callable[[_OnEvent_entityGone], _OnEvent_entityGone]:
-        """實體離開視野或被移除時觸發事件
+    def once(
+        self, event: Literal[BotEvent.GOAL_REACHED]
+    ) -> Callable[[_OnEvent_goal_reached], _OnEvent_goal_reached]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 消失的 `Entity`（讀取它的資料仍可，但不再更新）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityMoved"]) -> Callable[[_OnEvent_entityMoved], _OnEvent_entityMoved]:
-        """實體位置有變動時觸發事件
-        **這是高頻事件**，每 tick 都可能觸發，請勿在此做耗時工作
+    def once(
+        self, event: Literal[BotEvent.GOAL_UPDATED]
+    ) -> Callable[[_OnEvent_goal_updated], _OnEvent_goal_updated]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 移動中的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityDetach"]) -> Callable[[_OnEvent_entityDetach], _OnEvent_entityDetach]:
-        """實體離開載具時觸發事件
+    def once(
+        self, event: Literal[BotEvent.HARDCODED_SOUND_EFFECT_HEARD]
+    ) -> Callable[
+        [_OnEvent_hardcodedSoundEffectHeard], _OnEvent_hardcodedSoundEffectHeard
+    ]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 乘員
-            vehicle: 載具
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityAttach"]) -> Callable[[_OnEvent_entityAttach], _OnEvent_entityAttach]:
-        """實體掛上載具時觸發事件
-        （騎上馬、船等）
+    def once(
+        self, event: Literal[BotEvent.HEALTH]
+    ) -> Callable[[_OnEvent_health], _OnEvent_health]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 乘員 `Entity`
-            vehicle: 載具 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityUpdate"]) -> Callable[[_OnEvent_entityUpdate], _OnEvent_entityUpdate]:
-        """實體的 metadata（旁枝屬性，如染色、坐騎狀態等）變動時觸發事件
+    def once(
+        self, event: Literal[BotEvent.INJECT_ALLOWED]
+    ) -> Callable[[_OnEvent_inject_allowed], _OnEvent_inject_allowed]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 被更新的 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityEffect"]) -> Callable[[_OnEvent_entityEffect], _OnEvent_entityEffect]:
-        """實體被套上狀態效果時觸發事件
+    def once(
+        self, event: Literal[BotEvent.ITEM_DROP]
+    ) -> Callable[[_OnEvent_itemDrop], _OnEvent_itemDrop]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 對應 `Entity`
-            effect: `Effect` 物件（含 `id`、`amplifier`、`duration`）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["entityEffectEnd"]) -> Callable[[_OnEvent_entityEffectEnd], _OnEvent_entityEffectEnd]:
-        """實體身上的狀態效果消失時觸發事件
+    def once(
+        self, event: Literal[BotEvent.KICKED]
+    ) -> Callable[[_OnEvent_kicked], _OnEvent_kicked]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            entity: 對應 `Entity`
-            effect: 剛結束的 `Effect`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["playerJoined"]) -> Callable[[_OnEvent_playerJoined], _OnEvent_playerJoined]:
-        """有玩家加入伺服器時觸發事件
+    def once(
+        self, event: Literal[BotEvent.LOGIN]
+    ) -> Callable[[_OnEvent_login], _OnEvent_login]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            player: 加入的 `Player` 物件（含 `.username`、`.uuid`、`.ping` 等）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["playerUpdated"]) -> Callable[[_OnEvent_playerUpdated], _OnEvent_playerUpdated]:
-        """玩家資訊更新時觸發事件
-        **這是高頻事件**，每 tick 都可能觸發，請勿在此做耗時工作
-        （延遲、顯示名稱、遊戲模式等）
+    def once(
+        self, event: Literal[BotEvent.MESSAGE]
+    ) -> Callable[[_OnEvent_message], _OnEvent_message]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            player: 被更新的 `Player`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["playerLeft"]) -> Callable[[_OnEvent_playerLeft], _OnEvent_playerLeft]:
-        """有玩家離線時觸發事件
+    def once(
+        self, event: Literal[BotEvent.MESSAGESTR]
+    ) -> Callable[[_OnEvent_messagestr], _OnEvent_messagestr]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            player: 離線的 `Player` 物件
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["blockUpdate"]) -> Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]:
-        """**任何**方塊變動時觸發事件
-        **這是高頻事件**，每 tick 都可能觸發，請勿在此做耗時工作
+    def once(
+        self, event: Literal[BotEvent.MOUNT]
+    ) -> Callable[[_OnEvent_mount], _OnEvent_mount]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            oldBlock: 變更前的 `Block`（可能為 `None`，如果原本是載入邊界）
-            newBlock: 變更後的 `Block`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["blockUpdate:(x, y, z)"]) -> Callable[[_OnEvent_blockUpdate__x__y__z_], _OnEvent_blockUpdate__x__y__z_]:
-        """特定座標的方塊發生變化時觸發事件
-        事件名裡的 `(x, y, z)` 要換成實際整數，例如 `"blockUpdate:(100,64,200)"`
+    def once(
+        self, event: Literal[BotEvent.MOVE]
+    ) -> Callable[[_OnEvent_move], _OnEvent_move]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            oldBlock: 變更前 `Block`，可能為 `None`
-            newBlock: 變更後 `Block`，可能為 `None`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["chunkColumnLoad"]) -> Callable[[_OnEvent_chunkColumnLoad], _OnEvent_chunkColumnLoad]:
-        """區塊柱載入到機器人視野時觸發事件
+    def once(
+        self, event: Literal[BotEvent.NOTE_HEARD]
+    ) -> Callable[[_OnEvent_noteHeard], _OnEvent_noteHeard]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            position: 區塊柱的角落座標 `Vec3`（只有 x、z 有意義）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["chunkColumnUnload"]) -> Callable[[_OnEvent_chunkColumnUnload], _OnEvent_chunkColumnUnload]:
-        """區塊柱卸載時觸發事件
+    def once(
+        self, event: Literal[BotEvent.PARTICLE]
+    ) -> Callable[[_OnEvent_particle], _OnEvent_particle]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            position: 區塊柱角落座標
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["soundEffectHeard"]) -> Callable[[_OnEvent_soundEffectHeard], _OnEvent_soundEffectHeard]:
-        """可識別的音效事件觸發時觸發事件
+    def once(
+        self, event: Literal[BotEvent.PATH_RESET]
+    ) -> Callable[[_OnEvent_path_reset], _OnEvent_path_reset]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            soundName: 音效名稱字串（例如 `"entity.creeper.primed"`）
-            position: 音效發生位置 `Vec3`
-            volume: 音量（浮點數）
-            pitch: 音高（浮點數）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["hardcodedSoundEffectHeard"]) -> Callable[[_OnEvent_hardcodedSoundEffectHeard], _OnEvent_hardcodedSoundEffectHeard]:
-        """舊版硬編碼音效觸發時觸發事件
-        多數情境下用 `"soundEffectHeard"` 就夠了
+    def once(
+        self, event: Literal[BotEvent.PATH_STOP]
+    ) -> Callable[[_OnEvent_path_stop], _OnEvent_path_stop]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            soundId: 音效的數字 ID
-            soundCategory: 類別 ID
-            position: 位置 `Vec3`
-            volume: 音量
-            pitch: 音高
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["noteHeard"]) -> Callable[[_OnEvent_noteHeard], _OnEvent_noteHeard]:
-        """音符盒被擊發時觸發事件
+    def once(
+        self, event: Literal[BotEvent.PATH_UPDATE]
+    ) -> Callable[[_OnEvent_path_update], _OnEvent_path_update]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            block: 音符盒 `Block`
-            instrument: 演奏的樂器（含 `id` 與 `name` 如 `"harp"`、`"bassDrum"`）
-            pitch: 音高 `0` ~ `24`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["pistonMove"]) -> Callable[[_OnEvent_pistonMove], _OnEvent_pistonMove]:
-        """任何活塞推/拉動作發生時觸發事件
+    def once(
+        self, event: Literal[BotEvent.PHYSIC_TICK]
+    ) -> Callable[[_OnEvent_physicTick], _OnEvent_physicTick]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            block: 活塞方塊
-            isPulling: `1` 為拉、`0` 為推
-            direction: 方向編號 `0` ~ `5`（下、上、北、南、西、東）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["chestLidMove"]) -> Callable[[_OnEvent_chestLidMove], _OnEvent_chestLidMove]:
-        """任何箱子被打開或關上時觸發事件
-        （例如動畫狀態變化時）
+    def once(
+        self, event: Literal[BotEvent.PHYSICS_TICK]
+    ) -> Callable[[_OnEvent_physicsTick], _OnEvent_physicsTick]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            block: 箱子方塊
-            isOpen: `1` 為開啟動畫、`0` 為關閉動畫
-            block2: 若為雙箱，另一半的方塊；單箱為 `None`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["blockBreakProgressObserved"]) -> Callable[[_OnEvent_blockBreakProgressObserved], _OnEvent_blockBreakProgressObserved]:
-        """看見附近有人在挖方塊時觸發（不是自己挖的）
+    def once(
+        self, event: Literal[BotEvent.PISTON_MOVE]
+    ) -> Callable[[_OnEvent_pistonMove], _OnEvent_pistonMove]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            block: 正在被挖的 `Block`
-            destroyStage: 破壞進度 `0` ~ `9`；`9` 時接近挖斷
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["blockBreakProgressEnd"]) -> Callable[[_OnEvent_blockBreakProgressEnd], _OnEvent_blockBreakProgressEnd]:
-        """挖掘動作結束時觸發（可能挖斷，也可能中途放棄）
+    def once(
+        self, event: Literal[BotEvent.PLAYER_COLLECT]
+    ) -> Callable[[_OnEvent_playerCollect], _OnEvent_playerCollect]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            block: 對應的 `Block`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["diggingCompleted"]) -> Callable[[_OnEvent_diggingCompleted], _OnEvent_diggingCompleted]:
-        """`bot.dig(block)` 成功挖掉方塊時觸發事件
+    def once(
+        self, event: Literal[BotEvent.PLAYER_JOINED]
+    ) -> Callable[[_OnEvent_playerJoined], _OnEvent_playerJoined]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            block: 被挖掉的 `Block`（此時方塊類型多半已變成空氣，位置資訊仍可用）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["diggingAborted"]) -> Callable[[_OnEvent_diggingAborted], _OnEvent_diggingAborted]:
-        """`bot.dig(block)` 被中斷時觸發事件
-        例如玩家移動離開太遠、或方塊被他人搶挖
+    def once(
+        self, event: Literal[BotEvent.PLAYER_LEFT]
+    ) -> Callable[[_OnEvent_playerLeft], _OnEvent_playerLeft]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            block: 中途放棄的目標方塊
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["move"]) -> Callable[[_OnEvent_move], _OnEvent_move]:
-        """機器人位置或視角改變時觸發事件
-        **這是高頻事件**，每 tick 都可能觸發，請勿在此做耗時工作
+    def once(
+        self, event: Literal[BotEvent.PLAYER_UPDATED]
+    ) -> Callable[[_OnEvent_playerUpdated], _OnEvent_playerUpdated]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            position: 移動前的 `Vec3`（可以和 `bot.entity.position` 比較得知移動方向 / 距離）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["forcedMove"]) -> Callable[[_OnEvent_forcedMove], _OnEvent_forcedMove]:
-        """被伺服器強制傳送時觸發事件（無參數）
-        （例如teleport、`/tp` 指令等）
-        重要：此事件觸發後，機器人的當前位置會跟路徑規劃的預期不符，常需重新規劃路線
+    def once(
+        self, event: Literal[BotEvent.RAIN]
+    ) -> Callable[[_OnEvent_rain], _OnEvent_rain]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["mount"]) -> Callable[[_OnEvent_mount], _OnEvent_mount]:
-        """機器人騎上載具時觸發事件（無參數）
-        （例如馬、船、礦車等）
-        可讀 `bot.vehicle` 看載具
+    def once(
+        self, event: Literal[BotEvent.RESOURCE_PACK]
+    ) -> Callable[[_OnEvent_resourcePack], _OnEvent_resourcePack]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["dismount"]) -> Callable[[_OnEvent_dismount], _OnEvent_dismount]:
-        """機器人下載具時觸發事件
+    def once(
+        self, event: Literal[BotEvent.RESPAWN]
+    ) -> Callable[[_OnEvent_respawn], _OnEvent_respawn]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            vehicle: 剛離開的載具 `Entity`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["windowOpen"]) -> Callable[[_OnEvent_windowOpen], _OnEvent_windowOpen]:
-        """物品欄之外的視窗被打開時觸發事件
-        （例如箱子、熔爐、鐵砧、交易面板等）
+    def once(
+        self, event: Literal[BotEvent.SCORE_REMOVED]
+    ) -> Callable[[_OnEvent_scoreRemoved], _OnEvent_scoreRemoved]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            window: 剛開啟的 `Window`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["windowClose"]) -> Callable[[_OnEvent_windowClose], _OnEvent_windowClose]:
-        """視窗關閉時觸發事件
+    def once(
+        self, event: Literal[BotEvent.SCORE_UPDATED]
+    ) -> Callable[[_OnEvent_scoreUpdated], _OnEvent_scoreUpdated]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            window: 剛關閉的 `Window`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["sleep"]) -> Callable[[_OnEvent_sleep], _OnEvent_sleep]:
-        """機器人自己進入睡眠狀態時觸發事件（無參數）"""
+    def once(
+        self, event: Literal[BotEvent.SCOREBOARD_CREATED]
+    ) -> Callable[[_OnEvent_scoreboardCreated], _OnEvent_scoreboardCreated]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
         ...
     @overload
-    def once(self, event: Literal["wake"]) -> Callable[[_OnEvent_wake], _OnEvent_wake]:
-        """機器人自己醒來時觸發事件（無參數）"""
+    def once(
+        self, event: Literal[BotEvent.SCOREBOARD_DELETED]
+    ) -> Callable[[_OnEvent_scoreboardDeleted], _OnEvent_scoreboardDeleted]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
+        """
         ...
     @overload
-    def once(self, event: Literal["experience"]) -> Callable[[_OnEvent_experience], _OnEvent_experience]:
-        """經驗值有變動時觸發（無參數）
-        要讀新值請看 `bot.experience`
+    def once(
+        self, event: Literal[BotEvent.SCOREBOARD_POSITION]
+    ) -> Callable[[_OnEvent_scoreboardPosition], _OnEvent_scoreboardPosition]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["physicsTick"]) -> Callable[[_OnEvent_physicsTick], _OnEvent_physicsTick]:
-        """每個物理 tick（~20Hz）觸發一次（無參數）
-        **這是高頻事件**，每 tick 都可能觸發，請勿在此做耗時工作
+    def once(
+        self, event: Literal[BotEvent.SCOREBOARD_TITLE_CHANGED]
+    ) -> Callable[[_OnEvent_scoreboardTitleChanged], _OnEvent_scoreboardTitleChanged]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["physicTick"]) -> Callable[[_OnEvent_physicTick], _OnEvent_physicTick]:
-        """`"physicsTick"` 的舊別名（無參數）
-        新程式碼請用 `"physicsTick"`；保留只是為了相容老插件
+    def once(
+        self, event: Literal[BotEvent.SLEEP]
+    ) -> Callable[[_OnEvent_sleep], _OnEvent_sleep]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
+
+        Args:
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["scoreboardCreated"]) -> Callable[[_OnEvent_scoreboardCreated], _OnEvent_scoreboardCreated]:
-        """有新記分板被建立時觸發事件
+    def once(
+        self, event: Literal[BotEvent.SOUND_EFFECT_HEARD]
+    ) -> Callable[[_OnEvent_soundEffectHeard], _OnEvent_soundEffectHeard]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            scoreboard: 剛建立的 `ScoreBoard`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["scoreboardDeleted"]) -> Callable[[_OnEvent_scoreboardDeleted], _OnEvent_scoreboardDeleted]:
-        """記分板被刪除時觸發事件
+    def once(
+        self, event: Literal[BotEvent.SPAWN]
+    ) -> Callable[[_OnEvent_spawn], _OnEvent_spawn]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            scoreboard: 被刪除的 `ScoreBoard`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["scoreboardTitleChanged"]) -> Callable[[_OnEvent_scoreboardTitleChanged], _OnEvent_scoreboardTitleChanged]:
-        """記分板標題變動時觸發事件
+    def once(
+        self, event: Literal[BotEvent.SPAWN_RESET]
+    ) -> Callable[[_OnEvent_spawnReset], _OnEvent_spawnReset]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            scoreboard: 對應 `ScoreBoard`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["scoreUpdated"]) -> Callable[[_OnEvent_scoreUpdated], _OnEvent_scoreUpdated]:
-        """記分板裡某個項目的分數被更新時觸發事件
+    def once(
+        self, event: Literal[BotEvent.TEAM_CREATED]
+    ) -> Callable[[_OnEvent_teamCreated], _OnEvent_teamCreated]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            scoreboard: 對應 `ScoreBoard`
-            item: 被更新的條目編號
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["scoreRemoved"]) -> Callable[[_OnEvent_scoreRemoved], _OnEvent_scoreRemoved]:
-        """記分板裡某條目被移除時觸發事件
+    def once(
+        self, event: Literal[BotEvent.TEAM_MEMBER_ADDED]
+    ) -> Callable[[_OnEvent_teamMemberAdded], _OnEvent_teamMemberAdded]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            scoreboard: 對應 `ScoreBoard`
-            item: 被移除的條目編號
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["scoreboardPosition"]) -> Callable[[_OnEvent_scoreboardPosition], _OnEvent_scoreboardPosition]:
-        """記分板顯示位置被切換時觸發事件
-        （側邊欄、玩家名下方等）
+    def once(
+        self, event: Literal[BotEvent.TEAM_MEMBER_REMOVED]
+    ) -> Callable[[_OnEvent_teamMemberRemoved], _OnEvent_teamMemberRemoved]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            position: 新的顯示位置（`DisplaySlot`）
-            scoreboard: 對應 `ScoreBoard`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["teamCreated"]) -> Callable[[_OnEvent_teamCreated], _OnEvent_teamCreated]:
-        """有隊伍被建立時觸發事件
+    def once(
+        self, event: Literal[BotEvent.TEAM_REMOVED]
+    ) -> Callable[[_OnEvent_teamRemoved], _OnEvent_teamRemoved]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            team: 新的 `Team`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["teamRemoved"]) -> Callable[[_OnEvent_teamRemoved], _OnEvent_teamRemoved]:
-        """隊伍被移除時觸發事件
+    def once(
+        self, event: Literal[BotEvent.TEAM_UPDATED]
+    ) -> Callable[[_OnEvent_teamUpdated], _OnEvent_teamUpdated]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            team: 被移除的 `Team`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["teamUpdated"]) -> Callable[[_OnEvent_teamUpdated], _OnEvent_teamUpdated]:
-        """隊伍資訊變動時觸發事件
-        （顏色、前綴等）
+    def once(
+        self, event: Literal[BotEvent.TIME]
+    ) -> Callable[[_OnEvent_time], _OnEvent_time]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            team: 被更新的 `Team`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["teamMemberAdded"]) -> Callable[[_OnEvent_teamMemberAdded], _OnEvent_teamMemberAdded]:
-        """有玩家被加進隊伍時觸發事件
+    def once(
+        self, event: Literal[BotEvent.TITLE]
+    ) -> Callable[[_OnEvent_title], _OnEvent_title]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            team: 隊伍 `Team`（新成員列表可從 `team.members` 讀）
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["teamMemberRemoved"]) -> Callable[[_OnEvent_teamMemberRemoved], _OnEvent_teamMemberRemoved]:
-        """玩家被踢出隊伍時觸發事件
+    def once(
+        self, event: Literal[BotEvent.UNMATCHED_MESSAGE]
+    ) -> Callable[[_OnEvent_unmatchedMessage], _OnEvent_unmatchedMessage]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            team: 對應 `Team`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["bossBarCreated"]) -> Callable[[_OnEvent_bossBarCreated], _OnEvent_bossBarCreated]:
-        """伺服器推送新的 Boss 血條時觸發事件
+    def once(
+        self, event: Literal[BotEvent.USED_FIREWORK]
+    ) -> Callable[[_OnEvent_usedFirework], _OnEvent_usedFirework]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            bossBar: 新的 `BossBar`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["bossBarDeleted"]) -> Callable[[_OnEvent_bossBarDeleted], _OnEvent_bossBarDeleted]:
-        """Boss 血條被移除時觸發事件
+    def once(
+        self, event: Literal[BotEvent.WAKE]
+    ) -> Callable[[_OnEvent_wake], _OnEvent_wake]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            bossBar: 被移除的 `BossBar`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["bossBarUpdated"]) -> Callable[[_OnEvent_bossBarUpdated], _OnEvent_bossBarUpdated]:
-        """Boss 血條（血量、標題、顏色等）有變動時觸發事件
+    def once(
+        self, event: Literal[BotEvent.WHISPER]
+    ) -> Callable[[_OnEvent_whisper], _OnEvent_whisper]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            bossBar: 對應 `BossBar`
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["resourcePack"]) -> Callable[[_OnEvent_resourcePack], _OnEvent_resourcePack]:
-        """伺服器要求客戶端下載資源包時觸發事件
-        **注意**：mineflayer 三個呼叫點傳入的參數順序不一致（`resource_pack.js:23/43/46`），收到的資料語意會隨觸發路徑不同
-        需要使用此事件時，請對照 JS 原始碼判斷當下情境
+    def once(
+        self, event: Literal[BotEvent.WINDOW_CLOSE]
+    ) -> Callable[[_OnEvent_windowClose], _OnEvent_windowClose]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            url: 資源包網址（通常是，但不保證）
-            hash: SHA-1 雜湊值或 uuid，**順序視路徑而定**
-            uuid: 套件 UUID，**順序視路徑而定**
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
     @overload
-    def once(self, event: Literal["particle"]) -> Callable[[_OnEvent_particle], _OnEvent_particle]:
-        """伺服器在世界中生成粒子效果時觸發事件
-        （例如爆炸、煙霧、藥水光芒）
+    def once(
+        self, event: Literal[BotEvent.WINDOW_OPEN]
+    ) -> Callable[[_OnEvent_windowOpen], _OnEvent_windowOpen]:
+        """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
-            particle: `Particle` 物件，含位置、類型等資訊
+            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
         ...
+
+    once_action_bar: Callable[[_OnEvent_actionBar], _OnEvent_actionBar]
+    """Same as `bot.once(BotEvent.ACTION_BAR)`. """
+    once_block_break_progress_end: Callable[
+        [_OnEvent_blockBreakProgressEnd], _OnEvent_blockBreakProgressEnd
+    ]
+    """Same as `bot.once(BotEvent.BLOCK_BREAK_PROGRESS_END)`. """
+    once_block_break_progress_observed: Callable[
+        [_OnEvent_blockBreakProgressObserved], _OnEvent_blockBreakProgressObserved
+    ]
+    """Same as `bot.once(BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED)`. """
+    once_block_update: Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]
+    """Same as `bot.once(BotEvent.BLOCK_UPDATE)`. """
+    once_block_update_x_y_z: Callable[
+        [_OnEvent_blockUpdate__x__y__z_], _OnEvent_blockUpdate__x__y__z_
+    ]
+    """Same as `bot.once(BotEvent.BLOCK_UPDATE_X_Y_Z)`. """
+    once_boss_bar_created: Callable[[_OnEvent_bossBarCreated], _OnEvent_bossBarCreated]
+    """Same as `bot.once(BotEvent.BOSS_BAR_CREATED)`. """
+    once_boss_bar_deleted: Callable[[_OnEvent_bossBarDeleted], _OnEvent_bossBarDeleted]
+    """Same as `bot.once(BotEvent.BOSS_BAR_DELETED)`. """
+    once_boss_bar_updated: Callable[[_OnEvent_bossBarUpdated], _OnEvent_bossBarUpdated]
+    """Same as `bot.once(BotEvent.BOSS_BAR_UPDATED)`. """
+    once_breath: Callable[[_OnEvent_breath], _OnEvent_breath]
+    """Same as `bot.once(BotEvent.BREATH)`. """
+    once_chat: Callable[[_OnEvent_chat], _OnEvent_chat]
+    """Same as `bot.once(BotEvent.CHAT)`. """
+    once_chest_lid_move: Callable[[_OnEvent_chestLidMove], _OnEvent_chestLidMove]
+    """Same as `bot.once(BotEvent.CHEST_LID_MOVE)`. """
+    once_chunk_column_load: Callable[
+        [_OnEvent_chunkColumnLoad], _OnEvent_chunkColumnLoad
+    ]
+    """Same as `bot.once(BotEvent.CHUNK_COLUMN_LOAD)`. """
+    once_chunk_column_unload: Callable[
+        [_OnEvent_chunkColumnUnload], _OnEvent_chunkColumnUnload
+    ]
+    """Same as `bot.once(BotEvent.CHUNK_COLUMN_UNLOAD)`. """
+    once_death: Callable[[_OnEvent_death], _OnEvent_death]
+    """Same as `bot.once(BotEvent.DEATH)`. """
+    once_digging_aborted: Callable[[_OnEvent_diggingAborted], _OnEvent_diggingAborted]
+    """Same as `bot.once(BotEvent.DIGGING_ABORTED)`. """
+    once_digging_completed: Callable[
+        [_OnEvent_diggingCompleted], _OnEvent_diggingCompleted
+    ]
+    """Same as `bot.once(BotEvent.DIGGING_COMPLETED)`. """
+    once_dismount: Callable[[_OnEvent_dismount], _OnEvent_dismount]
+    """Same as `bot.once(BotEvent.DISMOUNT)`. """
+    once_end: Callable[[_OnEvent_end], _OnEvent_end]
+    """Same as `bot.once(BotEvent.END)`. """
+    once_entity_attach: Callable[[_OnEvent_entityAttach], _OnEvent_entityAttach]
+    """Same as `bot.once(BotEvent.ENTITY_ATTACH)`. """
+    once_entity_attributes: Callable[
+        [_OnEvent_entityAttributes], _OnEvent_entityAttributes
+    ]
+    """Same as `bot.once(BotEvent.ENTITY_ATTRIBUTES)`. """
+    once_entity_critical_effect: Callable[
+        [_OnEvent_entityCriticalEffect], _OnEvent_entityCriticalEffect
+    ]
+    """Same as `bot.once(BotEvent.ENTITY_CRITICAL_EFFECT)`. """
+    once_entity_crouch: Callable[[_OnEvent_entityCrouch], _OnEvent_entityCrouch]
+    """Same as `bot.once(BotEvent.ENTITY_CROUCH)`. """
+    once_entity_dead: Callable[[_OnEvent_entityDead], _OnEvent_entityDead]
+    """Same as `bot.once(BotEvent.ENTITY_DEAD)`. """
+    once_entity_detach: Callable[[_OnEvent_entityDetach], _OnEvent_entityDetach]
+    """Same as `bot.once(BotEvent.ENTITY_DETACH)`. """
+    once_entity_eat: Callable[[_OnEvent_entityEat], _OnEvent_entityEat]
+    """Same as `bot.once(BotEvent.ENTITY_EAT)`. """
+    once_entity_eating_grass: Callable[
+        [_OnEvent_entityEatingGrass], _OnEvent_entityEatingGrass
+    ]
+    """Same as `bot.once(BotEvent.ENTITY_EATING_GRASS)`. """
+    once_entity_effect: Callable[[_OnEvent_entityEffect], _OnEvent_entityEffect]
+    """Same as `bot.once(BotEvent.ENTITY_EFFECT)`. """
+    once_entity_effect_end: Callable[
+        [_OnEvent_entityEffectEnd], _OnEvent_entityEffectEnd
+    ]
+    """Same as `bot.once(BotEvent.ENTITY_EFFECT_END)`. """
+    once_entity_elytra_flew: Callable[
+        [_OnEvent_entityElytraFlew], _OnEvent_entityElytraFlew
+    ]
+    """Same as `bot.once(BotEvent.ENTITY_ELYTRA_FLEW)`. """
+    once_entity_equip: Callable[[_OnEvent_entityEquip], _OnEvent_entityEquip]
+    """Same as `bot.once(BotEvent.ENTITY_EQUIP)`. """
+    once_entity_gone: Callable[[_OnEvent_entityGone], _OnEvent_entityGone]
+    """Same as `bot.once(BotEvent.ENTITY_GONE)`. """
+    once_entity_hand_swap: Callable[[_OnEvent_entityHandSwap], _OnEvent_entityHandSwap]
+    """Same as `bot.once(BotEvent.ENTITY_HAND_SWAP)`. """
+    once_entity_hurt: Callable[[_OnEvent_entityHurt], _OnEvent_entityHurt]
+    """Same as `bot.once(BotEvent.ENTITY_HURT)`. """
+    once_entity_magic_critical_effect: Callable[
+        [_OnEvent_entityMagicCriticalEffect], _OnEvent_entityMagicCriticalEffect
+    ]
+    """Same as `bot.once(BotEvent.ENTITY_MAGIC_CRITICAL_EFFECT)`. """
+    once_entity_moved: Callable[[_OnEvent_entityMoved], _OnEvent_entityMoved]
+    """Same as `bot.once(BotEvent.ENTITY_MOVED)`. """
+    once_entity_shaking_off_water: Callable[
+        [_OnEvent_entityShakingOffWater], _OnEvent_entityShakingOffWater
+    ]
+    """Same as `bot.once(BotEvent.ENTITY_SHAKING_OFF_WATER)`. """
+    once_entity_sleep: Callable[[_OnEvent_entitySleep], _OnEvent_entitySleep]
+    """Same as `bot.once(BotEvent.ENTITY_SLEEP)`. """
+    once_entity_spawn: Callable[[_OnEvent_entitySpawn], _OnEvent_entitySpawn]
+    """Same as `bot.once(BotEvent.ENTITY_SPAWN)`. """
+    once_entity_swing_arm: Callable[[_OnEvent_entitySwingArm], _OnEvent_entitySwingArm]
+    """Same as `bot.once(BotEvent.ENTITY_SWING_ARM)`. """
+    once_entity_tamed: Callable[[_OnEvent_entityTamed], _OnEvent_entityTamed]
+    """Same as `bot.once(BotEvent.ENTITY_TAMED)`. """
+    once_entity_taming: Callable[[_OnEvent_entityTaming], _OnEvent_entityTaming]
+    """Same as `bot.once(BotEvent.ENTITY_TAMING)`. """
+    once_entity_uncrouch: Callable[[_OnEvent_entityUncrouch], _OnEvent_entityUncrouch]
+    """Same as `bot.once(BotEvent.ENTITY_UNCROUCH)`. """
+    once_entity_update: Callable[[_OnEvent_entityUpdate], _OnEvent_entityUpdate]
+    """Same as `bot.once(BotEvent.ENTITY_UPDATE)`. """
+    once_entity_wake: Callable[[_OnEvent_entityWake], _OnEvent_entityWake]
+    """Same as `bot.once(BotEvent.ENTITY_WAKE)`. """
+    once_error: Callable[[_OnEvent_error], _OnEvent_error]
+    """Same as `bot.once(BotEvent.ERROR)`. """
+    once_experience: Callable[[_OnEvent_experience], _OnEvent_experience]
+    """Same as `bot.once(BotEvent.EXPERIENCE)`. """
+    once_forced_move: Callable[[_OnEvent_forcedMove], _OnEvent_forcedMove]
+    """Same as `bot.once(BotEvent.FORCED_MOVE)`. """
+    once_game: Callable[[_OnEvent_game], _OnEvent_game]
+    """Same as `bot.once(BotEvent.GAME)`. """
+    once_goal_reached: Callable[[_OnEvent_goal_reached], _OnEvent_goal_reached]
+    """Same as `bot.once(BotEvent.GOAL_REACHED)`. """
+    once_goal_updated: Callable[[_OnEvent_goal_updated], _OnEvent_goal_updated]
+    """Same as `bot.once(BotEvent.GOAL_UPDATED)`. """
+    once_hardcoded_sound_effect_heard: Callable[
+        [_OnEvent_hardcodedSoundEffectHeard], _OnEvent_hardcodedSoundEffectHeard
+    ]
+    """Same as `bot.once(BotEvent.HARDCODED_SOUND_EFFECT_HEARD)`. """
+    once_health: Callable[[_OnEvent_health], _OnEvent_health]
+    """Same as `bot.once(BotEvent.HEALTH)`. """
+    once_inject_allowed: Callable[[_OnEvent_inject_allowed], _OnEvent_inject_allowed]
+    """Same as `bot.once(BotEvent.INJECT_ALLOWED)`. """
+    once_item_drop: Callable[[_OnEvent_itemDrop], _OnEvent_itemDrop]
+    """Same as `bot.once(BotEvent.ITEM_DROP)`. """
+    once_kicked: Callable[[_OnEvent_kicked], _OnEvent_kicked]
+    """Same as `bot.once(BotEvent.KICKED)`. """
+    once_login: Callable[[_OnEvent_login], _OnEvent_login]
+    """Same as `bot.once(BotEvent.LOGIN)`. """
+    once_message: Callable[[_OnEvent_message], _OnEvent_message]
+    """Same as `bot.once(BotEvent.MESSAGE)`. """
+    once_messagestr: Callable[[_OnEvent_messagestr], _OnEvent_messagestr]
+    """Same as `bot.once(BotEvent.MESSAGESTR)`. """
+    once_mount: Callable[[_OnEvent_mount], _OnEvent_mount]
+    """Same as `bot.once(BotEvent.MOUNT)`. """
+    once_move: Callable[[_OnEvent_move], _OnEvent_move]
+    """Same as `bot.once(BotEvent.MOVE)`. """
+    once_note_heard: Callable[[_OnEvent_noteHeard], _OnEvent_noteHeard]
+    """Same as `bot.once(BotEvent.NOTE_HEARD)`. """
+    once_particle: Callable[[_OnEvent_particle], _OnEvent_particle]
+    """Same as `bot.once(BotEvent.PARTICLE)`. """
+    once_path_reset: Callable[[_OnEvent_path_reset], _OnEvent_path_reset]
+    """Same as `bot.once(BotEvent.PATH_RESET)`. """
+    once_path_stop: Callable[[_OnEvent_path_stop], _OnEvent_path_stop]
+    """Same as `bot.once(BotEvent.PATH_STOP)`. """
+    once_path_update: Callable[[_OnEvent_path_update], _OnEvent_path_update]
+    """Same as `bot.once(BotEvent.PATH_UPDATE)`. """
+    once_physic_tick: Callable[[_OnEvent_physicTick], _OnEvent_physicTick]
+    """Same as `bot.once(BotEvent.PHYSIC_TICK)`. """
+    once_physics_tick: Callable[[_OnEvent_physicsTick], _OnEvent_physicsTick]
+    """Same as `bot.once(BotEvent.PHYSICS_TICK)`. """
+    once_piston_move: Callable[[_OnEvent_pistonMove], _OnEvent_pistonMove]
+    """Same as `bot.once(BotEvent.PISTON_MOVE)`. """
+    once_player_collect: Callable[[_OnEvent_playerCollect], _OnEvent_playerCollect]
+    """Same as `bot.once(BotEvent.PLAYER_COLLECT)`. """
+    once_player_joined: Callable[[_OnEvent_playerJoined], _OnEvent_playerJoined]
+    """Same as `bot.once(BotEvent.PLAYER_JOINED)`. """
+    once_player_left: Callable[[_OnEvent_playerLeft], _OnEvent_playerLeft]
+    """Same as `bot.once(BotEvent.PLAYER_LEFT)`. """
+    once_player_updated: Callable[[_OnEvent_playerUpdated], _OnEvent_playerUpdated]
+    """Same as `bot.once(BotEvent.PLAYER_UPDATED)`. """
+    once_rain: Callable[[_OnEvent_rain], _OnEvent_rain]
+    """Same as `bot.once(BotEvent.RAIN)`. """
+    once_resource_pack: Callable[[_OnEvent_resourcePack], _OnEvent_resourcePack]
+    """Same as `bot.once(BotEvent.RESOURCE_PACK)`. """
+    once_respawn: Callable[[_OnEvent_respawn], _OnEvent_respawn]
+    """Same as `bot.once(BotEvent.RESPAWN)`. """
+    once_score_removed: Callable[[_OnEvent_scoreRemoved], _OnEvent_scoreRemoved]
+    """Same as `bot.once(BotEvent.SCORE_REMOVED)`. """
+    once_score_updated: Callable[[_OnEvent_scoreUpdated], _OnEvent_scoreUpdated]
+    """Same as `bot.once(BotEvent.SCORE_UPDATED)`. """
+    once_scoreboard_created: Callable[
+        [_OnEvent_scoreboardCreated], _OnEvent_scoreboardCreated
+    ]
+    """Same as `bot.once(BotEvent.SCOREBOARD_CREATED)`. """
+    once_scoreboard_deleted: Callable[
+        [_OnEvent_scoreboardDeleted], _OnEvent_scoreboardDeleted
+    ]
+    """Same as `bot.once(BotEvent.SCOREBOARD_DELETED)`. """
+    once_scoreboard_position: Callable[
+        [_OnEvent_scoreboardPosition], _OnEvent_scoreboardPosition
+    ]
+    """Same as `bot.once(BotEvent.SCOREBOARD_POSITION)`. """
+    once_scoreboard_title_changed: Callable[
+        [_OnEvent_scoreboardTitleChanged], _OnEvent_scoreboardTitleChanged
+    ]
+    """Same as `bot.once(BotEvent.SCOREBOARD_TITLE_CHANGED)`. """
+    once_sleep: Callable[[_OnEvent_sleep], _OnEvent_sleep]
+    """Same as `bot.once(BotEvent.SLEEP)`. """
+    once_sound_effect_heard: Callable[
+        [_OnEvent_soundEffectHeard], _OnEvent_soundEffectHeard
+    ]
+    """Same as `bot.once(BotEvent.SOUND_EFFECT_HEARD)`. """
+    once_spawn: Callable[[_OnEvent_spawn], _OnEvent_spawn]
+    """Same as `bot.once(BotEvent.SPAWN)`. """
+    once_spawn_reset: Callable[[_OnEvent_spawnReset], _OnEvent_spawnReset]
+    """Same as `bot.once(BotEvent.SPAWN_RESET)`. """
+    once_team_created: Callable[[_OnEvent_teamCreated], _OnEvent_teamCreated]
+    """Same as `bot.once(BotEvent.TEAM_CREATED)`. """
+    once_team_member_added: Callable[
+        [_OnEvent_teamMemberAdded], _OnEvent_teamMemberAdded
+    ]
+    """Same as `bot.once(BotEvent.TEAM_MEMBER_ADDED)`. """
+    once_team_member_removed: Callable[
+        [_OnEvent_teamMemberRemoved], _OnEvent_teamMemberRemoved
+    ]
+    """Same as `bot.once(BotEvent.TEAM_MEMBER_REMOVED)`. """
+    once_team_removed: Callable[[_OnEvent_teamRemoved], _OnEvent_teamRemoved]
+    """Same as `bot.once(BotEvent.TEAM_REMOVED)`. """
+    once_team_updated: Callable[[_OnEvent_teamUpdated], _OnEvent_teamUpdated]
+    """Same as `bot.once(BotEvent.TEAM_UPDATED)`. """
+    once_time: Callable[[_OnEvent_time], _OnEvent_time]
+    """Same as `bot.once(BotEvent.TIME)`. """
+    once_title: Callable[[_OnEvent_title], _OnEvent_title]
+    """Same as `bot.once(BotEvent.TITLE)`. """
+    once_unmatched_message: Callable[
+        [_OnEvent_unmatchedMessage], _OnEvent_unmatchedMessage
+    ]
+    """Same as `bot.once(BotEvent.UNMATCHED_MESSAGE)`. """
+    once_used_firework: Callable[[_OnEvent_usedFirework], _OnEvent_usedFirework]
+    """Same as `bot.once(BotEvent.USED_FIREWORK)`. """
+    once_wake: Callable[[_OnEvent_wake], _OnEvent_wake]
+    """Same as `bot.once(BotEvent.WAKE)`. """
+    once_whisper: Callable[[_OnEvent_whisper], _OnEvent_whisper]
+    """Same as `bot.once(BotEvent.WHISPER)`. """
+    once_window_close: Callable[[_OnEvent_windowClose], _OnEvent_windowClose]
+    """Same as `bot.once(BotEvent.WINDOW_CLOSE)`. """
+    once_window_open: Callable[[_OnEvent_windowOpen], _OnEvent_windowOpen]
+    """Same as `bot.once(BotEvent.WINDOW_OPEN)`. """
 
     # --- Minethon-specific methods (defined in bot.py) ---
     # Populated after bot.load_plugin('mineflayer-pathfinder'):
@@ -3649,7 +5813,7 @@ class Bot:
 
         Args:
             name: npm 套件名稱
-            version: 要釘住的版本字串；省略時使用 bridge 已安裝的版本。建議**一律填**以確保可重現
+            version: 要釘住的版本字串。對 minethon 內建預裝的 plugin（目前是 `mineflayer-pathfinder`）可省略，其餘套件必須顯式填寫
             export_key: 該套件的 installer 函式掛在 module 的哪個屬性上。pathfinder 已內建對照，其他套件不相符時可傳這個覆寫
             **options: 會轉傳給「HOF 風格」的插件（例如 `@ssmidge/mineflayer-dashboard`）。普通插件會忽略
 
@@ -3670,7 +5834,7 @@ class Bot:
 
         Args:
             name: npm 套件名稱
-            version: 要釘住的版本字串；省略時使用 bridge 已安裝的版本。建議**一律填**以確保可重現
+            version: 要釘住的版本字串。對 minethon 內建預裝的 plugin（目前是 `mineflayer-pathfinder`）可省略，其餘套件必須顯式填寫
             export_key: 該套件的 installer 函式掛在 module 的哪個屬性上。pathfinder 已內建對照，其他套件不相符時可傳這個覆寫
             **options: 會轉傳給「HOF 風格」的插件（例如 `@ssmidge/mineflayer-dashboard`）。普通插件會忽略
 
@@ -3684,7 +5848,7 @@ class Bot:
 
         Args:
             name: npm 套件名稱
-            version: (選填) 要釘住的版本字串
+            version: 要釘住的版本字串。非內建預裝套件必填，避免 JSPyBridge 在 runtime 偷裝 latest
 
         Returns:
             的物件未做型別包裝，請對照該插件 README 操作
@@ -3696,7 +5860,6 @@ class Bot:
         按 Ctrl-C 會乾淨退出
         """
         ...
-
 
 def create_bot(**options: object) -> Bot:
     """建立並啟動一個 mineflayer 機器人
