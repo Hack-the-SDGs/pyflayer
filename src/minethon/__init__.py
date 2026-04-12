@@ -2,7 +2,7 @@
 
 Typical usage::
 
-    from minethon import create_bot
+    from minethon import BotEvent, create_bot
 
     bot = create_bot(
         host="mc.example.com",
@@ -10,12 +10,12 @@ Typical usage::
         username="my_bot",
     )
 
-    @bot.on("spawn")
+    @bot.on_spawn
     def on_spawn() -> None:
         bot.chat("Hello from minethon!")
 
-    @bot.on("chat")
-    def on_chat(username: str, message: str) -> None:
+    @bot.on(BotEvent.CHAT)
+    def on_chat(username: str, message: str, *_: object) -> None:
         if message == "quit":
             bot.quit("bye")
 
@@ -24,6 +24,23 @@ Typical usage::
 
 from __future__ import annotations
 
+from minethon._events import BotEvent
 from minethon.bot import Bot, create_bot
+from minethon.errors import (
+    MinethonError,
+    NotSpawnedError,
+    PlayerNotFoundError,
+    PluginNotInstalledError,
+    VersionPinRequiredError,
+)
 
-__all__ = ["Bot", "create_bot"]
+__all__ = [
+    "Bot",
+    "BotEvent",
+    "MinethonError",
+    "NotSpawnedError",
+    "PlayerNotFoundError",
+    "PluginNotInstalledError",
+    "VersionPinRequiredError",
+    "create_bot",
+]
