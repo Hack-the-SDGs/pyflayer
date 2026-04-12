@@ -36,34 +36,35 @@ class Vec3:
     """Y 軸座標"""
     z: float
     """Z 軸座標"""
+
     def isZero(self) -> bool:
         """是否為零向量（三軸皆為 `0`）
 
         Returns:
             布林
         """
-        ...
+
     def at(self, id: int) -> float:
         """依索引取軸座標：`0` 取 x、`1` 取 y、`2` 取 z
 
         Args:
             id: 索引 `0` / `1` / `2`
         """
-        ...
+
     def xz(self) -> tuple[float, float]:
         """以 `(x, z)` 回傳長度 2 的 tuple"""
-        ...
+
     def xy(self) -> tuple[float, float]:
         """以 `(x, y)` 回傳長度 2 的 tuple"""
-        ...
+
     def yz(self) -> tuple[float, float]:
         """以 `(y, z)` 回傳長度 2 的 tuple"""
-        ...
+
     def xzy(self) -> Vec3:
         """Returns:
         一個新 `Vec3`，y 與 z 互換（座標變 `(x, z, y)`）
         """
-        ...
+
     def set(self, x: float, y: float, z: float) -> Self:
         """**原地**修改三軸為給定值，回傳自身
 
@@ -72,30 +73,30 @@ class Vec3:
             y: 新的軸座標值
             z: 新的軸座標值
         """
-        ...
+
     def update(self, other: Vec3) -> Self:
         """**原地**把自己的值複製成 `other` 的值，回傳自身
 
         Args:
             other: 來源 `Vec3`
         """
-        ...
+
     def rounded(self) -> Vec3:
         """Returns:
         一個新 `Vec3`，各軸四捨五入到整數
         """
-        ...
+
     def round(self) -> Self:
         """**原地**四捨五入各軸，回傳自身"""
-        ...
+
     def floored(self) -> Vec3:
         """Returns:
         一個新 `Vec3`，各軸向下取整。用來把浮點位置對齊到所屬方塊座標時常用
         """
-        ...
+
     def floor(self) -> Self:
         """**原地**向下取整，回傳自身"""
-        ...
+
     def offset(self, dx: float, dy: float, dz: float) -> Vec3:
         """Args:
             dx: 各軸偏移量（浮點數）
@@ -110,7 +111,7 @@ class Vec3:
         head = feet.offset(0, bot.entity.height, 0)
         ```
         """
-        ...
+
     def translate(self, dx: float, dy: float, dz: float) -> Self:
         """**原地**位移，回傳自身
 
@@ -119,63 +120,63 @@ class Vec3:
             dy: 各軸位移量
             dz: 各軸位移量
         """
-        ...
+
     def add(self, other: Vec3) -> Self:
         """**原地**加上另一向量，回傳自身
 
         Args:
             other: `Vec3`
         """
-        ...
+
     def subtract(self, other: Vec3) -> Self:
         """**原地**減去另一向量"""
-        ...
+
     def multiply(self, other: Vec3) -> Self:
         """**原地**各軸相乘"""
-        ...
+
     def divide(self, other: Vec3) -> Self:
         """**原地**各軸相除"""
-        ...
+
     def plus(self, other: Vec3) -> Vec3:
         """Returns:
         新的 `Vec3`，座標是自身加上 `other` 的各軸值
         """
-        ...
+
     def minus(self, other: Vec3) -> Vec3:
         """Returns:
         新的 `Vec3`，座標是自身減去 `other`
         """
-        ...
+
     def scaled(self, scalar: float) -> Vec3:
         """Returns:
         新的 `Vec3`，各軸座標都乘上 `scalar`
         """
-        ...
+
     def abs(self) -> Vec3:
         """Returns:
         一個新 `Vec3`，各軸取絕對值
         """
-        ...
+
     def volume(self) -> float:
         """Returns:
         `x * y * z` 的體積
         """
-        ...
+
     def modulus(self, other: Vec3) -> Vec3:
         """Returns:
         一個新 `Vec3`，對 `other` 取 modulo
         """
-        ...
+
     def distanceTo(self, other: Vec3) -> float:
         """Returns:
         到另一個向量的歐氏距離
         """
-        ...
+
     def distanceSquared(self, other: Vec3) -> float:
         """Returns:
         到另一向量的歐氏距離**平方**
         """
-        ...
+
     def equals(self, other: Vec3, error: float = ...) -> bool:
         """判斷兩個向量是否「近乎相等」
 
@@ -183,83 +184,82 @@ class Vec3:
             other: 要比較的另一個 `Vec3`
             error: 允許的誤差；省略時要完全相等
         """
-        ...
+
     def toString(self) -> str:
         """Returns:
         `"(x, y, z)"` 格式的字串
         """
-        ...
+
     def clone(self) -> Vec3:
         """Returns:
         一個和自身相同座標的新 `Vec3`。避免意外修改共用物件時使用
         """
-        ...
+
     def min(self, other: Vec3) -> Vec3:
         """Returns:
         新 `Vec3`，各軸取兩者最小值
         """
-        ...
+
     def max(self, other: Vec3) -> Vec3:
         """Returns:
         新 `Vec3`，各軸取兩者最大值
         """
-        ...
+
     def norm(self) -> float:
         """Returns:
         向量長度
         """
-        ...
+
     def dot(self, other: Vec3) -> float:
         """Returns:
         與另一向量的點積
         """
-        ...
+
     def cross(self, other: Vec3) -> Vec3:
         """Returns:
         與另一向量的外積結果新 `Vec3`
         """
-        ...
+
     def unit(self) -> Vec3:
         """Returns:
         單位化後的新 `Vec3`（方向相同、長度 1）；零向量會回傳零向量
         """
-        ...
+
     def normalize(self) -> Vec3:
         """**原地**單位化，回傳自身"""
-        ...
+
     def scale(self, scalar: float) -> Self:
         """**原地**把各軸乘上 `scalar`，回傳自身
 
         Args:
             scalar: 純量
         """
-        ...
+
     def xyDistanceTo(self, other: Vec3) -> float:
         """只考慮 x、y 軸的距離"""
-        ...
+
     def xzDistanceTo(self, other: Vec3) -> float:
         """只考慮 x、z 軸的距離（忽略 y）
         Minecraft 算「水平距離」最常用這個
         """
-        ...
+
     def yzDistanceTo(self, other: Vec3) -> float:
         """只考慮 y、z 軸的距離"""
-        ...
+
     def innerProduct(self, other: Vec3) -> float:
         """Returns:
         內積
         """
-        ...
+
     def manhattanDistanceTo(self, other: Vec3) -> float:
         """Returns:
         曼哈頓距離
         """
-        ...
+
     def toArray(self) -> tuple[float, float, float]:
         """Returns:
         `[x, y, z]` 的 tuple
         """
-        ...
 
 class ChatMessageScore:
     """Score payload inside a `ChatMessage`.
@@ -284,14 +284,15 @@ class ChatMessage:
     selector: str | None
     keybind: str | None
     score: ChatMessageScore | None
+
     def append(self, *messages: object) -> None:
         """把一到多個子訊息或字串附加到自身"""
-        ...
+
     def clone(self) -> ChatMessage:
         """Returns:
         一個同內容的新 `ChatMessage`
         """
-        ...
+
     def toString(self, language: object = ...) -> str:
         """攤平為純文字字串（**去除所有顏色與樣式**）
         通常學生只會用這個
@@ -299,29 +300,32 @@ class ChatMessage:
         Args:
             language: (選填) 翻譯字典物件；預設使用內建 English 翻譯表
         """
-        ...
+
     def toMotd(self, language: object = ...) -> str:
         """攤平為含 `§x` 顏色碼的字串"""
-        ...
+
     def toAnsi(self, language: object = ...) -> str:
         """攤平為 ANSI 跳脫碼字串——印到終端機會顯示真正的顏色"""
-        ...
+
     def toHTML(self, language: object = ..., styles: object = ...) -> str:
         """攤平為 HTML 字串，含內嵌 CSS"""
-        ...
+
     def length(self) -> int:
         """取得這則訊息的子元件數量"""
-        ...
+
     def getText(self, idx: int, language: object = ...) -> str:
         """取得第 `idx` 個子元件的純文字"""
-        ...
+
     def valueOf(self) -> str:
         """同 `toString()`，供 `str()` / `+` 字串拼接使用"""
-        ...
+
     @staticmethod
-    def fromNotch(str: str) -> ChatMessage: ...
+    def fromNotch(str: str) -> ChatMessage:
+        pass
+
     @staticmethod
-    def fromNetwork(messageType: int, parameters: dict[str, object]) -> ChatMessage: ...
+    def fromNetwork(messageType: int, parameters: dict[str, object]) -> ChatMessage:
+        pass
 
 EntityType = Literal[
     "player", "mob", "object", "global", "orb", "projectile", "hostile", "other"
@@ -415,6 +419,7 @@ class Entity:
     """實體目前所騎的載具 `Entity`，沒有則為 `None`"""
     passengers: list[Entity]
     """騎在這個實體身上的乘員 `Entity` 陣列"""
+
     def setEquipment(self, index: int, item: Item) -> None:
         """更新實體指定裝備槽的顯示物品
 
@@ -422,15 +427,14 @@ class Entity:
             index: `0` 主手、`1` 腳、`2` 腿、`3` 胸、`4` 頭
             item: 要顯示的 `Item`
         """
-        ...
+
     def getCustomName(self) -> ChatMessage | None:
         """Returns:
         實體的自訂名稱 `ChatMessage`，沒有則為 `None`
         """
-        ...
+
     def getDroppedItem(self) -> Item | None:
         """若此實體是掉落物 entity，回傳其物品 `Item`，否則為 `None`"""
-        ...
 
 class Block:
     """世界中一格方塊的表示"""
@@ -483,16 +487,17 @@ class Block:
     """可以有效採集此方塊的工具 ID 字典 `{itemId: True}`；空的話代表空手也能採集"""
     position: Vec3
     """方塊在世界中的 `Vec3` 座標"""
+
     def canHarvest(self, heldItemType: int | None) -> bool:
         """能否用目前持有的工具收穫這個方塊
 
         Args:
             heldItemType: 手上工具的物品 ID 整數，或 `None` 代表空手
         """
-        ...
+
     def getProperties(self) -> dict[str, object]:
         """解析 block state，回傳屬性字典"""
-        ...
+
     def digTime(
         self,
         heldItemType: int | None,
@@ -512,7 +517,6 @@ class Block:
             enchantments: (選填) 工具上的附魔列表
             effects: (選填) 身上的狀態效果列表
         """
-        ...
 
 class Item:
     """物品堆疊的表示"""
@@ -579,6 +583,7 @@ class Window:
     requiresConfirmation: bool
     selectedItem: Item | None
     """目前游標上拿著的 `Item`（滑鼠按住拖放用），沒有則為 `None`"""
+
     def findInventoryItem(
         self, itemType: int, metadata: int | None, notFull: bool
     ) -> Item | None:
@@ -589,38 +594,38 @@ class Window:
             metadata: metadata；不關心傳 `None`
             notFull: `True` 代表只要沒達 stackSize 的那堆
         """
-        ...
+
     def findContainerItem(
         self, itemType: int, metadata: int | None, notFull: bool
     ) -> Item | None:
         """同上但在容器區找"""
-        ...
+
     def firstEmptySlotRange(self, start: int, end: int) -> int | None:
         """在指定範圍中找第一個空槽的編號，沒找到回 `None`"""
-        ...
+
     def firstEmptyHotbarSlot(self) -> int | None:
         """快捷欄中第一個空槽的編號，找不到回 `None`"""
-        ...
+
     def firstEmptyContainerSlot(self) -> int | None:
         """容器區中第一個空槽的編號"""
-        ...
+
     def firstEmptyInventorySlot(self, hotbarFirst: bool = ...) -> int | None:
         """物品欄中第一個空槽的編號
 
         Args:
             hotbarFirst: 預設 `True`，先從快捷欄找
         """
-        ...
+
     def items(self) -> list[Item]:
         """Returns:
         玩家物品欄中的所有物品 `Item` 陣列
         """
-        ...
+
     def containerItems(self) -> list[Item]:
         """Returns:
         容器區所有物品 `Item` 陣列
         """
-        ...
+
     def count(self, itemType: int | str, metadata: int | None) -> int:
         """玩家物品欄中有多少指定物品
 
@@ -628,10 +633,9 @@ class Window:
             itemType: 物品 ID 或名稱
             metadata: 目標 metadata；不關心傳 `None`
         """
-        ...
+
     def emptySlotCount(self) -> int:
         """玩家物品欄中空槽的數量"""
-        ...
 
 class Recipe:
     """合成配方物件
@@ -673,14 +677,18 @@ class Goal:
     """所有目標類別的基底
     學生通常直接用 `GoalNear` 等子類而不是這個
     """
-    def heuristic(self, node: Move) -> float: ...
-    def isEnd(self, node: Move) -> bool: ...
+
+    def heuristic(self, node: Move) -> float:
+        pass
+
+    def isEnd(self, node: Move) -> bool:
+        pass
+
     def hasChanged(self) -> bool:
         """目標參數是否自上次尋路後有改動"""
-        ...
+
     def isValid(self) -> bool:
         """目標是否仍然可以作為有效目標"""
-        ...
 
 class GoalBlock(Goal):
     """抵達指定整數座標那格方塊上
@@ -690,7 +698,9 @@ class GoalBlock(Goal):
     x: float
     y: float
     z: float
-    def __init__(self, x: float, y: float, z: float) -> None: ...
+
+    def __init__(self, x: float, y: float, z: float) -> None:
+        pass
 
 class GoalNear(Goal):
     """最常用的目標：抵達 `(x, y, z)` 附近 `range` 格內即算到達
@@ -708,14 +718,18 @@ class GoalNear(Goal):
     y: float
     z: float
     rangeSq: float
-    def __init__(self, x: float, y: float, z: float, range: float) -> None: ...
+
+    def __init__(self, x: float, y: float, z: float, range: float) -> None:
+        pass
 
 class GoalXZ(Goal):
     """抵達指定 X / Z 平面，Y 不限"""
 
     x: float
     z: float
-    def __init__(self, x: float, z: float) -> None: ...
+
+    def __init__(self, x: float, z: float) -> None:
+        pass
 
 class GoalNearXZ(Goal):
     """同 `GoalXZ` 但帶距離容許值：抵達 `(x, z)` 平面 `range` 格內即算達成，Y 不限
@@ -731,13 +745,17 @@ class GoalNearXZ(Goal):
     x: float
     z: float
     rangeSq: float
-    def __init__(self, x: float, z: float, range: float) -> None: ...
+
+    def __init__(self, x: float, z: float, range: float) -> None:
+        pass
 
 class GoalY(Goal):
     """爬升 / 下降到指定 Y 高度；X、Z 不限"""
 
     y: float
-    def __init__(self, y: float) -> None: ...
+
+    def __init__(self, y: float) -> None:
+        pass
 
 class GoalGetToBlock(Goal):
     """抵達指定整數座標**旁邊**
@@ -747,7 +765,9 @@ class GoalGetToBlock(Goal):
     x: float
     y: float
     z: float
-    def __init__(self, x: float, y: float, z: float) -> None: ...
+
+    def __init__(self, x: float, y: float, z: float) -> None:
+        pass
 
 class GoalFollow(Goal):
     """持續跟著某個實體，保持距離在 `range` 格內
@@ -763,40 +783,54 @@ class GoalFollow(Goal):
     z: float
     entity: Entity
     rangeSq: float
-    def __init__(self, entity: Entity, range: float) -> None: ...
+
+    def __init__(self, entity: Entity, range: float) -> None:
+        pass
 
 class GoalCompositeAll(Goal):
     """只有全部子目標都滿足時才算達成
     通常用來疊加多個空間約束
     """
-    def __init__(self, goals: list[Goal] = ...) -> None: ...
-    def push(self, goal: Goal) -> None: ...
+
+    def __init__(self, goals: list[Goal] = ...) -> None:
+        pass
+
+    def push(self, goal: Goal) -> None:
+        pass
 
 class GoalCompositeAny(Goal):
     """任一子目標達成就結束
     適合「到達任一地標即可」的需求
     """
-    def __init__(self, goals: list[Goal] = ...) -> None: ...
-    def push(self, goal: Goal) -> None: ...
+
+    def __init__(self, goals: list[Goal] = ...) -> None:
+        pass
+
+    def push(self, goal: Goal) -> None:
+        pass
 
 class GoalInvert(Goal):
     """把一個「抵達某點」目標翻轉成「遠離某點」——會朝讓啟發式最大化的方向移動"""
-    def __init__(self, goal: Goal) -> None: ...
+
+    def __init__(self, goal: Goal) -> None:
+        pass
 
 class GoalPlaceBlock(Goal):
     pos: Vec3
     world: object
     options: object
-    def __init__(self, pos: Vec3, world: object, options: object) -> None: ...
+
+    def __init__(self, pos: Vec3, world: object, options: object) -> None:
+        pass
 
 class GoalLookAtBlock(Goal):
     pos: Vec3
     reach: float
     entityHeight: float
     world: object
-    def __init__(
-        self, pos: Vec3, world: object, options: object | None = ...
-    ) -> None: ...
+
+    def __init__(self, pos: Vec3, world: object, options: object | None = ...) -> None:
+        pass
 
 class GoalBreakBlock(GoalLookAtBlock):
     pass
@@ -862,11 +896,21 @@ class Movements:
     exclusionAreasStep: list[Callable[[Block], float]]
     exclusionAreasBreak: list[Callable[[Block], float]]
     exclusionAreasPlace: list[Callable[[Block], float]]
-    def __init__(self, bot: object) -> None: ...
-    def countScaffoldingItems(self) -> int: ...
-    def getScaffoldingItem(self) -> Item | None: ...
-    def clearCollisionIndex(self) -> None: ...
-    def updateCollisionIndex(self) -> None: ...
+
+    def __init__(self, bot: object) -> None:
+        pass
+
+    def countScaffoldingItems(self) -> int:
+        pass
+
+    def getScaffoldingItem(self) -> Item | None:
+        pass
+
+    def clearCollisionIndex(self) -> None:
+        pass
+
+    def updateCollisionIndex(self) -> None:
+        pass
 
 class Pathfinder:
     """尋路插件提供給機器人的執行時 API
@@ -881,6 +925,7 @@ class Pathfinder:
     """每個 tick 內思考時間上限"""
     goal: Goal | None
     movements: Movements
+
     def setGoal(self, goal: Goal | None, dynamic: bool = ...) -> None:
         """設定機器人要去的目標；會在背景持續尋路並移動
         傳 `None` 可取消當前任務
@@ -889,7 +934,7 @@ class Pathfinder:
             goal: 任一 `Goal` 實例；`None` 代表取消
             dynamic: 預設 `False`。設 `True` 時，目標位置會被持續重新檢查（適合跟隨會移動的實體）
         """
-        ...
+
     def setMovements(self, movements: Movements) -> None:
         """套用一套移動規則
         通常只需要在初始化或更改規則時呼叫一次
@@ -897,7 +942,7 @@ class Pathfinder:
         Args:
             movements: `Movements` 實例
         """
-        ...
+
     def getPathTo(
         self, movements: Movements, goal: Goal, timeout: float | None = ...
     ) -> ComputedPath: ...
@@ -907,24 +952,26 @@ class Pathfinder:
         startPos: Vec3 | None,
         goal: Goal,
         options: object | None = ...,
-    ) -> Iterator[object]: ...
+    ) -> Iterator[object]:
+        pass
+
     def goto(self, goal: Goal) -> None:
         """阻塞直到抵達目標或失敗
         **慎用**：在 JSPyBridge 下會阻塞當前執行緒；若放在事件 handler 裡會卡住 callback 執行緒，通常只建議在主程式使用
         """
-        ...
+
     def stop(self) -> None:
         """取消當前尋路任務並停下移動"""
-        ...
+
     def isMoving(self) -> bool:
         """機器人目前是否正在執行尋路移動"""
-        ...
+
     def isMining(self) -> bool:
         """機器人是否正在為尋路挖方塊"""
-        ...
+
     def isBuilding(self) -> bool:
         """機器人是否正在為尋路放置方塊"""
-        ...
+
     def bestHarvestTool(self, block: Block) -> Item | None:
         """Args:
             block: 要挖的 `Block`
@@ -932,7 +979,6 @@ class Pathfinder:
         Returns:
             物品欄中最適合挖此方塊的 `Item`，沒有合用的工具則回 `None`
         """
-        ...
 
 PathComputationStatus = Literal["noPath", "timeout", "success"]
 PartialPathComputationStatus = Literal["noPath", "timeout", "success", "partial"]
@@ -997,335 +1043,394 @@ class Player:
 
     uuid: str
     """玩家 UUID 字串"""
+
     username: str
     """玩家遊戲名稱"""
+
     displayName: ChatMessage
     """玩家的顯示名稱 `ChatMessage`"""
+
     gamemode: float
     """玩家的遊戲模式數字 ID"""
+
     ping: float
     """玩家延遲毫秒"""
+
     entity: Entity
     """玩家的 `Entity` 物件（若該玩家目前在視野內）；否則為 `None`"""
+
     skinData: object | None
     """玩家膚色貼圖資料 dict（含 `url` 和 `model`），可能為 `None`"""
+
     profileKeys: object | None
 
 class ChatPattern:
     """Ref: mineflayer/index.d.ts — ChatPattern"""
 
     pattern: object
+
     type: str
+
     description: str
 
 class SkinParts:
     """Ref: mineflayer/index.d.ts — SkinParts"""
 
     showCape: bool
+
     showJacket: bool
+
     showLeftSleeve: bool
+
     showRightSleeve: bool
+
     showLeftPants: bool
+
     showRightPants: bool
+
     showHat: bool
 
 class GameSettings:
     """Ref: mineflayer/index.d.ts — GameSettings"""
 
     chat: ChatLevel
+
     colorsEnabled: bool
+
     viewDistance: ViewDistance
+
     difficulty: float
+
     skinParts: SkinParts
+
     mainHand: MainHands
 
 class GameState:
     """Ref: mineflayer/index.d.ts — GameState"""
 
     levelType: LevelType
+
     gameMode: GameMode
+
     hardcore: bool
+
     dimension: Dimension
+
     difficulty: Difficulty
+
     maxPlayers: float
+
     serverBrand: str
 
 class Experience:
     """Ref: mineflayer/index.d.ts — Experience"""
 
     level: float
+
     points: float
+
     progress: float
 
 class PhysicsOptions:
     """Ref: mineflayer/index.d.ts — PhysicsOptions"""
 
     maxGroundSpeed: float
+
     terminalVelocity: float
+
     walkingAcceleration: float
+
     gravity: float
+
     groundFriction: float
+
     playerApothem: float
+
     playerHeight: float
+
     jumpSpeed: float
+
     yawSpeed: float
+
     pitchSpeed: float
+
     sprintSpeed: float
+
     maxGroundSpeedSoulSand: float
+
     maxGroundSpeedWater: float
 
 class Time:
     """Ref: mineflayer/index.d.ts — Time"""
 
     doDaylightCycle: bool
+
     bigTime: int
+
     time: float
+
     timeOfDay: float
+
     day: float
+
     isDay: bool
+
     moonPhase: float
+
     bigAge: int
+
     age: float
 
 class ControlStateStatus:
     """Ref: mineflayer/index.d.ts — ControlStateStatus"""
 
     forward: bool
+
     back: bool
+
     left: bool
+
     right: bool
+
     jump: bool
+
     sprint: bool
+
     sneak: bool
 
 class Instrument:
     """Ref: mineflayer/index.d.ts — Instrument"""
 
     id: float
+
     name: Literal["harp", "doubleBass", "snareDrum", "sticks", "bassDrum"]
 
 class FindBlockOptions:
     """Ref: mineflayer/index.d.ts — FindBlockOptions"""
 
     point: Vec3 | None
+
     matching: float | list[float] | Callable[[object], object]
+
     maxDistance: float | None
+
     count: float | None
+
     useExtraInfo: bool | Callable[[object], object] | None
 
 class TransferOptions:
     """Ref: mineflayer/index.d.ts — TransferOptions"""
 
     window: Window
+
     itemType: float
+
     metadata: float | None
+
     count: float | None
+
     sourceStart: float
+
     sourceEnd: float
+
     destStart: float
+
     destEnd: float
 
 class creativeMethods:
     """Ref: mineflayer/index.d.ts — creativeMethods"""
 
     setInventorySlot: Callable[[float, Item | None], None]
+
     clearSlot: Callable[[float], None]
+
     clearInventory: Callable[[], None]
+
     flyTo: Callable[[Vec3], None]
+
     startFlying: Callable[[], None]
+
     stopFlying: Callable[[], None]
 
 class simpleClick:
     """Ref: mineflayer/index.d.ts — simpleClick"""
 
     leftMouse: Callable[[float], None]
+
     rightMouse: Callable[[float], None]
 
 class Tablist:
     """Ref: mineflayer/index.d.ts — Tablist"""
 
     header: ChatMessage
+
     footer: ChatMessage
 
 class chatPatternOptions:
     """Ref: mineflayer/index.d.ts — chatPatternOptions"""
 
     repeat: bool
+
     parse: bool
 
 class CommandBlockOptions:
     """Ref: mineflayer/index.d.ts — CommandBlockOptions"""
 
     mode: float
+
     trackOutput: bool
+
     conditional: bool
+
     alwaysActive: bool
 
 class VillagerTrade:
     """Ref: mineflayer/index.d.ts — VillagerTrade"""
 
     inputItem1: Item
+
     outputItem: Item
+
     inputItem2: Item | None
+
     hasItem2: bool
+
     tradeDisabled: bool
+
     nbTradeUses: float
+
     maximumNbTradeUses: float
+
     xp: float | None
+
     specialPrice: float | None
+
     priceMultiplier: float | None
+
     demand: float | None
+
     realPrice: float | None
 
 class Enchantment:
     """Ref: mineflayer/index.d.ts — Enchantment"""
 
     level: float
+
     expected: object
 
 # --- Mineflayer container classes ---
 
 class Chest:
     """繼承 `Window`，`bot.openChest(...)` 的回傳型別"""
+
     def close(self) -> None:
-        """關閉這個箱子
-        等同 `bot.closeWindow(chest)`
-        """
-        ...
+        pass
+
     def deposit(
         self, item_type: float, metadata: float | None, count: float | None
     ) -> None:
-        """從物品欄存入箱子
+        pass
 
-        Args:
-            itemType: 物品 ID 整數
-            metadata: 選擇特定 metadata，不關心傳 `None`
-            count: 要存入的數量
-        """
-        ...
     def withdraw(
         self, item_type: float, metadata: float | None, count: float | None
     ) -> None:
-        """從箱子取出到物品欄"""
-        ...
+        pass
 
 class Dispenser:
     """繼承 `Window`，發射器 / 投擲器
     方法與 `Chest` 幾乎相同
     """
+
     def close(self) -> None:
-        """關閉這個發射器"""
-        ...
+        pass
+
     def deposit(
         self, item_type: float, metadata: float | None, count: float | None
     ) -> None:
-        """從物品欄存入發射器"""
-        ...
+        pass
+
     def withdraw(
         self, item_type: float, metadata: float | None, count: float | None
     ) -> None:
-        """從發射器取出"""
-        ...
+        pass
 
 class Furnace:
     """繼承 `Window`，`bot.openFurnace(...)` 回傳型別"""
 
     fuel: float
     """目前燃料進度"""
+
     progress: float
     """目前冶煉進度"""
+
     def close(self) -> None:
-        """關閉熔爐"""
-        ...
+        pass
+
     def takeInput(self) -> Item:
-        """取出輸入槽的物品"""
-        ...
+        pass
+
     def takeFuel(self) -> Item:
-        """取出燃料槽的物品"""
-        ...
+        pass
+
     def takeOutput(self) -> Item:
-        """取出輸出槽的物品"""
-        ...
+        pass
+
     def putInput(self, item_type: float, metadata: float | None, count: float) -> None:
-        """放入指定物品到輸入槽"""
-        ...
+        pass
+
     def putFuel(self, item_type: float, metadata: float | None, count: float) -> None:
-        """放入指定燃料到燃料槽"""
-        ...
+        pass
+
     def inputItem(self) -> Item:
-        """Returns:
-        輸入槽目前的 `Item`
-        """
-        ...
+        pass
+
     def fuelItem(self) -> Item:
-        """Returns:
-        燃料槽目前的 `Item`
-        """
-        ...
+        pass
+
     def outputItem(self) -> Item:
-        """Returns:
-        輸出槽目前的 `Item`
-        """
-        ...
+        pass
 
 class EnchantmentTable:
     """繼承 `Window`，附魔台"""
 
     enchantments: list[Enchantment]
     """目前顯示的三個附魔選項陣列，每個元素含 `level` 和 `expected`"""
-    def close(self) -> None:
-        """關閉附魔台"""
-        ...
-    def targetItem(self) -> Item:
-        """Returns:
-        目前放在附魔台上的 `Item`
-        """
-        ...
-    def enchant(self, choice: str | float) -> Item:
-        """選擇某個附魔選項進行附魔
 
-        Args:
-            choice: 選項編號 `0` / `1` / `2`，或對應的字串名稱
-        """
-        ...
+    def close(self) -> None:
+        pass
+
+    def targetItem(self) -> Item:
+        pass
+
+    def enchant(self, choice: str | float) -> Item:
+        pass
+
     def takeTargetItem(self) -> Item:
-        """把附魔好的物品拿出來"""
-        ...
+        pass
+
     def putTargetItem(self, item: Item) -> Item:
-        """把要附魔的物品放進附魔台"""
-        ...
+        pass
+
     def putLapis(self, item: Item) -> Item:
-        """放青金石進去"""
-        ...
+        pass
 
 class Anvil:
     """鐵砧視窗"""
+
     def combine(self, item_one: Item, item_two: Item, name: str | None = ...) -> None:
-        """把兩個物品在鐵砧上合併（修復 / 附魔合併），可順便改名
+        pass
 
-        Args:
-            itemOne: 左槽物品
-            itemTwo: 右槽物品
-            name: (選填) 新名稱字串
-        """
-        ...
     def rename(self, item: Item, name: str | None = ...) -> None:
-        """重新命名一個物品
-
-        Args:
-            item: 要改名的物品
-            name: 新名稱
-        """
-        ...
+        pass
 
 class Villager:
     """繼承 `Window`，村民交易面板"""
 
     trades: list[VillagerTrade]
     """村民目前的交易選項陣列，每筆是 `VillagerTrade`"""
+
     def close(self) -> None:
-        """關閉交易面板"""
-        ...
+        pass
 
 # --- Event callback type aliases ---
 _OnEvent_chat = Callable[[str, str, str | None, ChatMessage, list[str] | None], None]
@@ -1480,7 +1585,9 @@ class Bot:
     機器人連線完成後會非同步地進入世界
     **請務必等 `spawn` 事件觸發後**，再呼叫跟位置 / 世界有關的 API；在此之前 `bot.entity` 等屬性尚未就緒
     """
-    def __init__(self, js_bot: object) -> None: ...
+
+    def __init__(self, js_bot: object) -> None:
+        pass
     username: str
     """機器人登入伺服器用的遊戲名稱
     登入前可能還是 `None`
@@ -1811,6 +1918,7 @@ class Bot:
     範例：進入世界後一直往前走，收到 `"stop"` 訊息才停下
 
     ```python
+
     @bot.on_spawn
     def on_spawn():
         bot.setControlState("forward", True)
@@ -2190,7 +2298,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.BLOCK_BREAK_PROGRESS_END]
@@ -2212,7 +2320,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED]
@@ -2236,7 +2344,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.BLOCK_UPDATE]
@@ -2258,7 +2366,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.BLOCK_UPDATE_X_Y_Z]
@@ -2280,7 +2388,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.BOSS_BAR_CREATED]
@@ -2302,7 +2410,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.BOSS_BAR_DELETED]
@@ -2324,7 +2432,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.BOSS_BAR_UPDATED]
@@ -2346,7 +2454,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.BREATH]
@@ -2368,7 +2476,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.CHAT]
@@ -2390,7 +2498,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.CHEST_LID_MOVE]
@@ -2412,7 +2520,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.CHUNK_COLUMN_LOAD]
@@ -2434,7 +2542,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.CHUNK_COLUMN_UNLOAD]
@@ -2456,7 +2564,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.DEATH]
@@ -2478,7 +2586,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.DIGGING_ABORTED]
@@ -2500,7 +2608,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.DIGGING_COMPLETED]
@@ -2522,7 +2630,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.DISMOUNT]
@@ -2544,7 +2652,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.END]
@@ -2566,7 +2674,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_ATTACH]
@@ -2588,7 +2696,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_ATTRIBUTES]
@@ -2610,7 +2718,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_CRITICAL_EFFECT]
@@ -2632,7 +2740,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_CROUCH]
@@ -2654,7 +2762,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_DEAD]
@@ -2676,7 +2784,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_DETACH]
@@ -2698,7 +2806,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_EAT]
@@ -2720,7 +2828,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_EATING_GRASS]
@@ -2742,7 +2850,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_EFFECT]
@@ -2764,7 +2872,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_EFFECT_END]
@@ -2786,7 +2894,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_ELYTRA_FLEW]
@@ -2808,7 +2916,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_EQUIP]
@@ -2830,7 +2938,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_GONE]
@@ -2852,7 +2960,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_HAND_SWAP]
@@ -2874,7 +2982,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_HURT]
@@ -2896,7 +3004,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_MAGIC_CRITICAL_EFFECT]
@@ -2920,7 +3028,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_MOVED]
@@ -2942,7 +3050,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_SHAKING_OFF_WATER]
@@ -2964,7 +3072,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_SLEEP]
@@ -2986,7 +3094,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_SPAWN]
@@ -3008,7 +3116,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_SWING_ARM]
@@ -3030,7 +3138,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_TAMED]
@@ -3052,7 +3160,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_TAMING]
@@ -3074,7 +3182,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_UNCROUCH]
@@ -3096,7 +3204,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_UPDATE]
@@ -3118,7 +3226,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ENTITY_WAKE]
@@ -3140,7 +3248,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ERROR]
@@ -3162,7 +3270,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.EXPERIENCE]
@@ -3184,7 +3292,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.FORCED_MOVE]
@@ -3206,7 +3314,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.GAME]
@@ -3228,7 +3336,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.GOAL_REACHED]
@@ -3250,7 +3358,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.GOAL_UPDATED]
@@ -3272,7 +3380,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.HARDCODED_SOUND_EFFECT_HEARD]
@@ -3296,7 +3404,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.HEALTH]
@@ -3318,7 +3426,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.INJECT_ALLOWED]
@@ -3340,7 +3448,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.ITEM_DROP]
@@ -3362,7 +3470,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.KICKED]
@@ -3384,7 +3492,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.LOGIN]
@@ -3406,7 +3514,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.MESSAGE]
@@ -3428,7 +3536,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.MESSAGESTR]
@@ -3450,7 +3558,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.MOUNT]
@@ -3472,7 +3580,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.MOVE]
@@ -3494,7 +3602,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.NOTE_HEARD]
@@ -3516,7 +3624,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PARTICLE]
@@ -3538,7 +3646,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PATH_RESET]
@@ -3560,7 +3668,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PATH_STOP]
@@ -3582,7 +3690,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PATH_UPDATE]
@@ -3604,7 +3712,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PHYSIC_TICK]
@@ -3626,7 +3734,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PHYSICS_TICK]
@@ -3648,7 +3756,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PISTON_MOVE]
@@ -3670,7 +3778,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PLAYER_COLLECT]
@@ -3692,7 +3800,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PLAYER_JOINED]
@@ -3714,7 +3822,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PLAYER_LEFT]
@@ -3736,7 +3844,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.PLAYER_UPDATED]
@@ -3758,7 +3866,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.RAIN]
@@ -3780,7 +3888,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.RESOURCE_PACK]
@@ -3802,7 +3910,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.RESPAWN]
@@ -3824,7 +3932,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.SCORE_REMOVED]
@@ -3846,7 +3954,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.SCORE_UPDATED]
@@ -3868,7 +3976,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.SCOREBOARD_CREATED]
@@ -3890,7 +3998,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.SCOREBOARD_DELETED]
@@ -3912,7 +4020,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.SCOREBOARD_POSITION]
@@ -3934,7 +4042,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.SCOREBOARD_TITLE_CHANGED]
@@ -3956,7 +4064,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.SLEEP]
@@ -3978,7 +4086,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.SOUND_EFFECT_HEARD]
@@ -4000,7 +4108,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.SPAWN]
@@ -4022,7 +4130,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.SPAWN_RESET]
@@ -4044,7 +4152,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.TEAM_CREATED]
@@ -4066,7 +4174,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.TEAM_MEMBER_ADDED]
@@ -4088,7 +4196,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.TEAM_MEMBER_REMOVED]
@@ -4110,7 +4218,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.TEAM_REMOVED]
@@ -4132,7 +4240,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.TEAM_UPDATED]
@@ -4154,7 +4262,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.TIME]
@@ -4176,7 +4284,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.TITLE]
@@ -4198,7 +4306,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.UNMATCHED_MESSAGE]
@@ -4220,7 +4328,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.USED_FIREWORK]
@@ -4242,7 +4350,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.WAKE]
@@ -4264,7 +4372,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.WHISPER]
@@ -4286,7 +4394,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.WINDOW_CLOSE]
@@ -4308,7 +4416,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def on(
         self, event: Literal[BotEvent.WINDOW_OPEN]
@@ -4330,7 +4438,6 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
 
     # Shortcut decorators for better IDE completion in JetBrains/Pylance
     on_action_bar: Callable[[_OnEvent_actionBar], _OnEvent_actionBar]
@@ -4577,7 +4684,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.BLOCK_BREAK_PROGRESS_END]
@@ -4587,7 +4694,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED]
@@ -4599,7 +4706,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.BLOCK_UPDATE]
@@ -4609,7 +4716,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.BLOCK_UPDATE_X_Y_Z]
@@ -4619,7 +4726,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.BOSS_BAR_CREATED]
@@ -4629,7 +4736,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.BOSS_BAR_DELETED]
@@ -4639,7 +4746,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.BOSS_BAR_UPDATED]
@@ -4649,7 +4756,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.BREATH]
@@ -4659,7 +4766,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.CHAT]
@@ -4669,7 +4776,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.CHEST_LID_MOVE]
@@ -4679,7 +4786,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.CHUNK_COLUMN_LOAD]
@@ -4689,7 +4796,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.CHUNK_COLUMN_UNLOAD]
@@ -4699,7 +4806,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.DEATH]
@@ -4709,7 +4816,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.DIGGING_ABORTED]
@@ -4719,7 +4826,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.DIGGING_COMPLETED]
@@ -4729,7 +4836,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.DISMOUNT]
@@ -4739,7 +4846,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.END]
@@ -4749,7 +4856,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_ATTACH]
@@ -4759,7 +4866,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_ATTRIBUTES]
@@ -4769,7 +4876,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_CRITICAL_EFFECT]
@@ -4779,7 +4886,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_CROUCH]
@@ -4789,7 +4896,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_DEAD]
@@ -4799,7 +4906,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_DETACH]
@@ -4809,7 +4916,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_EAT]
@@ -4819,7 +4926,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_EATING_GRASS]
@@ -4829,7 +4936,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_EFFECT]
@@ -4839,7 +4946,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_EFFECT_END]
@@ -4849,7 +4956,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_ELYTRA_FLEW]
@@ -4859,7 +4966,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_EQUIP]
@@ -4869,7 +4976,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_GONE]
@@ -4879,7 +4986,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_HAND_SWAP]
@@ -4889,7 +4996,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_HURT]
@@ -4899,7 +5006,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_MAGIC_CRITICAL_EFFECT]
@@ -4911,7 +5018,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_MOVED]
@@ -4921,7 +5028,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_SHAKING_OFF_WATER]
@@ -4931,7 +5038,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_SLEEP]
@@ -4941,7 +5048,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_SPAWN]
@@ -4951,7 +5058,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_SWING_ARM]
@@ -4961,7 +5068,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_TAMED]
@@ -4971,7 +5078,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_TAMING]
@@ -4981,7 +5088,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_UNCROUCH]
@@ -4991,7 +5098,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_UPDATE]
@@ -5001,7 +5108,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ENTITY_WAKE]
@@ -5011,7 +5118,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ERROR]
@@ -5021,7 +5128,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.EXPERIENCE]
@@ -5031,7 +5138,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.FORCED_MOVE]
@@ -5041,7 +5148,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.GAME]
@@ -5051,7 +5158,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.GOAL_REACHED]
@@ -5061,7 +5168,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.GOAL_UPDATED]
@@ -5071,7 +5178,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.HARDCODED_SOUND_EFFECT_HEARD]
@@ -5083,7 +5190,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.HEALTH]
@@ -5093,7 +5200,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.INJECT_ALLOWED]
@@ -5103,7 +5210,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.ITEM_DROP]
@@ -5113,7 +5220,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.KICKED]
@@ -5123,7 +5230,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.LOGIN]
@@ -5133,7 +5240,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.MESSAGE]
@@ -5143,7 +5250,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.MESSAGESTR]
@@ -5153,7 +5260,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.MOUNT]
@@ -5163,7 +5270,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.MOVE]
@@ -5173,7 +5280,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.NOTE_HEARD]
@@ -5183,7 +5290,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PARTICLE]
@@ -5193,7 +5300,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PATH_RESET]
@@ -5203,7 +5310,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PATH_STOP]
@@ -5213,7 +5320,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PATH_UPDATE]
@@ -5223,7 +5330,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PHYSIC_TICK]
@@ -5233,7 +5340,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PHYSICS_TICK]
@@ -5243,7 +5350,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PISTON_MOVE]
@@ -5253,7 +5360,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PLAYER_COLLECT]
@@ -5263,7 +5370,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PLAYER_JOINED]
@@ -5273,7 +5380,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PLAYER_LEFT]
@@ -5283,7 +5390,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.PLAYER_UPDATED]
@@ -5293,7 +5400,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.RAIN]
@@ -5303,7 +5410,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.RESOURCE_PACK]
@@ -5313,7 +5420,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.RESPAWN]
@@ -5323,7 +5430,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.SCORE_REMOVED]
@@ -5333,7 +5440,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.SCORE_UPDATED]
@@ -5343,7 +5450,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.SCOREBOARD_CREATED]
@@ -5353,7 +5460,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.SCOREBOARD_DELETED]
@@ -5363,7 +5470,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.SCOREBOARD_POSITION]
@@ -5373,7 +5480,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.SCOREBOARD_TITLE_CHANGED]
@@ -5383,7 +5490,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.SLEEP]
@@ -5393,7 +5500,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.SOUND_EFFECT_HEARD]
@@ -5403,7 +5510,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.SPAWN]
@@ -5413,7 +5520,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.SPAWN_RESET]
@@ -5423,7 +5530,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.TEAM_CREATED]
@@ -5433,7 +5540,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.TEAM_MEMBER_ADDED]
@@ -5443,7 +5550,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.TEAM_MEMBER_REMOVED]
@@ -5453,7 +5560,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.TEAM_REMOVED]
@@ -5463,7 +5570,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.TEAM_UPDATED]
@@ -5473,7 +5580,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.TIME]
@@ -5483,7 +5590,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.TITLE]
@@ -5493,7 +5600,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.UNMATCHED_MESSAGE]
@@ -5503,7 +5610,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.USED_FIREWORK]
@@ -5513,7 +5620,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.WAKE]
@@ -5523,7 +5630,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.WHISPER]
@@ -5533,7 +5640,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.WINDOW_CLOSE]
@@ -5543,7 +5650,7 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
+
     @overload
     def once(
         self, event: Literal[BotEvent.WINDOW_OPEN]
@@ -5553,7 +5660,6 @@ class Bot:
         Args:
             event: `BotEvent` 成員，例如 `BotEvent.CHAT`
         """
-        ...
 
     once_action_bar: Callable[[_OnEvent_actionBar], _OnEvent_actionBar]
     """Same as `bot.once(BotEvent.ACTION_BAR)`. """
@@ -5820,7 +5926,7 @@ class Bot:
         Returns:
             該插件的原生 JS module，方便取用它匯出的 class / 常數
         """
-        ...
+
     @overload
     def load_plugin(
         self,
@@ -5841,7 +5947,7 @@ class Bot:
         Returns:
             該插件的原生 JS module，方便取用它匯出的 class / 常數
         """
-        ...
+
     def require(self, name: str, version: str | None = ...) -> object:
         """原始逃生口——載入任意 JS 套件並回傳原生 proxy
         用在 Type B / C / D 插件（prismarine-viewer、web-inventory、statemachine 等）需要自行初始化時
@@ -5853,32 +5959,50 @@ class Bot:
         Returns:
             的物件未做型別包裝，請對照該插件 README 操作
         """
-        ...
+
     def run_forever(self) -> None:
         """阻塞呼叫它的執行緒，直到機器人斷線（`"end"` 事件觸發）
         學生腳本最後通常加這一行讓 script 不會提早結束
         按 Ctrl-C 會乾淨退出
         """
-        ...
 
 class BotHandlers:
     """Class-based handler base. Subclass, override `on_<event>`, then call `bot.bind(handlers)`.
 
     Typed signatures are provided here so IDE "Override methods" auto-fill produces the correct parameter list.
     """
-    def on_action_bar(self, json_msg: ChatMessage) -> None: ...
-    def on_block_break_progress_end(self, block: Block) -> None: ...
+
+    def on_action_bar(self, json_msg: ChatMessage) -> None:
+        pass
+
+    def on_block_break_progress_end(self, block: Block) -> None:
+        pass
+
     def on_block_break_progress_observed(
         self, block: Block, destroy_stage: float
-    ) -> None: ...
-    def on_block_update(self, old_block: Block | None, new_block: Block) -> None: ...
+    ) -> None:
+        pass
+
+    def on_block_update(self, old_block: Block | None, new_block: Block) -> None:
+        pass
+
     def on_block_update_x_y_z(
         self, old_block: Block | None, new_block: Block | None
-    ) -> None: ...
-    def on_boss_bar_created(self, boss_bar: object) -> None: ...
-    def on_boss_bar_deleted(self, boss_bar: object) -> None: ...
-    def on_boss_bar_updated(self, boss_bar: object) -> None: ...
-    def on_breath(self) -> None: ...
+    ) -> None:
+        pass
+
+    def on_boss_bar_created(self, boss_bar: object) -> None:
+        pass
+
+    def on_boss_bar_deleted(self, boss_bar: object) -> None:
+        pass
+
+    def on_boss_bar_updated(self, boss_bar: object) -> None:
+        pass
+
+    def on_breath(self) -> None:
+        pass
+
     def on_chat(
         self,
         username: str,
@@ -5886,49 +6010,131 @@ class BotHandlers:
         translate: str | None,
         json_msg: ChatMessage,
         matches: list[str] | None,
-    ) -> None: ...
+    ) -> None:
+        pass
+
     def on_chest_lid_move(
         self, block: Block, is_open: float, block2: Block | None
-    ) -> None: ...
-    def on_chunk_column_load(self, entity: Vec3) -> None: ...
-    def on_chunk_column_unload(self, entity: Vec3) -> None: ...
-    def on_death(self) -> None: ...
-    def on_digging_aborted(self, block: Block) -> None: ...
-    def on_digging_completed(self, block: Block) -> None: ...
-    def on_dismount(self, vehicle: Entity) -> None: ...
-    def on_end(self, reason: str) -> None: ...
-    def on_entity_attach(self, entity: Entity, vehicle: Entity) -> None: ...
-    def on_entity_attributes(self, entity: Entity) -> None: ...
-    def on_entity_critical_effect(self, entity: Entity) -> None: ...
-    def on_entity_crouch(self, entity: Entity) -> None: ...
-    def on_entity_dead(self, entity: Entity) -> None: ...
-    def on_entity_detach(self, entity: Entity, vehicle: Entity) -> None: ...
-    def on_entity_eat(self, entity: Entity) -> None: ...
-    def on_entity_eating_grass(self, entity: Entity) -> None: ...
-    def on_entity_effect(self, entity: Entity, effect: Effect) -> None: ...
-    def on_entity_effect_end(self, entity: Entity, effect: Effect) -> None: ...
-    def on_entity_elytra_flew(self, entity: Entity) -> None: ...
-    def on_entity_equip(self, entity: Entity) -> None: ...
-    def on_entity_gone(self, entity: Entity) -> None: ...
-    def on_entity_hand_swap(self, entity: Entity) -> None: ...
-    def on_entity_hurt(self, entity: Entity, source: Entity) -> None: ...
-    def on_entity_magic_critical_effect(self, entity: Entity) -> None: ...
-    def on_entity_moved(self, entity: Entity) -> None: ...
-    def on_entity_shaking_off_water(self, entity: Entity) -> None: ...
-    def on_entity_sleep(self, entity: Entity) -> None: ...
-    def on_entity_spawn(self, entity: Entity) -> None: ...
-    def on_entity_swing_arm(self, entity: Entity) -> None: ...
-    def on_entity_tamed(self, entity: Entity) -> None: ...
-    def on_entity_taming(self, entity: Entity) -> None: ...
-    def on_entity_uncrouch(self, entity: Entity) -> None: ...
-    def on_entity_update(self, entity: Entity) -> None: ...
-    def on_entity_wake(self, entity: Entity) -> None: ...
-    def on_error(self, err: Exception) -> None: ...
-    def on_experience(self) -> None: ...
-    def on_forced_move(self) -> None: ...
-    def on_game(self) -> None: ...
-    def on_goal_reached(self, goal: Goal) -> None: ...
-    def on_goal_updated(self, goal: Goal, dynamic: bool) -> None: ...
+    ) -> None:
+        pass
+
+    def on_chunk_column_load(self, entity: Vec3) -> None:
+        pass
+
+    def on_chunk_column_unload(self, entity: Vec3) -> None:
+        pass
+
+    def on_death(self) -> None:
+        pass
+
+    def on_digging_aborted(self, block: Block) -> None:
+        pass
+
+    def on_digging_completed(self, block: Block) -> None:
+        pass
+
+    def on_dismount(self, vehicle: Entity) -> None:
+        pass
+
+    def on_end(self, reason: str) -> None:
+        pass
+
+    def on_entity_attach(self, entity: Entity, vehicle: Entity) -> None:
+        pass
+
+    def on_entity_attributes(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_critical_effect(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_crouch(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_dead(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_detach(self, entity: Entity, vehicle: Entity) -> None:
+        pass
+
+    def on_entity_eat(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_eating_grass(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_effect(self, entity: Entity, effect: Effect) -> None:
+        pass
+
+    def on_entity_effect_end(self, entity: Entity, effect: Effect) -> None:
+        pass
+
+    def on_entity_elytra_flew(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_equip(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_gone(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_hand_swap(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_hurt(self, entity: Entity, source: Entity) -> None:
+        pass
+
+    def on_entity_magic_critical_effect(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_moved(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_shaking_off_water(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_sleep(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_spawn(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_swing_arm(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_tamed(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_taming(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_uncrouch(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_update(self, entity: Entity) -> None:
+        pass
+
+    def on_entity_wake(self, entity: Entity) -> None:
+        pass
+
+    def on_error(self, err: Exception) -> None:
+        pass
+
+    def on_experience(self) -> None:
+        pass
+
+    def on_forced_move(self) -> None:
+        pass
+
+    def on_game(self) -> None:
+        pass
+
+    def on_goal_reached(self, goal: Goal) -> None:
+        pass
+
+    def on_goal_updated(self, goal: Goal, dynamic: bool) -> None:
+        pass
+
     def on_hardcoded_sound_effect_heard(
         self,
         sound_id: float,
@@ -5936,22 +6142,44 @@ class BotHandlers:
         position: Vec3,
         volume: float,
         pitch: float,
-    ) -> None: ...
-    def on_health(self) -> None: ...
-    def on_inject_allowed(self) -> None: ...
-    def on_item_drop(self, entity: Entity) -> None: ...
-    def on_kicked(self, reason: str, logged_in: bool) -> None: ...
-    def on_login(self) -> None: ...
-    def on_message(self, msg: ChatMessage, position: MessagePosition) -> None: ...
+    ) -> None:
+        pass
+
+    def on_health(self) -> None:
+        pass
+
+    def on_inject_allowed(self) -> None:
+        pass
+
+    def on_item_drop(self, entity: Entity) -> None:
+        pass
+
+    def on_kicked(self, reason: str, logged_in: bool) -> None:
+        pass
+
+    def on_login(self) -> None:
+        pass
+
+    def on_message(self, msg: ChatMessage, position: MessagePosition) -> None:
+        pass
+
     def on_messagestr(
         self, message: str, position: MessagePosition, json_msg: ChatMessage
-    ) -> None: ...
-    def on_mount(self) -> None: ...
-    def on_move(self, position: Vec3) -> None: ...
-    def on_note_heard(
-        self, block: Block, instrument: Instrument, pitch: float
-    ) -> None: ...
-    def on_particle(self, particle: object) -> None: ...
+    ) -> None:
+        pass
+
+    def on_mount(self) -> None:
+        pass
+
+    def on_move(self, position: Vec3) -> None:
+        pass
+
+    def on_note_heard(self, block: Block, instrument: Instrument, pitch: float) -> None:
+        pass
+
+    def on_particle(self, particle: object) -> None:
+        pass
+
     def on_path_reset(
         self,
         reason: Literal[
@@ -5965,45 +6193,107 @@ class BotHandlers:
             "place_error",
             "stuck",
         ],
-    ) -> None: ...
-    def on_path_stop(self) -> None: ...
-    def on_path_update(self, path: PartiallyComputedPath) -> None: ...
-    def on_physic_tick(self) -> None: ...
-    def on_physics_tick(self) -> None: ...
-    def on_piston_move(
-        self, block: Block, is_pulling: float, direction: float
-    ) -> None: ...
-    def on_player_collect(self, collector: Entity, collected: Entity) -> None: ...
-    def on_player_joined(self, player: Player) -> None: ...
-    def on_player_left(self, entity: Player) -> None: ...
-    def on_player_updated(self, player: Player) -> None: ...
-    def on_rain(self) -> None: ...
-    def on_resource_pack(
-        self, url: str, hash_: str | None, uuid: str | None
-    ) -> None: ...
-    def on_respawn(self) -> None: ...
-    def on_score_removed(self, scoreboard: object, item: float) -> None: ...
-    def on_score_updated(self, scoreboard: object, item: float) -> None: ...
-    def on_scoreboard_created(self, scoreboard: object) -> None: ...
-    def on_scoreboard_deleted(self, scoreboard: object) -> None: ...
-    def on_scoreboard_position(self, position: str, scoreboard: object) -> None: ...
-    def on_scoreboard_title_changed(self, scoreboard: object) -> None: ...
-    def on_sleep(self) -> None: ...
+    ) -> None:
+        pass
+
+    def on_path_stop(self) -> None:
+        pass
+
+    def on_path_update(self, path: PartiallyComputedPath) -> None:
+        pass
+
+    def on_physic_tick(self) -> None:
+        pass
+
+    def on_physics_tick(self) -> None:
+        pass
+
+    def on_piston_move(self, block: Block, is_pulling: float, direction: float) -> None:
+        pass
+
+    def on_player_collect(self, collector: Entity, collected: Entity) -> None:
+        pass
+
+    def on_player_joined(self, player: Player) -> None:
+        pass
+
+    def on_player_left(self, entity: Player) -> None:
+        pass
+
+    def on_player_updated(self, player: Player) -> None:
+        pass
+
+    def on_rain(self) -> None:
+        pass
+
+    def on_resource_pack(self, url: str, hash_: str | None, uuid: str | None) -> None:
+        pass
+
+    def on_respawn(self) -> None:
+        pass
+
+    def on_score_removed(self, scoreboard: object, item: float) -> None:
+        pass
+
+    def on_score_updated(self, scoreboard: object, item: float) -> None:
+        pass
+
+    def on_scoreboard_created(self, scoreboard: object) -> None:
+        pass
+
+    def on_scoreboard_deleted(self, scoreboard: object) -> None:
+        pass
+
+    def on_scoreboard_position(self, position: str, scoreboard: object) -> None:
+        pass
+
+    def on_scoreboard_title_changed(self, scoreboard: object) -> None:
+        pass
+
+    def on_sleep(self) -> None:
+        pass
+
     def on_sound_effect_heard(
         self, sound_name: str, position: Vec3, volume: float, pitch: float
-    ) -> None: ...
-    def on_spawn(self) -> None: ...
-    def on_spawn_reset(self) -> None: ...
-    def on_team_created(self, team: object) -> None: ...
-    def on_team_member_added(self, team: object) -> None: ...
-    def on_team_member_removed(self, team: object) -> None: ...
-    def on_team_removed(self, team: object) -> None: ...
-    def on_team_updated(self, team: object) -> None: ...
-    def on_time(self) -> None: ...
-    def on_title(self, text: str, type_: Literal["subtitle", "title"]) -> None: ...
-    def on_unmatched_message(self, string_msg: str, json_msg: ChatMessage) -> None: ...
-    def on_used_firework(self) -> None: ...
-    def on_wake(self) -> None: ...
+    ) -> None:
+        pass
+
+    def on_spawn(self) -> None:
+        pass
+
+    def on_spawn_reset(self) -> None:
+        pass
+
+    def on_team_created(self, team: object) -> None:
+        pass
+
+    def on_team_member_added(self, team: object) -> None:
+        pass
+
+    def on_team_member_removed(self, team: object) -> None:
+        pass
+
+    def on_team_removed(self, team: object) -> None:
+        pass
+
+    def on_team_updated(self, team: object) -> None:
+        pass
+
+    def on_time(self) -> None:
+        pass
+
+    def on_title(self, text: str, type_: Literal["subtitle", "title"]) -> None:
+        pass
+
+    def on_unmatched_message(self, string_msg: str, json_msg: ChatMessage) -> None:
+        pass
+
+    def on_used_firework(self) -> None:
+        pass
+
+    def on_wake(self) -> None:
+        pass
+
     def on_whisper(
         self,
         username: str,
@@ -6011,9 +6301,14 @@ class BotHandlers:
         translate: str | None,
         json_msg: ChatMessage,
         matches: list[str] | None,
-    ) -> None: ...
-    def on_window_close(self, window: Window) -> None: ...
-    def on_window_open(self, window: Window) -> None: ...
+    ) -> None:
+        pass
+
+    def on_window_close(self, window: Window) -> None:
+        pass
+
+    def on_window_open(self, window: Window) -> None:
+        pass
 
 def create_bot(**options: object) -> Bot:
     """建立並啟動一個 mineflayer 機器人
