@@ -45,7 +45,7 @@ RUNTIME_DTS_ROOT = _find_runtime_node_modules()
 
 
 def _resolve_package_dir(package: str) -> Path:
-    """Resolve a package directory, preferring the pinned runtime install."""
+    """Resolve a package directory, preferring the pinned runtime installation."""
     if RUNTIME_DTS_ROOT is not None:
         aliased = sorted(RUNTIME_DTS_ROOT.glob(f"{package}--*"))
         if aliased:
@@ -214,13 +214,19 @@ def inject_docstrings(text: str, descriptions: dict[str, str]) -> str:
                     event_name = m_ov.group(3)
                     doc = descriptions.get(f"event:{event_name}")
                     if doc:
+                        # Replace ` : ...` with multi-line body; docstring alone
+                        # is a valid Python body, so no trailing `...` needed —
+                        # keeps ruff format from tightening blank lines away.
                         sig_part = next_line[:-4].rstrip()
                         out.append(sig_part)
                         out.extend(format_doc_block(doc, ov_indent + "    "))
-                        out.append(f"{ov_indent}    ...")
                         i = j + 1
                         continue
-                    out.append(next_line)
+                    # Rewrite `: ...` into multi-line `: pass` so E301 blank
+                    # lines survive ruff format in .pyi files.
+                    sig_part = next_line[:-4].rstrip()
+                    out.append(sig_part)
+                    out.append(f"{ov_indent}    pass")
                     i = j + 1
                     continue
             i += 1
@@ -235,13 +241,13 @@ def inject_docstrings(text: str, descriptions: dict[str, str]) -> str:
             name = m_method_single.group(2)
             key = key_for_member(name)
             doc = descriptions.get(key)
+            sig_part = line[:-4].rstrip()
             if doc:
-                sig_part = line[:-4].rstrip()
                 out.append(sig_part)
                 out.extend(format_doc_block(doc, m_indent + "    "))
-                out.append(f"{m_indent}    ...")
             else:
-                out.append(line)
+                out.append(sig_part)
+                out.append(f"{m_indent}    pass")
             i += 1
             continue
 
@@ -252,17 +258,30 @@ def inject_docstrings(text: str, descriptions: dict[str, str]) -> str:
             name = m_method_start.group(2)
             method_lines = [line]
             j = i + 1
-            while j < n and not method_lines[-1].rstrip().endswith("..."):
+            # Collect until we see either `    pass` or `...` or `: ...` tail
+            while j < n:
                 method_lines.append(lines[j])
+                last_stripped = method_lines[-1].rstrip()
+                if (
+                    last_stripped.endswith("...")
+                    or last_stripped == f"{m_indent}    pass"
+                ):
+                    j += 1
+                    break
                 j += 1
             last = method_lines[-1]
             key = key_for_member(name)
             doc = descriptions.get(key)
             if doc and last.rstrip().endswith(": ..."):
+                # Old stub-style tail (shouldn't happen after render_method
+                # update, kept for safety): strip trailing `: ...`, append doc.
                 out.extend(method_lines[:-1])
                 out.append(last.rstrip()[:-4].rstrip())
                 out.extend(format_doc_block(doc, m_indent + "    "))
-                out.append(f"{m_indent}    ...")
+            elif doc and last.rstrip() == f"{m_indent}    pass":
+                # New multi-line `pass` shape: replace the `pass` with docstring.
+                out.extend(method_lines[:-1])
+                out.extend(format_doc_block(doc, m_indent + "    "))
             else:
                 out.extend(method_lines)
             i = j
@@ -1420,13 +1439,19 @@ def render_property(member: Member) -> str:
 
 
 def render_method(member: Member) -> str:
+    """Emit a method with a multi-line ``pass`` body.
+
+    Multi-line ``pass`` bodies (instead of stub-style ``def foo(): ...``) are
+    required so that ruff format preserves blank lines between methods in
+    ``.pyi`` files — PyCharm's PEP 8 checker fires E301 otherwise.
+    """
     args = parse_method_args(member.params)
     ret_py = ts_to_py(member.returns)
     parts = ["self"]
     for name, py_type, has_default in args:
         default = " = ..." if has_default else ""
         parts.append(f"{name}: {py_type}{default}")
-    return f"    def {member.name}({', '.join(parts)}) -> {ret_py}: ..."
+    return f"    def {member.name}({', '.join(parts)}) -> {ret_py}:\n        pass"
 
 
 def render_interface(
@@ -1434,12 +1459,12 @@ def render_interface(
 ) -> list[str]:
     """Render a mineflayer interface body as a Python class."""
     members = parse_members(body)
-    lines = [f"class {name}:"]
-    lines.append(f'    """Ref: {ref_path} — {name}"""')
+    lines = [f"class {name}:", f'    """Ref: {ref_path} — {name}"""']
     if not members:
         lines.append("    pass")
         return lines
     for m in members:
+        lines.append("")  # blank line between members — needed for PEP 8 E301
         if m.is_method:
             lines.append(render_method(m))
         else:
@@ -1576,13 +1601,13 @@ def render_bot(
     event_callbacks: list[tuple[str, str, list[tuple[str, str]]]],
 ) -> list[str]:
     members = parse_members(bot_body)
-    lines = ["class Bot:"]
-    lines.append(
+    lines = [
+        "class Bot:",
         '    """Pythonic façade over a mineflayer Bot proxy.\n\n'
         "    Every property and method below mirrors mineflayer's Bot interface.\n\n"
-        '    Ref: mineflayer/index.d.ts — interface Bot\n    """'
-    )
-    lines.append("    def __init__(self, js_bot: object) -> None: ...")
+        '    Ref: mineflayer/index.d.ts — interface Bot\n    """',
+        "    def __init__(self, js_bot: object) -> None: ...",
+    ]
     # Skip private `_client` field (exposed as raw JS only)
     for m in members:
         if m.name.startswith("_"):
@@ -1644,11 +1669,11 @@ def render_bot(
 def render_bot_options(body: str) -> list[str]:
     """BotOptions → TypedDict (total=False since most are optional)."""
     members = parse_members(body)
-    lines = ["class BotOptions(TypedDict, total=False):"]
-    lines.append(
+    lines = [
+        "class BotOptions(TypedDict, total=False):",
         '    """Options accepted by `create_bot(**opts)`.\n\n'
-        '    Ref: mineflayer/index.d.ts — interface BotOptions\n    """'
-    )
+        '    Ref: mineflayer/index.d.ts — interface BotOptions\n    """',
+    ]
     # minecraft-protocol ClientOptions (merged in) — surface the common fields
     extras = [
         Member(name="host", ts_type="string"),
@@ -1707,7 +1732,6 @@ from typing import Literal, Self, TypedDict, overload
 from minethon._events import BotEvent
 
 """
-
 
 # Mineflayer type aliases and aux interfaces we want to emit (selectively)
 MINEFLAYER_TYPE_ALIASES = [
@@ -2002,6 +2026,82 @@ def render_handlers_stub(
     return lines
 
 
+def normalize_pyi_method_bodies(text: str) -> str:
+    """Rewrite stub-style `...` method bodies to multi-line `pass`.
+
+    Required so PyCharm's PEP 8 checker stops firing E301 on `.pyi` files:
+    ruff format keeps `def foo(): ...` methods tight (no blank lines between)
+    in stubs, but preserves blanks when the body is a real multi-line statement
+    (docstring or ``pass``). After this transform, the formatter leaves our
+    explicit blank lines in place.
+
+    Also inserts a blank line between adjacent methods where missing.
+    """
+    lines = text.split("\n")
+    out: list[str] = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+
+        # Single-line `<indent>def name(...) -> T: ...` at end-of-line.
+        m_single = re.match(
+            r"^(\s+)def \w+\([^)]*\)(?:\s*->\s*[^:]+)?:\s*\.\.\.\s*$", line
+        )
+        if m_single:
+            indent = m_single.group(1)
+            sig_part = line[:-4].rstrip()  # drop trailing ` ...`
+            out.append(sig_part)
+            out.append(f"{indent}    pass")
+            i += 1
+            continue
+
+        # Multi-line `<indent>def name(` … last line `) -> T: ...`.
+        m_multi = re.match(r"^(\s+)def \w+\(\s*$", line)
+        if m_multi:
+            indent = m_multi.group(1)
+            block = [line]
+            j = i + 1
+            while j < n:
+                block.append(lines[j])
+                if block[-1].rstrip().endswith("..."):
+                    j += 1
+                    break
+                j += 1
+            last = block[-1]
+            if last.rstrip().endswith(": ..."):
+                block[-1] = last.rstrip()[:-4].rstrip()
+                block.append(f"{indent}    pass")
+            out.extend(block)
+            i = j
+            continue
+
+        out.append(line)
+        i += 1
+
+    # Second pass — insert blank line before every method "head" (`def ` or
+    # `@overload` / `@staticmethod` etc.) when it follows another method's end
+    # (pass / docstring / closing paren / property line).
+    final: list[str] = []
+    for idx, cur in enumerate(out):
+        if idx > 0:
+            stripped_cur = cur.lstrip()
+            prev = final[-1] if final else ""
+            prev_stripped = prev.strip()
+            cur_indent = len(cur) - len(stripped_cur)
+            is_method_head = stripped_cur.startswith(("def ", "@"))
+            if (
+                is_method_head
+                and cur_indent >= 4
+                and prev_stripped != ""
+                and not prev_stripped.startswith(("class ", "@", "#"))
+                and not prev_stripped.endswith(":")
+            ):
+                final.append("")
+        final.append(cur)
+    return "\n".join(final)
+
+
 def format_generated_files(*paths: Path) -> None:
     subprocess.run(
         [sys.executable, "-m", "ruff", "format", *(str(path) for path in paths)],
@@ -2028,10 +2128,10 @@ def main() -> None:
         ),
         EXTERNAL_STUBS,
         "",
+        "# --- Mineflayer type aliases ---",
     ]
 
     # Type aliases
-    out.append("# --- Mineflayer type aliases ---")
     for alias in MINEFLAYER_TYPE_ALIASES:
         expr = extract_type_alias(mf_text, alias)
         if expr is None:
@@ -2110,6 +2210,7 @@ def main() -> None:
     else:
         final_text = raw_text
         print(f"no stubs doc at {STUBS_DOC}; skipping docstring injection")
+    final_text = normalize_pyi_method_bodies(final_text)
     OUT_PATH.write_text(final_text)
     events_text = render_events_module(event_callbacks)
     OUT_EVENTS_PATH.write_text(events_text)
