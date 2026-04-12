@@ -1457,15 +1457,19 @@ def render_method(member: Member) -> str:
 def render_interface(
     name: str, body: str, *, ref_path: str = "mineflayer/index.d.ts"
 ) -> list[str]:
-    """Render a mineflayer interface body as a Python class."""
+    """Render a mineflayer interface body as a Python class.
+
+    Spacing rule: blank line before each method (PEP 8 E301), but properties
+    stay tight — consecutive attributes read as a single declaration block.
+    """
     members = parse_members(body)
     lines = [f"class {name}:", f'    """Ref: {ref_path} — {name}"""']
     if not members:
         lines.append("    pass")
         return lines
     for m in members:
-        lines.append("")  # blank line between members — needed for PEP 8 E301
         if m.is_method:
+            lines.append("")  # blank line before each method for E301
             lines.append(render_method(m))
         else:
             lines.append(render_property(m))

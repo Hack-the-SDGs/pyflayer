@@ -1043,279 +1043,190 @@ class Player:
 
     uuid: str
     """玩家 UUID 字串"""
-
     username: str
     """玩家遊戲名稱"""
-
     displayName: ChatMessage
     """玩家的顯示名稱 `ChatMessage`"""
-
     gamemode: float
     """玩家的遊戲模式數字 ID"""
-
     ping: float
     """玩家延遲毫秒"""
-
     entity: Entity
     """玩家的 `Entity` 物件（若該玩家目前在視野內）；否則為 `None`"""
-
     skinData: object | None
     """玩家膚色貼圖資料 dict（含 `url` 和 `model`），可能為 `None`"""
-
     profileKeys: object | None
 
 class ChatPattern:
     """Ref: mineflayer/index.d.ts — ChatPattern"""
 
     pattern: object
-
     type: str
-
     description: str
 
 class SkinParts:
     """Ref: mineflayer/index.d.ts — SkinParts"""
 
     showCape: bool
-
     showJacket: bool
-
     showLeftSleeve: bool
-
     showRightSleeve: bool
-
     showLeftPants: bool
-
     showRightPants: bool
-
     showHat: bool
 
 class GameSettings:
     """Ref: mineflayer/index.d.ts — GameSettings"""
 
     chat: ChatLevel
-
     colorsEnabled: bool
-
     viewDistance: ViewDistance
-
     difficulty: float
-
     skinParts: SkinParts
-
     mainHand: MainHands
 
 class GameState:
     """Ref: mineflayer/index.d.ts — GameState"""
 
     levelType: LevelType
-
     gameMode: GameMode
-
     hardcore: bool
-
     dimension: Dimension
-
     difficulty: Difficulty
-
     maxPlayers: float
-
     serverBrand: str
 
 class Experience:
     """Ref: mineflayer/index.d.ts — Experience"""
 
     level: float
-
     points: float
-
     progress: float
 
 class PhysicsOptions:
     """Ref: mineflayer/index.d.ts — PhysicsOptions"""
 
     maxGroundSpeed: float
-
     terminalVelocity: float
-
     walkingAcceleration: float
-
     gravity: float
-
     groundFriction: float
-
     playerApothem: float
-
     playerHeight: float
-
     jumpSpeed: float
-
     yawSpeed: float
-
     pitchSpeed: float
-
     sprintSpeed: float
-
     maxGroundSpeedSoulSand: float
-
     maxGroundSpeedWater: float
 
 class Time:
     """Ref: mineflayer/index.d.ts — Time"""
 
     doDaylightCycle: bool
-
     bigTime: int
-
     time: float
-
     timeOfDay: float
-
     day: float
-
     isDay: bool
-
     moonPhase: float
-
     bigAge: int
-
     age: float
 
 class ControlStateStatus:
     """Ref: mineflayer/index.d.ts — ControlStateStatus"""
 
     forward: bool
-
     back: bool
-
     left: bool
-
     right: bool
-
     jump: bool
-
     sprint: bool
-
     sneak: bool
 
 class Instrument:
     """Ref: mineflayer/index.d.ts — Instrument"""
 
     id: float
-
     name: Literal["harp", "doubleBass", "snareDrum", "sticks", "bassDrum"]
 
 class FindBlockOptions:
     """Ref: mineflayer/index.d.ts — FindBlockOptions"""
 
     point: Vec3 | None
-
     matching: float | list[float] | Callable[[object], object]
-
     maxDistance: float | None
-
     count: float | None
-
     useExtraInfo: bool | Callable[[object], object] | None
 
 class TransferOptions:
     """Ref: mineflayer/index.d.ts — TransferOptions"""
 
     window: Window
-
     itemType: float
-
     metadata: float | None
-
     count: float | None
-
     sourceStart: float
-
     sourceEnd: float
-
     destStart: float
-
     destEnd: float
 
 class creativeMethods:
     """Ref: mineflayer/index.d.ts — creativeMethods"""
 
     setInventorySlot: Callable[[float, Item | None], None]
-
     clearSlot: Callable[[float], None]
-
     clearInventory: Callable[[], None]
-
     flyTo: Callable[[Vec3], None]
-
     startFlying: Callable[[], None]
-
     stopFlying: Callable[[], None]
 
 class simpleClick:
     """Ref: mineflayer/index.d.ts — simpleClick"""
 
     leftMouse: Callable[[float], None]
-
     rightMouse: Callable[[float], None]
 
 class Tablist:
     """Ref: mineflayer/index.d.ts — Tablist"""
 
     header: ChatMessage
-
     footer: ChatMessage
 
 class chatPatternOptions:
     """Ref: mineflayer/index.d.ts — chatPatternOptions"""
 
     repeat: bool
-
     parse: bool
 
 class CommandBlockOptions:
     """Ref: mineflayer/index.d.ts — CommandBlockOptions"""
 
     mode: float
-
     trackOutput: bool
-
     conditional: bool
-
     alwaysActive: bool
 
 class VillagerTrade:
     """Ref: mineflayer/index.d.ts — VillagerTrade"""
 
     inputItem1: Item
-
     outputItem: Item
-
     inputItem2: Item | None
-
     hasItem2: bool
-
     tradeDisabled: bool
-
     nbTradeUses: float
-
     maximumNbTradeUses: float
-
     xp: float | None
-
     specialPrice: float | None
-
     priceMultiplier: float | None
-
     demand: float | None
-
     realPrice: float | None
 
 class Enchantment:
     """Ref: mineflayer/index.d.ts — Enchantment"""
 
     level: float
-
     expected: object
 
 # --- Mineflayer container classes ---
@@ -1359,7 +1270,6 @@ class Furnace:
 
     fuel: float
     """目前燃料進度"""
-
     progress: float
     """目前冶煉進度"""
 
