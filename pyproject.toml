@@ -1,7 +1,7 @@
 [project]
 name = "minethon"
-version = "0.1.0a1"
-description = "A Python-first Mineflayer SDK for building Minecraft bots with a typed, high-level async API."
+version = "0.2.0a1"
+description = "A Python-first Mineflayer SDK with a synchronous, IDE-friendly callback API."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -18,7 +18,6 @@ packages = ["src/minethon"]
 [dependency-groups]
 dev = [
     "pytest>=9.0",
-    "pytest-asyncio>=1.3",
     "pytest-cov>=7.1",
     "ruff>=0.15",
     "pyright>=1.1",
@@ -44,7 +43,6 @@ ignore = [
     "S101",    # assert in non-test code
     "TRY003", "EM101", "EM102",  # exception message style
     "SIM105",  # contextlib.suppress preferred — style choice across codebase
-    "ASYNC109", # timeout= param is idiomatic for this SDK's public API
     # try/except error-wrapping patterns used throughout SDK, not just bridge
     "TRY300", "TRY301"
 ]
@@ -65,7 +63,6 @@ pylint.max-statements = 65
     "PLR2004",             # magic values in assertions
     "FBT003",              # boolean positional values in test calls
     "PLC0415",             # local imports inside test methods are fine
-    "RUF006",              # asyncio.create_task without storing result (test pattern)
 ]
 
 # examples — written by contributors, intentionally loose
@@ -77,37 +74,9 @@ pylint.max-statements = 65
     "S",                   # security lints less relevant in demo code
     "ERA001",              # commented-out code OK while iterating
     "BLE001",              # broad except is fine for demo error handling
-    "ASYNC110",            # sleep-in-loop keep-alive is idiomatic for bot examples
     "TC001", "TC003",      # type-checking imports not needed in standalone scripts
-    "PLR0915",             # long test functions are expected for manual integration tests
-    "SIM113",              # enumerate not always clearer in test iteration patterns
-]
-
-# bridge internals — JS interop constraints
-"src/minethon/_bridge/*" = [
-    "ANN401",  # Any is unavoidable for JS proxy objects
-    "BLE001",  # broad except catches unpredictable JS proxy errors
-    "N806",    # JS camelCase local variables (e.g. displayName, tradeDisabled)
-]
-# files outside _bridge/ that still interface directly with JS proxies
-"src/minethon/api/observe.py" = ["ANN401"]   # js_bot / on_fn params are JS proxies
-"src/minethon/api/gui.py" = ["ANN401"]       # raw_query escape hatch returns JS proxy
-"src/minethon/api/panorama.py" = ["ANN401"]  # JPEG stream is a raw JS proxy
-"src/minethon/raw.py" = ["ANN401"]           # explicit raw escape hatch, Any by design
-"src/minethon/_bridge/runtime.py" = [
-    "PLC0415", # delayed `import javascript` for conditional bridge loading
-    "S603", "PLW1510",   # subprocess.run for node version check
-    "PLR2004", # magic value 22 for Node.js minimum version
-]
-"src/minethon/_bridge/js_bot.py" = ["S110", "FBT003"]
-
-# bot.py — large orchestration class with known structural exceptions
-"src/minethon/bot.py" = [
-    "ANN401",  # internal helpers and raw escape hatch methods use JS proxy Any
-    "FBT003",  # boolean positional for bridge control calls
-    "PLR2004", # magic value 8 for quick_bar_slot range
-    "PLR0913", # Bot.__init__ has many config parameters by design
-    "SLF001",  # intentional access to observe._bind_js / _reset_state / _on_raw
+    "PLR0915",             # long main() functions OK in demos
+    "SIM113",              # enumerate not always clearer
 ]
 
 [tool.pyright]
@@ -116,14 +85,12 @@ typeCheckingMode = "strict"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-asyncio_mode = "auto"
 markers = [
     "integration: tests requiring a running Minecraft server",
 ]
 
 [tool.coverage.run]
 source = ["src/minethon"]
-omit = ["src/minethon/_bridge/js/*"]
 
 [tool.coverage.report]
 show_missing = true
