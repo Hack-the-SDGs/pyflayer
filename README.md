@@ -1,136 +1,121 @@
-<div align="center">
+# minethon
 
-[![Banner](https://github.com/Hack-the-SDGs/minethon/blob/main/.github/assets/banner.png?raw=true)](https://github.com/Hack-the-SDGs/minethon)
-[![License](https://img.shields.io/github/license/Hack-the-SDGs/minethon?style=for-the-badge)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.14%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
+minethon 是教學導向的 Python mineflayer SDK。
 
-</div>
+它保留 mineflayer 的能力，但把公開 API 收斂成同步 callback、薄門面、完整 stub，讓學生不需要先學 Node.js、EventEmitter、asyncio。
 
-## 總覽
+## 目前定位
 
-minethon 讓你用 Python 寫 Minecraft bot，不需要碰 JavaScript。
-
-底層透過 [JSPyBridge](https://github.com/extremeheat/JSPyBridge) 驅動 [mineflayer](https://github.com/PrismarineJS/mineflayer)，但公開 API 是純 Python — 全 async/await、有完整型別提示、有 docstring。
-
-### 特色
-
-- **Pythonic API** — `await bot.goto(100, 64, 200)` 就這麼簡單
-- **完整型別** — 所有公開 API 都有 type hints，IDE 自動補全
-- **事件系統** — decorator 風格的事件訂閱，支援 async handler
-- **Pathfinding** — 內建 mineflayer-pathfinder，A* 導航
-- **Escape Hatch** — `bot.raw` 直接存取底層 JS bot，進階用途不受限
-
-## 前置需求
-
-| 項目 | 需求 |
-|------|------|
-| Python | 3.14+ |
-| Node.js | 22+ |
-| Minecraft Server | Java Edition |
+- Python 3.14+
+- Node.js 22+
+- bridge: `javascript` / JSPyBridge
+- 內建預裝且有型別支援的 plugin: `mineflayer-pathfinder`
+- 其他 npm 套件可用 `bot.load_plugin(name, "x.y.z")` 或 `bot.require(name, "x.y.z")`，但必須顯式版本
 
 ## 安裝
 
 ```bash
-uv add minethon
+./setup.sh
 ```
 
-> Node.js 必須在 PATH 中可用。minethon 啟動時會自動檢查。
+`setup.sh` 會：
+
+- `uv sync`
+- 檢查 Node.js 22+
+- 預裝 pinned 的 `mineflayer`、`vec3`、`mineflayer-pathfinder`
 
 ## 快速開始
 
 ```python
-import asyncio
-from minethon import Bot
-from minethon.models.events import ChatEvent
+from minethon import BotEvent, create_bot
+from minethon.models import ChatMessage
 
-async def main():
-    bot = Bot(host="localhost", port=25565, username="pybot")
+bot = create_bot(host="localhost", username="pybot")
 
-    @bot.observe.on(ChatEvent)
-    async def on_chat(event: ChatEvent):
-        if event.sender != bot.username:
-            await bot.chat(f"You said: {event.message}")
+@bot.on_spawn
+def on_spawn() -> None:
+    bot.chat("hello")
 
-    await bot.connect()
-    await bot.wait_until_spawned()
-    print(f"Bot spawned at {bot.position}")
-    await bot.chat("Hello from minethon!")
+@bot.on_chat
+def on_chat(
+    username: str,
+    message: str,
+    translate: str | None,
+    json_msg: ChatMessage,
+    matches: list[str] | None,
+) -> None:
+    if username == bot.username:
+        return
+    if message == "quit":
+        bot.quit("bye")
 
-    try:
-        while bot.is_connected:
-            await asyncio.sleep(1)
-    except KeyboardInterrupt:
-        await bot.disconnect()
+@bot.on(BotEvent.END)
+def on_end(reason: str) -> None:
+    print(f"Disconnected: {reason}")
 
-asyncio.run(main())
+bot.run_forever()
+```
+
+## 兩種事件寫法
+
+以下兩種都支援：
+
+```python
+@bot.on_chat
+def on_chat(...): ...
+
+@bot.on(BotEvent.CHAT)
+def on_chat(...): ...
+```
+
+如果你用的是 IDEA Ultimate / PyCharm：
+
+- `@bot.on_chat` 通常是最直接的 completion 路徑
+- `@bot.on(BotEvent.CHAT)` 適合想保留顯式 event enum 的寫法
+- `@bot.on("chat")` 已移除，不再是公開 API
+
+## 型別與匯入
+
+常用型別可從 `minethon.models` 匯入：
+
+```python
+from minethon.models import Block, ChatMessage, Entity, Item, Player, Vec3
+```
+
+這些是公開型別 shell，實際成員定義以 [`src/minethon/bot.pyi`](src/minethon/bot.pyi) 為準。
+
+## 版本規則
+
+- `create_bot(...)` 內部固定使用 pinned 的 `mineflayer`
+- `bot.load_plugin("mineflayer-pathfinder")` 可省略版本，會用內建 pin
+- 其他套件必須顯式版本，例如：
+
+```python
+viewer = bot.require("prismarine-viewer", "1.33.0")
+tool = bot.load_plugin("mineflayer-tool", "1.5.0", export_key="plugin")
+```
+
+這是刻意設計，用來避免 JSPyBridge 在 runtime 偷裝 latest。
+
+## 主要檔案
+
+- `src/minethon/bot.py`: runtime façade
+- `src/minethon/bot.pyi`: 生成的 IDE 型別層
+- `src/minethon/_events.py`: 生成的 `BotEvent`
+- `src/minethon/models/`: 可匯入的公開型別 shell
+- `scripts/generate_stubs.py`: 從 mineflayer / pathfinder d.ts 生成 stub
+- `docs/stubs_zh_tw.md`: 中文 hover 說明來源
+
+## 開發檢查
+
+```bash
+uv run python scripts/generate_stubs.py
+uv run pytest -m "not integration" --tb=short -q
+uv run ruff format --check src/minethon tests/
+uv run ruff check src/minethon tests/
+uv run pyright src/
 ```
 
 ## 範例
 
-| 範例 | 說明 |
-|------|------|
-| [01_hello_bot](examples/01_hello_bot/) | 基本連線與聊天回覆 |
-| [02_goto_player](examples/02_goto_player/) | 導航到玩家位置、跟隨指令 |
-| [03_drasl_auth](examples/03_drasl_auth/) | 透過自建 Drasl 驗證伺服器連線 |
-
-## 專案結構
-
-```
-src/minethon/
-├── bot.py              # Bot 主類別（公開入口）
-├── config.py           # BotConfig 設定
-├── raw.py              # Raw escape hatch
-├── models/             # 純 Python 資料結構
-│   ├── vec3.py         # Vec3 座標
-│   ├── block.py        # Block 方塊
-│   ├── entity.py       # Entity 實體
-│   ├── item.py         # ItemStack 物品
-│   ├── events.py       # 事件 dataclass
-│   └── errors.py       # 例外層級
-├── api/                # 子 API
-│   ├── navigation.py   # 路徑規劃
-│   └── observe.py      # 事件訂閱
-└── _bridge/            # 私有 JSPyBridge 橋接層
-    ├── runtime.py      # Node.js 生命週期
-    ├── js_bot.py       # JS bot 操作封裝
-    ├── event_relay.py  # 事件橋接
-    └── marshalling.py  # JS→Python 轉換
-```
-
-## 開發
-
-```bash
-# 安裝開發依賴
-uv sync --group dev
-
-# 執行測試
-uv run pytest
-
-# Lint
-uv run ruff check src/
-
-# 型別檢查
-uv run pyright
-```
-
-### IntelliJ / PyCharm 使用者注意
-
-`uv sync` 會以 editable 模式安裝本專案，導致 IDEA 的 Python SDK 將專案目錄同時視為外部 library，可能使整個專案被標記為 excluded。
-
-**解法：** File → Project Structure → SDKs → 選擇 Python interpreter → Paths 頁籤，移除指向本專案的路徑與指向本專案 `src/` 的路徑，然後 Apply。
-
-## 貢獻
-歡迎 PR 與 Issue！
-
-送出前請確認
-1. 遵循現有的程式碼風格與架構慣例
-2. 通過所有檢查測試 
-    - uv run pytest
-    - uv run ruff check src/
-    - uv run pyright
-3. 以 `feature/your-feature` 或 `fix/your-fix` 命名分支
-4. 發布 PR 時，目標分支為 `dev`
-
-## 授權
-本專案採用 [GNU Affero General Public License v3.0](LICENSE) 授權。
+- [`examples/demos/drasl_auth/main.py`](examples/demos/drasl_auth/main.py)

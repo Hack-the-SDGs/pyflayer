@@ -73,7 +73,7 @@ See Also:
     `"whisper"`
 
 ```python
-@bot.on("chat")
+@bot.on_chat
 def on_chat(username, message, *_):
     if username == bot.username:
         return
@@ -720,11 +720,11 @@ Args:
 範例：進入世界後一直往前走，收到 `"stop"` 訊息才停下
 
 ```python
-@bot.on("spawn")
+@bot.on_spawn
 def on_spawn():
     bot.setControlState("forward", True)
 
-@bot.on("chat")
+@bot.on_chat
 def on_chat(username, message, *_):
     if message == "stop":
         bot.setControlState("forward", False)
@@ -838,7 +838,7 @@ Args:
 
 Args:
     name: npm 套件名稱
-    version: 要釘住的版本字串；省略時使用 bridge 已安裝的版本。建議**一律填**以確保可重現
+    version: 要釘住的版本字串。對 minethon 內建預裝的 plugin（目前是 `mineflayer-pathfinder`）可省略，其餘套件必須顯式填寫
     export_key: 該套件的 installer 函式掛在 module 的哪個屬性上。pathfinder 已內建對照，其他套件不相符時可傳這個覆寫
     **options: 會轉傳給「HOF 風格」的插件（例如 `@ssmidge/mineflayer-dashboard`）。普通插件會忽略
 
@@ -851,7 +851,7 @@ Returns:
 
 Args:
     name: npm 套件名稱
-    version: (選填) 要釘住的版本字串
+    version: 要釘住的版本字串。非內建預裝套件必填，避免 JSPyBridge 在 runtime 偷裝 latest
 
 Returns:
     的物件未做型別包裝，請對照該插件 README 操作
@@ -869,19 +869,21 @@ Returns:
 手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
 
 ```python
-@bot.on("chat")
+from minethon import BotEvent
+
+@bot.on(BotEvent.CHAT)
 def on_chat(username, message, *_):
     print(username, message)
 ```
 
 Args:
-    event: 事件名稱字串（請用 IDE 建議的 Literal，打錯 pyright 會擋）
+    event: `BotEvent` 成員，例如 `BotEvent.CHAT`
 
 ### bot.once(event)
 同 `bot.on(event)` 但只觸發一次，之後自動解除
 
 Args:
-    event: 事件名稱字串
+    event: `BotEvent` 成員，例如 `BotEvent.CHAT`
 
 ### create_bot(**options)
 建立並啟動一個 mineflayer 機器人
