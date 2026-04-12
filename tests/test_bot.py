@@ -112,3 +112,33 @@ def test_require_without_version_rejects_unbundled_packages() -> None:
 
     with pytest.raises(VersionPinRequiredError):
         bot.require("mineflayer-tool")
+
+
+def test_bind_wires_only_overridden_handlers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from minethon import BotHandlers
+
+    registered: list[str] = []
+
+    def fake_on(js_bot: object, event: str):
+        def decorator(func: object) -> object:
+            registered.append(event)
+            return func
+
+        return decorator
+
+    monkeypatch.setattr(bot_module, "On", fake_on)
+    bot = bot_module.Bot(_FakeJsBot())
+
+    class MyHandlers(BotHandlers):
+        def on_chat(self, *_args: object, **_kwargs: object) -> None:
+            pass
+
+        def on_spawn(self, *_args: object, **_kwargs: object) -> None:
+            pass
+
+    returned = bot.bind(MyHandlers())
+
+    assert isinstance(returned, MyHandlers)
+    assert set(registered) == {"chat", "spawn"}
