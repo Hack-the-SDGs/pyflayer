@@ -256,6 +256,14 @@ class Particle(_Shell):
     pass
 
 
+class Location(_Shell):
+    pass
+
+
+class Painting(_Shell):
+    pass
+
+
 TYPE_SHELL_NAMES = (
     "Vec3",
     "ChatMessageScore",
@@ -318,6 +326,8 @@ TYPE_SHELL_NAMES = (
     "Team",
     "BossBar",
     "Particle",
+    "Location",
+    "Painting",
 )
 
 

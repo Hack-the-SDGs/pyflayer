@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import os
 
-from minethon import BotEvent, create_bot
+from minethon import BotEvent, create_bot, BotHandlers
 from minethon.models import ChatMessage
 
 
@@ -29,15 +29,15 @@ def main() -> None:
         session_server=os.environ["MC_SESSION_SERVER"],
     )
 
-    @bot.on(BotEvent.LOGIN)
-    def on_login() -> None:
-        print(f"Logged in as {bot.username}")
+    class Handler(BotHandlers):
+        def on_login(self) -> None:
+            print(f"Logged in as {bot.username}")
 
-    @bot.on_spawn
-    def on_spawn() -> None:
-        p = bot.entity.position
-        print(f"Spawned at ({p.x:.1f}, {p.y:.1f}, {p.z:.1f})")
-        bot.chat("Hello from minethon!")
+        def on_spawn(self) -> None:
+            p = bot.entity.position
+            print(f"Spawned at ({p.x:.1f}, {p.y:.1f}, {p.z:.1f})")
+            bot.chat("Hello from minethon!")
+    bot.bind(Handler())
 
     @bot.on_chat
     def on_chat(

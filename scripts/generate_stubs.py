@@ -557,9 +557,15 @@ def ts_to_py(ts: str) -> str:
 
 
 def _balanced(text: str) -> bool:
-    return all(
-        text.count(a) == text.count(b)
-        for a, b in [("<", ">"), ("(", ")"), ("[", "]"), ("{", "}")]
+    # `=>` inside arrow-function types contributes a `>` that isn't part of a
+    # generic closure; discount it so `(a: X) => Y` stays "balanced" and
+    # outer-paren stripping / array detection work on function types.
+    adjusted_gt = text.count(">") - text.count("=>")
+    return (
+        text.count("<") == adjusted_gt
+        and text.count("(") == text.count(")")
+        and text.count("[") == text.count("]")
+        and text.count("{") == text.count("}")
     )
 
 
@@ -1453,6 +1459,45 @@ MAPPING_FIELD_OVERRIDES: dict[str, str] = {
 }
 
 
+_ARROW_FN_RE = re.compile(r"^\((.*)\)\s*=>\s*(.+)$", re.DOTALL)
+
+
+def _as_method_if_arrow(member: Member) -> Member:
+    """Return a method-shaped Member when `member` is a `name: (args) => ret` property.
+
+    Mineflayer declares most Bot methods as arrow-typed properties. Rendering
+    them as `name: Callable[...]` loses parameter names — a critical hit to
+    IDE completion for a teaching SDK. This helper reshapes them so
+    `render_method` emits `def name(self, message: str) -> None: pass`
+    instead.
+
+    If the ts_type is an intersection of arrow types (e.g. `dig`), the first
+    overload is used as the primary signature; that matches the historical
+    fallback behaviour but no longer mangles brackets.
+    """
+    if member.is_method or not member.ts_type:
+        return member
+    ts = member.ts_type.strip()
+    # Peel the leading overload from an intersection type.
+    if "&" in ts and _no_generic_ampersand(ts):
+        head = split_top_level(ts, "&")[0]
+        ts = head.strip()
+    # Strip redundant wrapping parens around an arrow type.
+    while ts.startswith("(") and ts.endswith(")") and _balanced(ts[1:-1]):
+        ts = ts[1:-1].strip()
+    arrow = _ARROW_FN_RE.match(ts)
+    if not arrow:
+        return member
+    return Member(
+        name=member.name,
+        ts_type="",
+        optional=member.optional,
+        is_method=True,
+        params=arrow.group(1),
+        returns=arrow.group(2),
+    )
+
+
 def render_property(member: Member, *, class_name: str | None = None) -> str:
     qualified = f"{class_name}.{member.name}" if class_name else ""
     if qualified in MAPPING_FIELD_OVERRIDES:
@@ -1494,7 +1539,8 @@ def render_interface(
     if not members:
         lines.append("    pass")
         return lines
-    for m in members:
+    for raw in members:
+        m = _as_method_if_arrow(raw)
         if m.is_method:
             lines.append("")  # blank line before each method for E301
             lines.append(render_method(m))
@@ -1640,9 +1686,10 @@ def render_bot(
         "    def __init__(self, js_bot: object) -> None: ...",
     ]
     # Skip private `_client` field (exposed as raw JS only)
-    for m in members:
-        if m.name.startswith("_"):
+    for raw in members:
+        if raw.name.startswith("_"):
             continue
+        m = _as_method_if_arrow(raw)
         if m.is_method:
             lines.append(render_method(m))
         else:
@@ -1858,6 +1905,8 @@ MINEFLAYER_CLASSES = [
     "Team",
     "BossBar",
     "Particle",
+    "Location",
+    "Painting",
 ]
 
 
@@ -2096,6 +2145,8 @@ def _type_shell_names() -> tuple[str, ...]:
         "Team",
         "BossBar",
         "Particle",
+        "Location",
+        "Painting",
     )
 
 
