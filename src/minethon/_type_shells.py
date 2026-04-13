@@ -264,6 +264,14 @@ class Painting(_Shell):
     pass
 
 
+class BotOptions(dict[str, object]):
+    """Runtime shell for the generated `TypedDict` in `bot.pyi`."""
+
+
+class CreateBotOptions(dict[str, object]):
+    """Runtime shell for the snake-case `TypedDict` in `bot.pyi`."""
+
+
 TYPE_SHELL_NAMES = (
     "Vec3",
     "ChatMessageScore",
@@ -328,12 +336,6 @@ TYPE_SHELL_NAMES = (
     "Particle",
     "Location",
     "Painting",
+    "BotOptions",
+    "CreateBotOptions",
 )
-
-
-class BotOptions(dict[str, object]):
-    """Runtime shell for the generated `TypedDict` in `bot.pyi`."""
-
-
-class CreateBotOptions(dict[str, object]):
-    """Runtime shell for the snake-case `TypedDict` in `bot.pyi`."""
