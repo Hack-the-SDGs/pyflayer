@@ -113,7 +113,7 @@ pylint.max-statements = 65
 ]
 
 # test suite — relaxed for assertions, magic values, private access
-"tests/*" = [
+"tests/**" = [
     "INP001",              # not a namespace package
     "ANN",                 # type annotations not required in tests
     "ARG",                 # fake JS-bridge callables accept but ignore args
