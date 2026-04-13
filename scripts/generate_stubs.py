@@ -1598,6 +1598,12 @@ def render_bot_events(
     for m in members:
         if not m.is_method and not m.ts_type:
             continue
+        # Skip TypeScript template-literal event keys like
+        # 'blockUpdate:(x, y, z)'. mineflayer emits position-specific events
+        # such as 'blockUpdate:(5, 64, 5)'; the literal template name is never
+        # emitted, so a handler registered on it would never fire.
+        if "(x, y, z)" in m.name:
+            continue
         override = EVENT_CALLBACK_OVERRIDES.get(m.name)
         if override is not None:
             alias = f"_OnEvent_{_sanitize_alias(m.name)}"

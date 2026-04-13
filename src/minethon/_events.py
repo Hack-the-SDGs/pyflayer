@@ -12,7 +12,6 @@ class BotEvent(StrEnum):
     BLOCK_BREAK_PROGRESS_END = "blockBreakProgressEnd"
     BLOCK_BREAK_PROGRESS_OBSERVED = "blockBreakProgressObserved"
     BLOCK_UPDATE = "blockUpdate"
-    BLOCK_UPDATE_X_Y_Z = "blockUpdate:(x, y, z)"
     BOSS_BAR_CREATED = "bossBarCreated"
     BOSS_BAR_DELETED = "bossBarDeleted"
     BOSS_BAR_UPDATED = "bossBarUpdated"
@@ -113,7 +112,6 @@ EVENT_ATTRIBUTE_MAP = {
     "block_break_progress_end": BotEvent.BLOCK_BREAK_PROGRESS_END,
     "block_break_progress_observed": BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED,
     "block_update": BotEvent.BLOCK_UPDATE,
-    "block_update_x_y_z": BotEvent.BLOCK_UPDATE_X_Y_Z,
     "boss_bar_created": BotEvent.BOSS_BAR_CREATED,
     "boss_bar_deleted": BotEvent.BOSS_BAR_DELETED,
     "boss_bar_updated": BotEvent.BOSS_BAR_UPDATED,

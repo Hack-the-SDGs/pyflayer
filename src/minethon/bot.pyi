@@ -1575,7 +1575,6 @@ _OnEvent_playerJoined = Callable[[Player], None]
 _OnEvent_playerUpdated = Callable[[Player], None]
 _OnEvent_playerLeft = Callable[[Player], None]
 _OnEvent_blockUpdate = Callable[[Block | None, Block], None]
-_OnEvent_blockUpdate__x__y__z_ = Callable[[Block | None, Block | None], None]
 _OnEvent_chunkColumnLoad = Callable[[Vec3], None]
 _OnEvent_chunkColumnUnload = Callable[[Vec3], None]
 _OnEvent_soundEffectHeard = Callable[[str, Vec3, float, float], None]
@@ -2641,28 +2640,6 @@ class Bot:
     def on(
         self, event: Literal[BotEvent.BLOCK_UPDATE]
     ) -> Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]:
-        """註冊事件處理器的 decorator
-        會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
-        各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
-
-        手寫 handler 時**參數個數不符也沒關係**——minethon 的 `_normalize_handler` 會自動補 `None` / 截斷，不會噴 TypeError
-
-        ```python
-        from minethon import BotEvent
-
-        @bot.on(BotEvent.CHAT)
-        def on_chat(username, message, *_):
-            print(username, message)
-        ```
-
-        Args:
-            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
-        """
-
-    @overload
-    def on(
-        self, event: Literal[BotEvent.BLOCK_UPDATE_X_Y_Z]
-    ) -> Callable[[_OnEvent_blockUpdate__x__y__z_], _OnEvent_blockUpdate__x__y__z_]:
         """註冊事件處理器的 decorator
         會自動把回呼函式裝到 mineflayer 的 JS EventEmitter 上
         各事件的回呼參數數量由 `bot.pyi` 的 Literal overload 決定；IDE 會跳出完整清單
@@ -4744,10 +4721,6 @@ class Bot:
     """Same as `bot.on(BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED)`. """
     on_block_update: Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]
     """Same as `bot.on(BotEvent.BLOCK_UPDATE)`. """
-    on_block_update_x_y_z: Callable[
-        [_OnEvent_blockUpdate__x__y__z_], _OnEvent_blockUpdate__x__y__z_
-    ]
-    """Same as `bot.on(BotEvent.BLOCK_UPDATE_X_Y_Z)`. """
     on_boss_bar_created: Callable[[_OnEvent_bossBarCreated], _OnEvent_bossBarCreated]
     """Same as `bot.on(BotEvent.BOSS_BAR_CREATED)`. """
     on_boss_bar_deleted: Callable[[_OnEvent_bossBarDeleted], _OnEvent_bossBarDeleted]
@@ -5003,16 +4976,6 @@ class Bot:
     def once(
         self, event: Literal[BotEvent.BLOCK_UPDATE]
     ) -> Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]:
-        """同 `bot.on(event)` 但只觸發一次，之後自動解除
-
-        Args:
-            event: `BotEvent` 成員，例如 `BotEvent.CHAT`
-        """
-
-    @overload
-    def once(
-        self, event: Literal[BotEvent.BLOCK_UPDATE_X_Y_Z]
-    ) -> Callable[[_OnEvent_blockUpdate__x__y__z_], _OnEvent_blockUpdate__x__y__z_]:
         """同 `bot.on(event)` 但只觸發一次，之後自動解除
 
         Args:
@@ -5965,10 +5928,6 @@ class Bot:
     """Same as `bot.once(BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED)`. """
     once_block_update: Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]
     """Same as `bot.once(BotEvent.BLOCK_UPDATE)`. """
-    once_block_update_x_y_z: Callable[
-        [_OnEvent_blockUpdate__x__y__z_], _OnEvent_blockUpdate__x__y__z_
-    ]
-    """Same as `bot.once(BotEvent.BLOCK_UPDATE_X_Y_Z)`. """
     once_boss_bar_created: Callable[[_OnEvent_bossBarCreated], _OnEvent_bossBarCreated]
     """Same as `bot.once(BotEvent.BOSS_BAR_CREATED)`. """
     once_boss_bar_deleted: Callable[[_OnEvent_bossBarDeleted], _OnEvent_bossBarDeleted]
@@ -6304,11 +6263,6 @@ class BotHandlers:
         pass
 
     def on_block_update(self, old_block: Block | None, new_block: Block) -> None:
-        pass
-
-    def on_block_update_x_y_z(
-        self, old_block: Block | None, new_block: Block | None
-    ) -> None:
         pass
 
     def on_boss_bar_created(self, boss_bar: BossBar) -> None:

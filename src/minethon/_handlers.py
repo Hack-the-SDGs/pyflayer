@@ -76,11 +76,6 @@ class BotHandlers:
     def on_block_update(self, old_block: Block | None, new_block: Block) -> None:
         pass
 
-    def on_block_update_x_y_z(
-        self, old_block: Block | None, new_block: Block | None
-    ) -> None:
-        pass
-
     def on_boss_bar_created(self, boss_bar: BossBar) -> None:
         pass
 
