@@ -50,12 +50,13 @@ uv sync --quiet
 # js/package.json and runs npm with the right args.
 
 echo "[2/2] priming JSPyBridge module cache with pinned versions..."
+# Read versions from _bridge.py so there's a single source of truth — bumping
+# BUNDLED_VERSIONS is enough; this script stays in sync automatically.
 uv run --quiet python -c "
 from javascript import require
-# Versions must match the constants in src/minethon/_bridge.py.
-require('mineflayer', '4.37.0')
-require('vec3', '0.1.10')
-require('mineflayer-pathfinder', '2.4.5')
+from minethon._bridge import BUNDLED_VERSIONS
+for pkg, ver in BUNDLED_VERSIONS.items():
+    require(pkg, ver)
 "
 
 cat <<'EOF'
