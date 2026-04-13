@@ -1,185 +1,167 @@
-# AGENTS.md — Minethon 開發指引
+# AGENTS.md — minethon 開發指引
 
-## 本文件的維護規則
+## 維護規則
 
-- 本文件是 minethon 專案的唯一 ground truth。
-- 當你發現程式碼與本文件描述不一致時，**不要自行判斷哪邊正確**，先詢問使用者，確認後更新本文件。
-- 每次原則、約定或架構決策有新增或修改，都必須同步更新本文件，不僅限於重大架構變更。
-- 保持精簡。本文件記錄「原則與決策」，不記錄「完整 API 簽名」——那是程式碼和 docstring 的工作。
+- 本文件是目前專案的 ground truth。
+- 發現實作與本文件不一致時，先修其中一邊，不要讓兩邊長期漂移。
+- 記錄原則、公開 API 形狀、版本規則；不要把每個細節 API 簽名重複抄在這裡。
 
-## 互動原則
+## 產品目標
 
-- **禁止阿諛奉承。** 當使用者質疑你的判斷時，先思考、查證，再回應。不要為了迎合而直接肯定使用者。
-- **遇到不確定的事，問。** 不要猜測使用者的意圖或偏好。
-- **不要用修補的方式解決問題。** 遇到 bug 或異常行為時：
-  1. 先去讀 mineflayer 的 JS 原始碼，理解它的意圖和流程
-  2. 判斷問題來源是橋接層、非同步時序、還是設計層
-  3. 從根本解決，不要用 sleep / monkey-patch / 特殊 flag 繞過
-- **所有設計決策必須基於 mineflayer API 文件和原始碼。** 不要憑直覺定義 Python 介面。
-  - mineflayer 文件位置：`.venv/lib/python3.14/site-packages/javascript/js/node_modules/mineflayer/docs`
-  - 相關插件的文件也在對應的 node_modules 目錄下
+minethon 是教學導向的 Python mineflayer SDK。
 
-## CI / Commit 前置檢查
+- 學生不需要先懂 Node.js、EventEmitter、asyncio
+- 公開 API 以同步 callback 為主
+- `bot.py` 保持薄，盡量直接委託 mineflayer
+- 補全與 hover 體驗由生成的 `bot.pyi` 承擔
 
-每次 commit 前必須通過以下檢查，全部通過才可 commit：
+第一驗收標準：
 
-```bash
-uv run pytest -m "not integration" --tb=short -q
-uv run ruff format --check src/ tests/
-uv run ruff check src/
+> 學生能一行一行看懂並自己仿寫。
+
+## 事件 API
+
+事件入口只保留兩種公開寫法：
+
+```python
+@bot.on_chat
+def on_chat(...): ...
+
+@bot.on(BotEvent.CHAT)
+def on_chat(...): ...
 ```
 
-## 專案定義
+設計決策：
 
-**minethon** 是一套 Python-first 的 Mineflayer SDK。
+- `bot.on(...)` / `bot.once(...)` 只接受 `BotEvent`
+- `@bot.on_<event>` 是給 JetBrains / Pylance 更穩定 completion 的 sugar
+- `BotEvent` 是 `StrEnum`，給 enum-style completion 與 refactor 安全性
+- event callback 參數以 upstream d.ts 為主；若 JS runtime 明確更嚴格或更少參數，可做 source-verified 正規化
 
-- 不重寫 mineflayer，而是建立一層 typed Python façade
-- 底層透過 JSPyBridge（`javascript` pip package）驅動，但 JSPyBridge 是私有實作細節，不對使用者暴露
-- 公開 API 必須是 Pythonic、有型別、有文件、可維護的
-- 使用者不需要理解 Node.js、JSPyBridge、EventEmitter 就能開發 bot
-- 提供明確標示的 raw escape hatches 給進階使用者直接操作 JS 物件；未標示為 raw 的 API 一律不得洩漏 JS proxy
+## IDE 與型別層
 
-## 技術棧
+- `src/minethon/bot.pyi` 是 IDE completion 的主要來源，必須由 `scripts/generate_stubs.py` 生成
+- generator 的 source of truth 優先讀 `.venv/.../javascript/js/node_modules/` 的實際安裝版本；缺少時才 fallback 到 repo vendored `src/mineflayer/js/node_modules/`
+- `docs/stubs_zh_tw.md` 是中文 hover 說明來源
+- `src/minethon/_events.py` 由 generator 生成，提供 `BotEvent`
+- `src/minethon/models/` 提供可 import 的公開型別 shell，方便使用者寫 annotation；實際成員面仍以 `bot.pyi` 為準
 
-- Python 3.14+、Node.js 22+（mineflayer 4.37.0 要求 `node >=22`）
-- Bridge：JSPyBridge
-- 套件管理：uv（`pyproject.toml`）
-- Async 模型：asyncio（公開 API 原則上 async/await；若底層 JS 方法同步返回且不涉及 Promise，允許同步方法；純資料存取的 property 除外）
-- 型別：mypy / pyright 相容，inline annotations + `py.typed`
-- 測試：pytest + pytest-asyncio
-- Linting：ruff
+## 公開模組分層
 
-## 核心插件範圍
+1. `src/minethon/__init__.py`
+   - 使用者入口
+   - re-export `create_bot`、`Bot`、`BotEvent`、公開錯誤類
+2. `src/minethon/bot.py`
+   - runtime façade
+   - event decorator、plugin loading、version pin guard
+3. `src/minethon/bot.pyi`
+   - 生成的型別面
+4. `src/minethon/models/`
+   - 可 import 的型別 shell
+5. `src/minethon/errors.py`
+   - 使用者可見的錯誤類
 
-以下插件需要在設計中考慮支援。不代表全部要在第一天實作，但架構必須能容納它們：
+## Source-Verified 原則
 
-- mineflayer（核心）
-- mineflayer-pathfinder
-- prismarine-viewer（npm 名稱，非 mineflayer-prismarine-viewer）
-- mineflayer-web-inventory
-- mineflayer-statemachine
-- mineflayer-armor-manager
-- mineflayer-collectblock
-- @ssmidge/mineflayer-dashboard（npm 名稱，非 mineflayer-dashboard）
-- mineflayer-tool
-- minecrafthawkeye（npm 名稱，非 mineflayer-hawkeye）
-- mineflayer-gui
-- mineflayer-panorama
+所有設計決策必須有 mineflayer / plugin 原始碼依據。
 
-插件系統需要有明確的擴充介面，讓上述插件以及未來的第三方插件能以一致的方式接入。
+主要來源：
 
-### 插件整合模式
+- mineflayer d.ts：`.venv/lib/python3.14/site-packages/javascript/js/node_modules/mineflayer--*/index.d.ts`
+- mineflayer JS：`.venv/lib/python3.14/site-packages/javascript/js/node_modules/mineflayer--*/lib/**/*.js`
+- pathfinder d.ts：`.venv/lib/python3.14/site-packages/javascript/js/node_modules/mineflayer-pathfinder--*/index.d.ts`
 
-不是所有 mineflayer 插件都走同一種模式。依原始碼分四類：
+禁止：
 
-- **Type A（`bot.loadPlugin()` facade）**：export 一個 `(bot) => void` 函式，透過 `bot.loadPlugin()` 載入。包括 armor-manager、tool、collectblock、gui、hawkeye、panorama。走 `PluginRegistry` 管理。
-- **Type B（Server / Service）**：直接呼叫 `module(bot, options)` 初始化，不走 `bot.loadPlugin()`。包括 prismarine-viewer、web-inventory。透過 `bot.<service>` lazy property 管理。
-- **Type C（Class Library / DSL）**：export 一組 class，使用者自行 `new` 實例。包括 statemachine。透過 `bot.raw.plugin()` 存取。
-- **Type D（Higher-Order Function）**：export 一個 `(options) => (bot) => void` 的 HOF。包括 @ssmidge/mineflayer-dashboard。使用時 `bot.loadPlugin(mod(options))`，走 `PluginRegistry` 管理。
+- 只看 README 就定義 Python API
+- 用 sleep / monkey-patch 硬繞 bridge 問題
+- 在沒有 source 依據時擅自把 runtime 行為講成既定契約
 
-Public API 層（`api/`）不直接碰 `_js_bot`，一律透過 bridge / service 層的方法。
+## 版本規則
 
-### JS Promise 橋接策略
+- Python 3.14+
+- Node.js 22+
+- bundled / pinned npm packages：
+  - `mineflayer`
+  - `vec3`
+  - `mineflayer-pathfinder`
+- 對 bundled package，可省略版本
+- 對其他 npm 套件，`bot.load_plugin(...)` / `bot.require(...)` 必須顯式版本
+- Python 端的 `javascript` (JSPyBridge) 套件在 `pyproject.toml` 用 minor 級 ceiling 鎖（目前 `>=1!1.2.6,<1!1.3`）。理由：minethon 依賴 `On`/`Once` 的 emitter 注入與 Promise `await`-before-return 行為，這兩件事是實作細節不是正式契約；升 minor 前要先跑 `./scripts/format.sh` 與 integration smoke。
 
-**JSPyBridge 不支援 Python async await JS Promise。** `Proxy` 類別沒有 `__await__` 方法（`proxy.py:183-289`），所有 JS 呼叫透過 `threading.Event.wait()` 同步阻塞呼叫執行緒（`proxy.py:39, 134, 143`）。`bridge.js` 裡的 `await` 發生在 JS 端（`bridge.js:133-138`），Python 端看到的只是同步阻塞直到 Promise resolve。
+理由：
 
-因此，**所有回傳 Promise 的 JS 方法都必須走 `helpers.js` → `_minethon:*Done` 事件模式**：
-1. `helpers.js` 中的 `start*` function 呼叫 JS Promise method，用 `.then()/.catch()` 非阻塞地 emit `_minethon:*Done` 事件
-2. `js_bot.py` 中的 `start_*` method 同步呼叫 helpers（快速返回，不等 Promise）
-3. `bot.py` 中的 async method 用 `await self._relay.wait_for(DoneEvent)` 真正 yield 給 asyncio event loop
+- 避免 JSPyBridge 在 runtime 偷裝 latest
+- 讓教學範例與學生環境可重現
 
-只有同步返回的 JS 方法（如 `bot.chat()`、`bot.attack()`）可以在 bridge 層直接呼叫。
+## Plugin scope
 
-詳細規格見 `docs/architecture/plugin-expansion-plan.md`。
+- 內建 typed / documented plugin：只有 `mineflayer-pathfinder`
+- 其他 plugin 目前不提供 typed façade
+- 其他 plugin 若要使用，走：
+  - `bot.load_plugin(name, "x.y.z", export_key=...)`
+  - `bot.require(name, "x.y.z")`
 
-## 架構原則
+## Callback thread 規則
 
-### 三層分離
+- 所有 event handler 跑在 JSPyBridge callback thread
+- handler 內不要 blocking
+- bridge 層必須處理 JSPyBridge 可選的 emitter 注入，以及 runtime 少於 d.ts 宣告參數的情況
 
-1. **Private Bridge（`_bridge/`）**— 啟動 JSPyBridge、載入 JS 模組、綁定事件、執行 JS 呼叫、管理 JS 物件生命週期。不定義任何公開型別。
-2. **Domain Model（`models/`）**— 純 Python 資料結構（dataclass / enum / TypedDict）。不依賴 JSPyBridge。可獨立 import 和測試。
-3. **Public SDK（`bot.py`, `api/`）**— 使用者直接互動的層。依賴 models，透過 bridge 執行操作。
+## 錯誤處理
 
-**硬性規則：**
-- 除明確標示為 raw 的 escape hatch 外，公開 API 不得回傳 JS proxy object
-- 除 raw escape hatch 外，公開 API 的 type hint 不得出現 `javascript` 模組的任何型別
-- 使用者不需要 `from javascript import ...`
+至少要維持下列公開錯誤類存在：
 
-### Async 橋接策略
+- `MinethonError`
+- `NotSpawnedError`
+- `PlayerNotFoundError`
+- `PluginNotInstalledError`
+- `VersionPinRequiredError`
 
-JSPyBridge 的 callback 跑在自己的 thread 上，不在 asyncio event loop 裡。關鍵約束：
+使用者訊息優先告訴下一步該做什麼。
 
-- **所有 JSPyBridge 呼叫必須在初始化它的同一個 thread 上執行**，不能用 `to_thread()` / `run_in_executor()` 搬走
-- **JS → Python 事件**：透過 `call_soon_threadsafe()` 投遞到 asyncio loop
-- **JS callback thread 只做最小工作**：不要在 callback thread 內遍歷 live JS proxy；若需要事件資料，優先在 JS 端先整理成 plain payload，再投遞到 Python loop
-- **等待型操作**（如 goto）：Python 端建立 `asyncio.Future`，由事件 relay 在收到對應 JS 事件時 resolve
-- 若 JS 操作可能阻塞過久，在 JS 端設計為非阻塞/事件驅動，不要在 Python 端包 executor
-- **公開同步 property 必須來自 Python snapshot/cache**；若資料必須 live 查詢 JS，應提供明確的 async 方法，而不是隱性同步跨 bridge I/O
+## 檢查指令
 
-### 風格原則
+一鍵跑完（regen stubs → format → lint → type-check → test）：
 
-- 避免歧義：能用 Enum 就用，不接受 magic string
-- Python 側命名遵循 PEP 8（snake_case），與 JS 側 camelCase 做明確映射
-- 所有公開方法必須有 Google style docstring 和完整 type hints
-- 不使用 `Any` 作為公開 API 回傳型別（raw escape hatch 除外）
-- **所有與 mineflayer JS 互動的方法與屬性，必須標注對應的 mineflayer 原始碼來源。** 格式為 `Ref: mineflayer/lib/plugins/<file>.js — <property/method/event>`，寫在 docstring 或行內註解中。確保每個跨 bridge 行為都有可追溯的依據，便於除錯與審查。
+```bash
+./scripts/format.sh            # 寫回格式修正
+./scripts/format.sh --check    # 只檢查不寫入（CI 模式）
+```
 
-### JSPyBridge 已知陷阱
+對應的個別指令（與 `format.sh` 內部順序相同）：
 
-1. `@On` callback 裡不要做 blocking 操作——所有 callback 共用一個 thread
-2. `.valueOf()` 可序列化 JS 物件為 Python dict，但對大物件很慢，只在需要快照時用
-3. `@On` callback 的參數語意與 JSPyBridge / Node 版本有關：舊版 patched emitter 可能會把 emitter/`this` 放在第一個參數；目前 Node 22+ 目標環境通常直接收到 event payload。bridge 層必須依實際 runtime 正規化，不能硬編碼假設第一個參數一定是 `this`
-4. JS 的 `undefined` / `null` 在 Python 端行為不一致，轉換時防禦性處理
-5. `require()` 首次呼叫會自動安裝 npm 套件，可能較慢
+```bash
+uv run python scripts/generate_stubs.py
+uv run ruff format src scripts tests
+uv run ruff check src scripts tests
+uv run pyright src/
+uv run pytest -m "not integration" --tb=short -q
+```
 
-### 效能原則
+`src/mineflayer/` 是 legacy / scratch 區，不納入目前 package 的 lint 與 pyright 範圍。
 
-- 避免在迴圈中逐一跨 bridge 呼叫——批次處理
-- 公開同步 property 必須從快取快照讀取，不要每次跨 bridge
-- 高頻事件（move, entityMoved, physicsTick）必須在進入 Python 前於 JS 端節流，或不公開
-- tick 敏感的邏輯可以用 JS 實作，避免 Python 跨 bridge 延遲造成的差異
+## Lint 策略
 
-## 現有狀態
+- `[tool.ruff.lint]` 全域 `select = ["ALL"]`，只對「全案都不適用」的規則做全域忽略。
+- 針對情境的豁免一律走 `[tool.ruff.lint.per-file-ignores]`，不要擴張全域 `ignore`。
+- 已有的 per-file 區塊：
+  - `src/minethon/_bridge.py` / `src/minethon/bot.py` — JSPyBridge proxy 必然是 `Any`，豁免 `ANN401`
+  - `src/minethon/**/*.pyi` — 型別覆蓋層；豁免 `N`（命名）、`A`（遮 builtin）、`ANN`、`ARG`、`PLR`、`PYI`、`UP`、`TRY`、`SIM`、`TC`、`RUF001`-`003`（zh-TW 全形符號）、`ERA001`、`PIE790`、`I001`；rationale 留在 `pyproject.toml` 註解
+  - `scripts/*.py` — 產生器工具；豁免複雜度與風格類
+  - `tests/*` — 允許 magic values、私有存取、硬編 fixtures
+  - `examples/**` — 教學 demo，放寬 `ANN`、`T201`、broad-except 等
+- 新增豁免時：先嘗試用更具體的規則號（`PIE790`、`RUF022`）而不是整個家族（`PYI`、`RUF`）；只在「整個家族都不適用」時才用前綴。
+- generator 輸出要符合 ruff 的規則，`format.sh` 跑完必須 idempotent（第二次跑不再變動）。
 
-<!-- 隨開發進展更新此區塊 -->
-- [x] 核心基礎：`_bridge/` 的 runtime / controller / event relay / marshalling、`models/` 基本資料型別、`Bot` 公開入口、`ObserveAPI`、`raw` escape hatch、基本 hello / goto / drasl auth 範例
-- [x] 插件架構：`PluginRegistry` + `PluginBridge` ABC（Phase 0 完成）。Type A/D 走 registry，Type B 走 `bot.<service>` lazy property
-- [x] Type A 插件已接入：
-  - `NavigationAPI`（mineflayer-pathfinder）— `bot.navigation`
-  - `ArmorAPI`（mineflayer-armor-manager）— `bot.armor`
-  - `ToolAPI`（mineflayer-tool）— `bot.tool`
-  - `CombatAPI`（minecrafthawkeye）— `bot.combat`（alias: `bot.hawkeye`）
-  - `GuiAPI`（mineflayer-gui）— `bot.gui`（comparator 在 JS 端構建，不跨 bridge 傳遞 Python callable）
-  - `PanoramaAPI`（mineflayer-panorama）— `bot.panorama`（experimental：需要 native node-canvas-webgl，版本 0.0.1；capture 方法為 raw escape hatch：`raw_take_panorama` / `raw_take_picture`）
-- [x] Type B 服務已接入（公開型別為 `api/` wrapper，不暴露 `_bridge` 類型）：
-  - `ViewerAPI`（prismarine-viewer）— `bot.viewer`
-  - `InventoryViewerAPI`（mineflayer-web-inventory）— `bot.inventory_viewer`
-- [x] Type D 插件已接入（experimental）：
-  - `DashboardAPI`（@ssmidge/mineflayer-dashboard）— `bot.dashboard`
-- [x] Type C（class library）：
-  - statemachine（mineflayer-statemachine）— 僅 raw access：`bot.raw.plugin("mineflayer-statemachine")`，typed builder API 因 `shouldTransition` 每 tick 呼叫的 callable 橋接風險未實作
-- [ ] 已知痛點：事件 payload 與 mineflayer docs 尚未全面對齊；raw escape hatch 邊界仍偏寬；npm 插件版本未釘選（JSPyBridge lazy install 會拉 latest）
+## 當前狀態
 
-## 決策紀錄
-
-<!-- 格式：日期 — 決策內容 — 原因 -->
-<!-- 範例：2025-01-15 — 事件系統改用 typed event class 而非 string key — 避免拼字錯誤且支援 IDE 自動補全 -->
-2026-04-10 — raw JS proxy 僅允許出現在明確標示為 raw 的 escape hatch — 維持預設 SDK 為 Python-first typed façade
-2026-04-10 — 公開同步 property 必須由 Python snapshot/cache 提供，不直接做 live bridge 讀取 — 避免 thread ownership 問題與隱性同步 I/O
-2026-04-10 — `@On` callback payload 必須依實際 JSPyBridge / Node runtime 正規化，不假設第一個參數一定是 `this` — 舊版 emitter patch 與目前 Node 18+ 行為不同
-2026-04-10 — 所有跨 bridge 的方法與屬性必須標注 mineflayer 原始碼來源 — 確保行為有依據，加速除錯與審查
-2026-04-11 — 插件分四類整合模式（Type A/B/C/D），不硬套同一抽象 — 原始碼驗證各插件 export pattern 不同；dashboard 為 Type D（HOF）、panorama 為 Type A（兩個 inject function）
-2026-04-11 — Node.js 版本要求從 18+ 更新為 22+ — mineflayer 4.37.0 的 `engines.node` 為 `>=22`
-2026-04-11 — Public API 不直接碰 `_js_bot`，一律透過 bridge method — 維持三層分離
-2026-04-11 — ~~能 await JS Promise 的直接 await，不自造 Done event~~ **已撤銷** — JSPyBridge `Proxy` 無 `__await__`，所有呼叫同步阻塞（`proxy.py:39,134,143`）；`bridge.js:133-138` 的 await 發生在 JS 端不是 Python 端
-2026-04-11 — 所有回傳 Promise 的 JS 方法必須走 `helpers.js` → `_minethon:*Done` 事件模式 — 這是 JSPyBridge 限制下唯一不阻塞 asyncio event loop 的做法
-2026-04-11 — 插件 npm 名稱以實際 package.json 為準 — prismarine-viewer（非 mineflayer-prismarine-viewer）、minecrafthawkeye（非 mineflayer-hawkeye）、@ssmidge/mineflayer-dashboard（非 mineflayer-dashboard）
-2026-04-11 — Phase 0 完成：PluginHost 已刪除，PluginRegistry + PathfinderBridge 已落地
-2026-04-11 — Phase 1a 完成：armor-manager / tool / hawkeye (Type A) + viewer / web-inventory (Type B) 已接入
-2026-04-11 — web-inventory 的公開存取路徑為 `bot.inventory_viewer`（非 `bot.web_inventory`）
-2026-04-11 — hawkeye 公開 API 為 `bot.combat`（主）+ `bot.hawkeye`（alias）
-2026-04-11 — 允許同步公開方法：若底層 JS 方法同步返回且不涉及 Promise（如 hawkeye 的 autoAttack），Python 端不必強制 async
-2026-04-11 — Type B service 的 start() 必須走 done-event 模式回報成功/失敗，不可在呼叫後立即標為 started — 防止 port 衝突等非同步錯誤被隱藏。**例外**：prismarine-viewer 的 `mineflayer()` 不回傳 Promise 且不暴露 HTTP server，done-event 僅能偵測同步錯誤（如模組未安裝），`EADDRINUSE` 等 async bind error 是已知不可觀測的 upstream 限制
-2026-04-11 — Phase 2 完成：gui=stable、dashboard=experimental、panorama=experimental、statemachine=raw-only — spike 已全部驗證，程式碼已接入 dev
-2026-04-11 — PanoramaAPI capture 方法改為明確 raw escape hatch（`raw_take_panorama` / `raw_take_picture`）— 回傳 JS proxy 必須標示 raw，修正 P1 違規
-2026-04-11 — Type B 服務公開型別改用 `api/` wrapper（`ViewerAPI`、`InventoryViewerAPI`），`Bot` 不再直接暴露 `_bridge` 類型 — 修正 P1 架構洩漏
+- [x] 同步 callback façade
+- [x] `BotEvent` 與 `@bot.on_<event>` sugar
+- [x] pathfinder event augmentation 併入 typed event overload
+- [x] `minethon.models` 可 import 型別 shell
+- [x] 顯式版本 guard
+- [x] 最小單元測試重建
+- [ ] 自家 collection wrapper（`bot.players` / `bot.entities` 目前仍是 bridge proxy）
+- [ ] 更完整的 user-facing error wrapping
+- [ ] 除 pathfinder 以外的 plugin typed 支援

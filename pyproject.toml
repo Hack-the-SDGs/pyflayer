@@ -1,11 +1,16 @@
 [project]
 name = "minethon"
-version = "0.1.0a1"
-description = "A Python-first Mineflayer SDK for building Minecraft bots with a typed, high-level async API."
+version = "0.2.0a1"
+description = "A Python-first Mineflayer SDK with a synchronous, IDE-friendly callback API."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "javascript>=1!1.2.6",
+    # JSPyBridge contract matters: emitter injection on On/Once and Promise
+    # await-before-return semantics are what let minethon expose mineflayer
+    # as a synchronous callback API. Pin to a known-compatible minor so a
+    # future 1.3.x release can't silently break the facade; bump after
+    # re-verifying against scripts/format.sh.
+    "javascript>=1!1.2.6,<1!1.3",
 ]
 
 [build-system]
@@ -18,7 +23,6 @@ packages = ["src/minethon"]
 [dependency-groups]
 dev = [
     "pytest>=9.0",
-    "pytest-asyncio>=1.3",
     "pytest-cov>=7.1",
     "ruff>=0.15",
     "pyright>=1.1",
@@ -29,6 +33,7 @@ src = ["src"]
 fix = true
 line-length = 88
 target-version = "py314"
+extend-exclude = ["src/mineflayer"]
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -38,13 +43,12 @@ ignore = [
 
     # project-wide opt-outs
     "D",       # docstring rules (managed separately)
-    "ARG",     # unused arguments
+    # ARG is handled per-file below (tests, stubs) — AGENTS.md lint policy
     "FBT001", "FBT002",  # boolean-typed parameters
     "N818",    # exception naming
     "S101",    # assert in non-test code
     "TRY003", "EM101", "EM102",  # exception message style
     "SIM105",  # contextlib.suppress preferred — style choice across codebase
-    "ASYNC109", # timeout= param is idiomatic for this SDK's public API
     # try/except error-wrapping patterns used throughout SDK, not just bridge
     "TRY300", "TRY301"
 ]
@@ -55,17 +59,70 @@ pylint.max-branches = 15
 pylint.max-statements = 65
 
 [tool.ruff.lint.per-file-ignores]
+# bridge / public entry — interops with untyped JSPyBridge proxies
+"src/minethon/_bridge.py" = [
+    "ANN401",  # JS proxy return types are Any by necessity
+]
+"src/minethon/bot.py" = [
+    "ANN401",  # Bot.__init__ / __getattr__ / create_bot expose Any for JS proxy interop
+]
+
+# Generated type overlays — mirror upstream TypeScript surface verbatim.
+# Stay specific per user-requested policy (AGENTS.md): disable only the
+# families that genuinely don't fit stub files, not blanket `ALL`.
+# Pattern uses `**` so nested packages like `models/__init__.pyi` are covered.
+"src/minethon/**/*.pyi" = [
+    "N",        # N801/N802/N803/N815 — stub mirrors JS camelCase identifiers
+    "A",        # builtin shadowing — JS APIs legitimately use `type`, `list`, `id`
+    "ANN",      # .pyi is entirely annotations; no missing-annotation rules apply
+    "ARG",      # stub method params are declarative; "unused" by nature
+    "PLR",      # pylint-refactor metrics (too many methods/args/branches) don't apply
+    "PYI",      # some stub-specific rules conflict with generated output style
+    "RUF012",   # mutable class defaults are annotation-only in stubs
+    "UP",       # pyupgrade rewrites can break stub typing round-trip
+    "TRY",      # no runtime control flow in stubs
+    "SIM",      # stubs are declarative; "simplify" doesn't apply
+    "TC",       # `.pyi` IS the type-checking surface — TYPE_CHECKING is irrelevant
+    "FIX002",   # TODO markers preserved from upstream docstrings
+    "E741",     # short names (`l`, `i`) inherited from upstream signatures
+    "RUF001",   # ambiguous unicode in zh-TW docstrings (curated by docs/stubs_zh_tw.md)
+    "RUF002",   # same as RUF001 but for docstrings
+    "RUF003",   # same for comments
+    "ERA001",   # generator header comments mention example code fragments
+    "PIE790",   # `def foo(): """doc"""; ...` pattern kept for generator idempotency
+    "I001",     # re-export groupings in `models/__init__.pyi` are curated by hand
+]
+
+# Build-time code generators — developer-only utilities, relaxed lint
+"scripts/*.py" = [
+    "INP001",   # not a package
+    "ANN",      # annotations optional
+    "T201",     # print() used for warnings
+    "S101",     # asserts fine
+    "S603",     # subprocess call — fixed-arg ruff/pyright invocations, no user input
+    "PLR",      # all pylint-refactor (return count, branch count, magic values)
+    "PLW",      # pylint-warning (loop-var reassign is intentional)
+    "C901",     # complexity high in one-off generators
+    "ERA001",   # commented-out examples OK
+    "BLE001",
+    "TRY",
+    "SIM",      # ternary / simplify — generator readability over style
+    "RET",      # return style
+    "PERF401",  # list.extend vs append loop — append loops stay readable
+    "FURB171",  # membership in single-item container (explicit vs equality)
+]
+
 # test suite — relaxed for assertions, magic values, private access
-"tests/*" = [
+"tests/**" = [
     "INP001",              # not a namespace package
     "ANN",                 # type annotations not required in tests
+    "ARG",                 # fake JS-bridge callables accept but ignore args
     "SLF001",              # private member access for white-box testing
     "SIM117",              # nested with-statements OK
     "S105", "S106", "S107", "S108", # hardcoded credentials and paths in fixtures
     "PLR2004",             # magic values in assertions
     "FBT003",              # boolean positional values in test calls
     "PLC0415",             # local imports inside test methods are fine
-    "RUF006",              # asyncio.create_task without storing result (test pattern)
 ]
 
 # examples — written by contributors, intentionally loose
@@ -77,50 +134,34 @@ pylint.max-statements = 65
     "S",                   # security lints less relevant in demo code
     "ERA001",              # commented-out code OK while iterating
     "BLE001",              # broad except is fine for demo error handling
-    "ASYNC110",            # sleep-in-loop keep-alive is idiomatic for bot examples
-]
-
-# bridge internals — JS interop constraints
-"src/minethon/_bridge/*" = [
-    "ANN401",  # Any is unavoidable for JS proxy objects
-    "BLE001",  # broad except catches unpredictable JS proxy errors
-    "N806",    # JS camelCase local variables (e.g. displayName, tradeDisabled)
-]
-# files outside _bridge/ that still interface directly with JS proxies
-"src/minethon/api/observe.py" = ["ANN401"]   # js_bot / on_fn params are JS proxies
-"src/minethon/api/gui.py" = ["ANN401"]       # raw_query escape hatch returns JS proxy
-"src/minethon/api/panorama.py" = ["ANN401"]  # JPEG stream is a raw JS proxy
-"src/minethon/raw.py" = ["ANN401"]           # explicit raw escape hatch, Any by design
-"src/minethon/_bridge/runtime.py" = [
-    "PLC0415", # delayed `import javascript` for conditional bridge loading
-    "S603", "PLW1510",   # subprocess.run for node version check
-    "PLR2004", # magic value 22 for Node.js minimum version
-]
-"src/minethon/_bridge/js_bot.py" = ["S110", "FBT003"]
-
-# bot.py — large orchestration class with known structural exceptions
-"src/minethon/bot.py" = [
-    "ANN401",  # internal helpers and raw escape hatch methods use JS proxy Any
-    "FBT003",  # boolean positional for bridge control calls
-    "PLR2004", # magic value 8 for quick_bar_slot range
-    "PLR0913", # Bot.__init__ has many config parameters by design
-    "SLF001",  # intentional access to observe._bind_js / _reset_state / _on_raw
+    "TC001", "TC003",      # type-checking imports not needed in standalone scripts
+    "PLR0915",             # long main() functions OK in demos
+    "SIM113",              # enumerate not always clearer
 ]
 
 [tool.pyright]
 include = ["src"]
+exclude = ["src/mineflayer"]
 typeCheckingMode = "strict"
+# The `javascript` package (JSPyBridge) ships no type stubs; treat its surface as Any.
+reportMissingTypeStubs = "none"
+reportUnknownMemberType = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownParameterType = "none"
+# `@bot.on(event)` decorates inner functions whose names are only referenced
+# by the decorator — strict mode flags every handler as unused. Disable the
+# rule project-wide so student scripts don't drown in false positives.
+reportUnusedFunction = "none"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-asyncio_mode = "auto"
 markers = [
     "integration: tests requiring a running Minecraft server",
 ]
 
 [tool.coverage.run]
 source = ["src/minethon"]
-omit = ["src/minethon/_bridge/js/*"]
 
 [tool.coverage.report]
 show_missing = true

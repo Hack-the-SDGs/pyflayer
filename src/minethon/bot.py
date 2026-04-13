@@ -1,2599 +1,354 @@
-"""Bot -- the public entry point for minethon."""
+"""Bot — public entry point for minethon.
 
-import asyncio
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+Runtime behavior lives here. A sibling `bot.pyi` (generated from
+mineflayer's `index.d.ts`) supplies the typed overloads that IDEs
+use for completion of event names, callback signatures, and
+properties like `bot.health`, `bot.entity.position`, etc.
 
-from minethon._bridge._events import (
-    ActivateBlockDoneEvent,
-    ActivateEntityAtDoneEvent,
-    ActivateEntityDoneEvent,
-    ChunksLoadedDoneEvent,
-    ClickWindowDoneEvent,
-    ConsumeDoneEvent,
-    CraftDoneEvent,
-    CreativeClearInventoryDoneEvent,
-    CreativeClearSlotDoneEvent,
-    CreativeFlyToDoneEvent,
-    CreativeSetSlotDoneEvent,
-    DigDoneEvent,
-    ElytraFlyDoneEvent,
-    EquipDoneEvent,
-    FishDoneEvent,
-    LookAtDoneEvent,
-    LookDoneEvent,
-    MoveSlotItemDoneEvent,
-    OpenAnvilDoneEvent,
-    OpenContainerDoneEvent,
-    OpenEnchantmentTableDoneEvent,
-    OpenFurnaceDoneEvent,
-    OpenVillagerDoneEvent,
-    PlaceDoneEvent,
-    PlaceEntityDoneEvent,
-    PutAwayDoneEvent,
-    SleepDoneEvent,
-    TabCompleteDoneEvent,
-    TossDoneEvent,
-    TossStackDoneEvent,
-    TradeDoneEvent,
-    TransferDoneEvent,
-    UnequipDoneEvent,
-    WaitForTicksDoneEvent,
-    WakeDoneEvent,
-    WriteBookDoneEvent,
+Pure synchronous callback model — no asyncio. Long-running JS work
+(dig, goto, ...) reports completion via handlers registered with
+`@bot.on(BotEvent.X)` or `@bot.on_x`.
+"""
+
+from __future__ import annotations
+
+import inspect
+import threading
+from collections.abc import Callable
+from functools import wraps
+from typing import Any, TypeVar
+
+from javascript import On, Once, require
+
+from minethon import _type_shells
+from minethon._bridge import BUNDLED_VERSIONS, get_mineflayer
+from minethon._events import EVENT_ATTRIBUTE_MAP, BotEvent
+from minethon._handlers import BotHandlers
+from minethon.errors import PluginNotInstalledError, VersionPinRequiredError
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+globals().update(
+    {name: getattr(_type_shells, name) for name in _type_shells.TYPE_SHELL_NAMES}
 )
-from minethon._bridge.event_relay import EventRelay
-from minethon._bridge.js_bot import JSBotController
-from minethon._bridge.marshalling import (
-    js_block_to_block,
-    js_entity_to_entity,
-    js_item_to_item_stack,
-    js_window_to_window_handle,
-    villager_snapshot_to_session,
-)
-from minethon._bridge.plugin_registry import PluginRegistry
-from minethon._bridge.runtime import BridgeRuntime
-from minethon.api.armor import ArmorAPI
-from minethon.api.combat import CombatAPI
-from minethon.api.dashboard import DashboardAPI
-from minethon.api.gui import GuiAPI
-from minethon.api.inventory_viewer import InventoryViewerAPI
-from minethon.api.navigation import NavigationAPI
-from minethon.api.observe import ObserveAPI
-from minethon.api.panorama import PanoramaAPI
-from minethon.api.plugins import PluginAPI
-from minethon.api.tool import ToolAPI
-from minethon.api.viewer import ViewerAPI
-from minethon.config import BotConfig
-from minethon.models import Recipe, VillagerSession, WindowHandle
-from minethon.models.block import Block
-from minethon.models.entity import Entity, EntityKind
-from minethon.models.errors import (
-    BridgeError,
-    InventoryError,
-    MinethonConnectionError,
-    MinethonError,
-    NotSpawnedError,
-)
-from minethon.models.events import (
-    BreathEvent,
-    DeathEvent,
-    EndEvent,
-    ExperienceEvent,
-    GameEvent,
-    GoalReachedEvent,
-    HealthChangedEvent,
-    HeldItemChangedEvent,
-    MessageStrEvent,
-    MoveEvent,
-    PlayerJoinedEvent,
-    PlayerLeftEvent,
-    PlayerUpdatedEvent,
-    RainEvent,
-    RespawnEvent,
-    SleepEvent,
-    SpawnEvent,
-    TimeEvent,
-    WakeEvent,
-    WeatherUpdateEvent,
-)
-from minethon.models.experience import Experience
-from minethon.models.game_state import GameState
-from minethon.models.item import ItemStack
-from minethon.models.player_info import PlayerInfo
-from minethon.models.time_state import TimeState
-from minethon.models.vec3 import Vec3
-from minethon.raw import RawBotHandle
-
-if TYPE_CHECKING:
-    import re
 
 
-@dataclass(slots=True)
-class _BotStateCache:
-    """Mutable snapshot store for sync Bot properties."""
+def _require_event(method: str, event: object) -> BotEvent:
+    if isinstance(event, BotEvent):
+        return event
+    msg = (
+        f"bot.{method}(...) 只接受 BotEvent。"
+        "請改用 @bot.on_<event> / @bot.once_<event>，"
+        "或傳入 BotEvent.CHAT 這種 enum 成員。"
+    )
+    raise TypeError(msg)
 
-    position: Vec3 | None = None
-    health: float | None = None
-    food: float | None = None
-    food_saturation: float | None = None
-    oxygen_level: int | None = None
-    experience: Experience | None = None
-    game: GameState | None = None
-    time: TimeState | None = None
-    held_item: ItemStack | None = None
-    held_item_known: bool = False
-    rain_state: float | None = None
-    thunder_state: float | None = None
-    is_alive: bool = True
-    is_sleeping: bool = False
-    is_sleeping_known: bool = False
-    version: str | None = None
-    physics_enabled: bool | None = None
-    quick_bar_slot: int | None = None
-    players: dict[str, PlayerInfo] = field(default_factory=dict)  # pyright: ignore[reportUnknownVariableType]
+
+def _normalize_handler(
+    func: Callable[..., Any], *, emitter: Any | None = None
+) -> Callable[..., Any]:
+    """Adapt a user handler to mineflayer's loose event-arity conventions.
+
+    Mineflayer's TypeScript typings sometimes declare trailing callback
+    parameters that the JS runtime never actually emits (the ``chat`` event's
+    ``matches: string[] | null`` is the canonical example — the type
+    advertises 5 args but ``lib/plugins/chat.js`` only emits 4). A handler
+    written against the declared signature would otherwise crash with
+    ``TypeError: missing positional argument``.
+
+    This wrapper:
+
+    * drops the leading emitter arg when JSPyBridge injects it
+    * pads missing trailing positional args with ``None``
+    * truncates any excess positional args JS emits
+
+    Ref: mineflayer/lib/plugins/chat.js:85 — chat event emit arity
+    Ref: javascript/__init__.py:78 — optional emitter injection in `On` / `Once`
+    """
+    params = list(inspect.signature(func).parameters.values())
+    accepts_varargs = any(p.kind is inspect.Parameter.VAR_POSITIONAL for p in params)
+    slots = sum(
+        1
+        for p in params
+        if p.kind
+        in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+    )
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if emitter is not None and args and args[0] is emitter:
+            args = args[1:]
+        if accepts_varargs:
+            return func(*args, **kwargs)
+        if len(args) < slots:
+            args = (*args, *([None] * (slots - len(args))))
+        return func(*args[:slots], **kwargs)
+
+    return wrapper
+
+
+# npm package → attribute on the required module that holds the plugin
+# installer function. Most plugins export the installer as the default,
+# but a few (pathfinder) expose it on a named property.
+_PLUGIN_EXPORT_KEY: dict[str, str] = {
+    "mineflayer-pathfinder": "pathfinder",
+}
 
 
 class Bot:
-    """minethon entry point.
+    """Pythonic façade over a mineflayer Bot proxy.
 
-    Example::
+    Prefer `create_bot(...)` over direct construction. Unknown attribute
+    reads fall through to the underlying JS proxy, so every documented
+    mineflayer property or method works transparently.
 
-        async def main():
-            bot = Bot(host="localhost", username="Steve")
-            await bot.connect()
-            await bot.wait_until_spawned()
-            await bot.chat("Hello!")
-            await bot.disconnect()
+    Ref: mineflayer/index.d.ts — Bot interface
     """
 
-    def __init__(
-        self,
-        host: str,
-        port: int = 25565,
-        username: str = "minethon",
-        *,
-        password: str | None = None,
-        version: str | None = None,
-        auth: str | None = None,
-        auth_server: str | None = None,
-        session_server: str | None = None,
-        hide_errors: bool | None = None,
-        log_errors: bool | None = None,
-        disable_chat_signing: bool | None = None,
-        check_timeout_interval: int | None = None,
-        keep_alive: bool | None = None,
-        respawn: bool | None = None,
-        chat_length_limit: int | None = None,
-        view_distance: str | None = None,
-        default_chat_patterns: bool | None = None,
-        physics_enabled: bool | None = None,
-        brand: str | None = None,
-        skip_validation: bool | None = None,
-        profiles_folder: str | None = None,
-        load_internal_plugins: bool | None = None,
-        event_throttle_ms: dict[str, int] | None = None,
-    ) -> None:
-        self._config = BotConfig(
-            host=host,
-            port=port,
-            username=username,
-            password=password,
-            version=version,
-            auth=auth,
-            auth_server=auth_server,
-            session_server=session_server,
-            hide_errors=hide_errors,
-            log_errors=log_errors,
-            disable_chat_signing=disable_chat_signing,
-            check_timeout_interval=check_timeout_interval,
-            keep_alive=keep_alive,
-            respawn=respawn,
-            chat_length_limit=chat_length_limit,
-            view_distance=view_distance,
-            default_chat_patterns=default_chat_patterns,
-            physics_enabled=physics_enabled,
-            brand=brand,
-            skip_validation=skip_validation,
-            profiles_folder=profiles_folder,
-            load_internal_plugins=load_internal_plugins,
-            **(
-                {"event_throttle_ms": event_throttle_ms}
-                if event_throttle_ms is not None
-                else {}
-            ),
-        )
-        self._relay = EventRelay(self._config.event_throttle_ms)
-        self._observe = ObserveAPI(self._relay)
-        self._runtime: BridgeRuntime | None = None
-        self._controller: JSBotController | None = None
-        self._connected = False
-        self._spawned = False
-        self._state = _BotStateCache()
-        self._window_registry: dict[int, Any] = {}
-        self._recipe_registry: dict[int, Any] = {}
-        self._recipe_counter: int = 0
-        self._resolved_username: str | None = None
-        self._registry: PluginRegistry | None = None
-        self._navigation: NavigationAPI | None = None
-        self._armor: ArmorAPI | None = None
-        self._combat: CombatAPI | None = None
-        self._gui: GuiAPI | None = None
-        self._panorama: PanoramaAPI | None = None
-        self._dashboard: DashboardAPI | None = None
-        self._tool: ToolAPI | None = None
-        self._viewer_api: ViewerAPI | None = None
-        self._viewer_svc: Any = None  # _bridge.services.viewer.ViewerService
-        self._inv_viewer_api: InventoryViewerAPI | None = None
-        self._inv_viewer_svc: Any = (
-            None  # _bridge.services.web_inventory.WebInventoryService
-        )
-        self._plugins_api: PluginAPI | None = None
-        self._on_end_handler: object | None = None
-        # Serialize long-running operations that use global completion
-        # events, preventing concurrent calls from stealing each other's
-        # completion signal.
-        self._dig_lock = asyncio.Lock()
-        self._place_lock = asyncio.Lock()
-        self._look_at_lock = asyncio.Lock()
-        self._look_lock = asyncio.Lock()
-        self._sleep_lock = asyncio.Lock()
-        self._consume_lock = asyncio.Lock()
-        self._fish_lock = asyncio.Lock()
-        self._equip_lock = asyncio.Lock()
-        self._unequip_lock = asyncio.Lock()
-        self._toss_lock = asyncio.Lock()
-        self._activate_block_lock = asyncio.Lock()
-        self._activate_entity_lock = asyncio.Lock()
-        self._craft_lock = asyncio.Lock()
-        self._tab_complete_lock = asyncio.Lock()
-        self._wait_chunks_lock = asyncio.Lock()
-        self._wait_ticks_lock = asyncio.Lock()
-        self._window_lock = asyncio.Lock()
-        self._trade_lock = asyncio.Lock()
-        self._elytra_fly_lock = asyncio.Lock()
-        self._activate_entity_at_lock = asyncio.Lock()
-        self._write_book_lock = asyncio.Lock()
-        self._place_entity_lock = asyncio.Lock()
-        self._move_slot_item_lock = asyncio.Lock()
-        self._put_away_lock = asyncio.Lock()
-        self._click_window_lock = asyncio.Lock()
-        self._transfer_lock = asyncio.Lock()
-        self._creative_lock = asyncio.Lock()
-        self._register_internal_state_handlers()
+    _js: Any
 
-    def _reset_state_cache(self) -> None:
-        """Discard all cached snapshot values."""
-        self._state = _BotStateCache()
-        self._window_registry.clear()
-        self._recipe_registry.clear()
-        self._recipe_counter = 0
+    def __init__(self, js_bot: Any) -> None:
+        """Wrap an existing mineflayer JS bot proxy."""
+        object.__setattr__(self, "_js", js_bot)
 
-    @staticmethod
-    def _vec3_from_raw(data: dict[str, float]) -> Vec3:
-        return Vec3(x=float(data["x"]), y=float(data["y"]), z=float(data["z"]))
+    def __getattr__(self, name: str) -> Any:
+        """Forward attribute reads to the underlying JS bot.
 
-    @staticmethod
-    def _experience_from_raw(data: dict[str, object]) -> Experience:
-        return Experience(
-            level=int(data["level"]),  # type: ignore[arg-type]
-            points=int(data["points"]),  # type: ignore[arg-type]
-            progress=float(data["progress"]),  # type: ignore[arg-type]
-        )
+        Private names (leading underscore) are not forwarded — they should
+        be set via `object.__setattr__` in this class or raise AttributeError.
 
-    @staticmethod
-    def _game_state_from_raw(data: dict[str, object]) -> GameState:
-        return GameState(
-            game_mode=str(data["game_mode"]),
-            dimension=str(data["dimension"]),
-            difficulty=str(data["difficulty"]),
-            hardcore=bool(data["hardcore"]),
-            max_players=int(data["max_players"]),  # type: ignore[arg-type]
-            server_brand=str(data["server_brand"]),
-            min_y=int(data["min_y"]),  # type: ignore[arg-type]
-            height=int(data["height"]),  # type: ignore[arg-type]
-        )
-
-    @staticmethod
-    def _time_state_from_raw(data: dict[str, object]) -> TimeState:
-        return TimeState(
-            time_of_day=int(data["time_of_day"]),  # type: ignore[arg-type]
-            day=int(data["day"]),  # type: ignore[arg-type]
-            is_day=bool(data["is_day"]),
-            moon_phase=int(data["moon_phase"]),  # type: ignore[arg-type]
-            age=int(data["age"]),  # type: ignore[arg-type]
-            do_daylight_cycle=bool(data["do_daylight_cycle"]),
-        )
-
-    def _refresh_connected_state_cache(self) -> None:
-        """Refresh connected-state snapshots on the event-loop thread."""
-        ctrl = self._controller
-        if ctrl is None:
-            return
-        try:
-            self._state.game = self._game_state_from_raw(ctrl.get_game_state())
-        except BridgeError:
-            pass
-        try:
-            self._state.time = self._time_state_from_raw(ctrl.get_time())
-        except BridgeError:
-            pass
-        try:
-            self._state.rain_state = ctrl.get_rain_state()
-        except BridgeError:
-            pass
-        try:
-            self._state.thunder_state = ctrl.get_thunder_state()
-        except BridgeError:
-            pass
-        try:
-            self._state.is_sleeping = ctrl.get_is_sleeping()
-            self._state.is_sleeping_known = True
-        except BridgeError:
-            pass
-        # Ref: mineflayer/lib/plugins/game.js — bot.username (set at login)
-        if self._resolved_username is None:
-            try:
-                self._resolved_username = ctrl.get_username_js()
-            except BridgeError:
-                pass
-        # Ref: mineflayer/lib/plugins/inventory.js — bot.version (set once at login)
-        if self._state.version is None:
-            try:
-                self._state.version = ctrl.get_version()
-            except BridgeError:
-                pass
-        # Ref: mineflayer/lib/plugins/physics.js — bot.physicsEnabled
-        if self._state.physics_enabled is None:
-            try:
-                self._state.physics_enabled = ctrl.get_physics_enabled()
-            except BridgeError:
-                pass
-        # Ref: mineflayer/docs/api.md — bot.players
-        if not self._state.players:
-            try:
-                raw = ctrl.get_players_full()
-                self._state.players = {
-                    name: PlayerInfo(
-                        username=str(info["username"]),
-                        uuid=str(info["uuid"]),
-                        ping=int(info["ping"]),  # type: ignore[arg-type]
-                        game_mode=int(info["game_mode"]),  # type: ignore[arg-type]
-                        display_name=(
-                            str(info["display_name"])
-                            if info["display_name"] is not None
-                            else None
-                        ),
-                    )
-                    for name, info in raw.items()
-                }
-            except BridgeError:
-                pass
-
-    def _refresh_spawn_state_cache(self) -> None:
-        """Refresh spawned-state snapshots on the event-loop thread."""
-        ctrl = self._controller
-        if ctrl is None or not self._spawned:
-            return
-        self._refresh_connected_state_cache()
-        try:
-            self._state.position = self._vec3_from_raw(ctrl.get_position())
-        except BridgeError:
-            pass
-        try:
-            self._state.health = ctrl.get_health()
-            self._state.food = ctrl.get_food()
-            self._state.food_saturation = ctrl.get_food_saturation()
-        except BridgeError:
-            pass
-        try:
-            self._state.oxygen_level = ctrl.get_oxygen_level()
-        except BridgeError:
-            pass
-        try:
-            self._state.experience = self._experience_from_raw(ctrl.get_experience())
-        except BridgeError:
-            pass
-        try:
-            js_item = ctrl.get_held_item()
-            self._state.held_item = (
-                js_item_to_item_stack(js_item) if js_item is not None else None
+        Ref: mineflayer/index.d.ts — all fields on the Bot interface
+        """
+        if name.startswith("_"):
+            raise AttributeError(name)
+        for prefix, register in (("once_", self.once), ("on_", self.on)):
+            if not name.startswith(prefix):
+                continue
+            suffix = name[len(prefix) :]
+            event = EVENT_ATTRIBUTE_MAP.get(suffix)
+            if event is not None:
+                return register(event)
+            # Known-shape typo — surface a friendly hint instead of letting
+            # the lookup fall through to the JS proxy and produce a bare
+            # ``AttributeError`` with no guidance for students.
+            sample = ", ".join(f"{prefix}{k}" for k in list(EVENT_ATTRIBUTE_MAP)[:5])
+            msg = (
+                f"未知的事件 shortcut 'bot.{name}'。"
+                f"請確認事件名拼字，或改用 @bot.on(BotEvent.X)。"
+                f"常見例子 {sample} …"
             )
-            self._state.held_item_known = True
-        except BridgeError:
-            pass
-        # Ref: mineflayer/lib/plugins/inventory.js:43 — bot.quickBarSlot
+            raise AttributeError(msg)
         try:
-            self._state.quick_bar_slot = ctrl.get_quick_bar_slot()
-        except BridgeError:
-            pass
-
-    @staticmethod
-    def _require_snapshot(value: Any, name: str) -> Any:
-        if value is None:
-            raise BridgeError(f"{name} snapshot is not available yet")
-        return value
-
-    def _resolve_js_block(self, block: Block) -> Any | None:
-        ctrl = self._ensure_connected()
-        return ctrl.block_at(
-            int(block.position.x),
-            int(block.position.y),
-            int(block.position.z),
-        )
-
-    def _resolve_js_entity(self, entity: Entity) -> Any | None:
-        ctrl = self._ensure_connected()
-        return ctrl.get_entity_by_id(entity.id)
-
-    def _resolve_item_type(self, item_name: str) -> int:
-        ctrl = self._ensure_connected()
-        item_type = ctrl.get_item_type(item_name)
-        if item_type is None:
-            raise ValueError(f"Unknown item name '{item_name}'")
-        return item_type
-
-    def _register_internal_state_handlers(self) -> None:
-        """Keep sync properties backed by Python-side snapshots."""
-
-        async def _on_spawn(_event: SpawnEvent) -> None:
-            self._spawned = True
-            self._state.is_alive = True
-            if self._controller is not None and self._connected:
-                self._refresh_spawn_state_cache()
-
-        async def _on_respawn(_event: RespawnEvent) -> None:
-            self._spawned = False
-            # is_alive will be reset to True by the following _on_spawn handler.
-
-        async def _on_death(_event: DeathEvent) -> None:
-            self._state.is_alive = False
-
-        async def _on_move(event: MoveEvent) -> None:
-            self._state.position = event.position
-
-        async def _on_goal_reached(event: GoalReachedEvent) -> None:
-            self._state.position = event.position
-
-        async def _on_health(event: HealthChangedEvent) -> None:
-            self._state.health = event.health
-            self._state.food = event.food
-            self._state.food_saturation = event.saturation
-
-        async def _on_breath(event: BreathEvent) -> None:
-            self._state.oxygen_level = event.oxygen_level
-
-        async def _on_experience(event: ExperienceEvent) -> None:
-            self._state.experience = Experience(
-                level=event.level,
-                points=event.points,
-                progress=event.progress,
-            )
-
-        async def _on_held_item(event: HeldItemChangedEvent) -> None:
-            self._state.held_item = event.item
-            self._state.held_item_known = True
-            # quick_bar_slot is read on the JS callback thread and
-            # included in the event — no bridge call needed here.
-            self._state.quick_bar_slot = event.quick_bar_slot
-
-        async def _on_weather(event: WeatherUpdateEvent) -> None:
-            self._state.rain_state = event.rain_state
-            self._state.thunder_state = event.thunder_state
-
-        async def _on_rain(event: RainEvent) -> None:
-            self._state.rain_state = event.rain_state
-
-        async def _on_time(event: TimeEvent) -> None:
-            self._state.time = TimeState(
-                time_of_day=event.time_of_day,
-                day=event.day,
-                is_day=event.is_day,
-                moon_phase=event.moon_phase,
-                age=event.age,
-                do_daylight_cycle=event.do_daylight_cycle,
-            )
-
-        async def _on_game(event: GameEvent) -> None:
-            self._state.game = GameState(
-                game_mode=event.game_mode,
-                dimension=event.dimension,
-                difficulty=event.difficulty,
-                hardcore=event.hardcore,
-                max_players=event.max_players,
-                server_brand=event.server_brand,
-                min_y=event.min_y,
-                height=event.height,
-            )
-
-        async def _on_sleep(_event: SleepEvent) -> None:
-            self._state.is_sleeping = True
-            self._state.is_sleeping_known = True
-
-        async def _on_wake(_event: WakeEvent) -> None:
-            self._state.is_sleeping = False
-            self._state.is_sleeping_known = True
-
-        async def _on_player_joined(event: PlayerJoinedEvent) -> None:
-            self._state.players[event.username] = PlayerInfo(
-                username=event.username,
-                uuid=event.uuid,
-                ping=event.ping,
-                game_mode=event.game_mode,
-                display_name=event.display_name,
-            )
-
-        async def _on_player_updated(event: PlayerUpdatedEvent) -> None:
-            self._state.players[event.username] = PlayerInfo(
-                username=event.username,
-                uuid=event.uuid,
-                ping=event.ping,
-                game_mode=event.game_mode,
-                display_name=event.display_name,
-            )
-
-        async def _on_player_left(event: PlayerLeftEvent) -> None:
-            self._state.players.pop(event.username, None)
-
-        self._relay.add_handler(SpawnEvent, _on_spawn)  # type: ignore[arg-type]
-        self._relay.add_handler(RespawnEvent, _on_respawn)  # type: ignore[arg-type]
-        self._relay.add_handler(DeathEvent, _on_death)  # type: ignore[arg-type]
-        self._relay.add_handler(MoveEvent, _on_move)  # type: ignore[arg-type]
-        self._relay.add_handler(GoalReachedEvent, _on_goal_reached)  # type: ignore[arg-type]
-        self._relay.add_handler(HealthChangedEvent, _on_health)  # type: ignore[arg-type]
-        self._relay.add_handler(BreathEvent, _on_breath)  # type: ignore[arg-type]
-        self._relay.add_handler(ExperienceEvent, _on_experience)  # type: ignore[arg-type]
-        self._relay.add_handler(HeldItemChangedEvent, _on_held_item)  # type: ignore[arg-type]
-        self._relay.add_handler(WeatherUpdateEvent, _on_weather)  # type: ignore[arg-type]
-        self._relay.add_handler(RainEvent, _on_rain)  # type: ignore[arg-type]
-        self._relay.add_handler(TimeEvent, _on_time)  # type: ignore[arg-type]
-        self._relay.add_handler(GameEvent, _on_game)  # type: ignore[arg-type]
-        self._relay.add_handler(SleepEvent, _on_sleep)  # type: ignore[arg-type]
-        self._relay.add_handler(WakeEvent, _on_wake)  # type: ignore[arg-type]
-        self._relay.add_handler(PlayerJoinedEvent, _on_player_joined)  # type: ignore[arg-type]
-        self._relay.add_handler(PlayerUpdatedEvent, _on_player_updated)  # type: ignore[arg-type]
-        self._relay.add_handler(PlayerLeftEvent, _on_player_left)  # type: ignore[arg-type]
-
-    def _ensure_connected(self) -> JSBotController:
-        """Return the controller or raise if not connected."""
-        if self._controller is None or not self._connected:
-            raise MinethonConnectionError("Bot is not connected.")
-        return self._controller
-
-    def _ensure_spawned(self) -> JSBotController:
-        """Return the controller or raise if not spawned.
-
-        Implies connected -- raises ``MinethonConnectionError`` first if
-        not connected, then ``NotSpawnedError`` if not yet spawned.
-        """
-        ctrl = self._ensure_connected()
-        if not self._spawned:
-            raise NotSpawnedError(
-                "Bot has not spawned yet. Call wait_until_spawned() first."
-            )
-        return ctrl
-
-    # -- Lifecycle --
-
-    async def connect(self) -> None:
-        """Connect to the Minecraft server.
-
-        Initializes the JSPyBridge runtime and calls
-        ``mineflayer.createBot()``.
-        """
-        if self._connected:
-            return
-
-        # Clean up stale resources from a previous session (e.g. after a
-        # remote EndEvent flipped _connected but left runtime alive).
-        if self._runtime is not None or self._controller is not None:
-            await self.disconnect()
-
-        loop = asyncio.get_running_loop()
-        self._relay.set_loop(loop)
-
-        self._runtime = BridgeRuntime()
-        self._runtime.start()
-
-        self._controller = JSBotController(self._runtime, self._config)
-        self._controller.create_bot()
-
-        self._registry = PluginRegistry(
-            self._runtime,
-            self._controller.js_bot,
-            self._relay,
-            self._controller,
-        )
-        self._registry.load("mineflayer-pathfinder")
-        pf = self._registry.get_pathfinder()
-        assert pf is not None  # just loaded above
-        self._navigation = NavigationAPI(pf, self._relay)
-
-        self._relay.register_js_events(
-            self._controller.js_bot,
-            self._runtime.js_module.On,
-        )
-        self._observe._bind_js(  # pyright: ignore[reportPrivateUsage]
-            self._controller.js_bot,
-            self._runtime.js_module.On,
-        )
-
-        # Register internal EndEvent handler *before* setting _connected,
-        # so an immediate "end" event (e.g. connection refused) is caught.
-        # Remove any previous handler to avoid accumulation on reconnect.
-        if self._on_end_handler is not None:
-            try:
-                self._relay.remove_handler(EndEvent, self._on_end_handler)  # type: ignore[arg-type]
-            except ValueError:
-                pass  # Already removed by reset()
-
-        async def _on_end(_event: EndEvent) -> None:
-            self._connected = False
-            self._spawned = False
-            self._reset_state_cache()
-
-        self._on_end_handler = _on_end
-        self._relay.add_handler(EndEvent, _on_end)  # type: ignore[arg-type]
-        self._connected = True
-        self._refresh_connected_state_cache()
-
-    async def disconnect(self) -> None:
-        """Disconnect from the server and clean up resources.
-
-        Safe to call even after a remote disconnect -- the runtime and
-        controller are always cleaned up if they exist.
-        """
-        if self._on_end_handler is not None:
-            try:
-                self._relay.remove_handler(EndEvent, self._on_end_handler)  # type: ignore[arg-type]
-            except ValueError:
-                pass  # Handler already gone
-            self._on_end_handler = None
-        self._relay.reset()
-        self._observe._reset_state()  # pyright: ignore[reportPrivateUsage]
-        if self._viewer_svc is not None:
-            self._viewer_svc.stop()
-            self._viewer_svc = None
-            self._viewer_api = None
-        if self._inv_viewer_svc is not None:
-            self._inv_viewer_svc.force_stop()
-            self._inv_viewer_svc = None
-            self._inv_viewer_api = None
-        if self._registry is not None:
-            self._registry.teardown_all()
-        if self._controller is not None:
-            if self._connected:
-                self._controller.quit()
-            self._controller = None
-        self._navigation = None
-        self._armor = None
-        self._combat = None
-        self._gui = None
-        self._panorama = None
-        self._dashboard = None
-        self._tool = None
-        self._plugins_api = None
-        self._registry = None
-        if self._runtime is not None:
-            self._runtime.shutdown()
-            self._runtime = None
-        self._connected = False
-        self._spawned = False
-        self._resolved_username = None
-        self._reset_state_cache()
-
-    async def wait_until_spawned(self, timeout: float = 30.0) -> None:
-        """Block until the bot has spawned in the world."""
-        if self._spawned:
-            return
-        await self._observe.wait_for(SpawnEvent, timeout=timeout)
-        self._spawned = True
-        self._refresh_spawn_state_cache()
-        if self._registry is not None:
-            pf = self._registry.get_pathfinder()
-            if pf is not None and pf.is_loaded:
-                pf.setup_movements()
-
-    # -- State properties --
-
-    @property
-    def is_connected(self) -> bool:
-        """Whether the bot is currently connected."""
-        return self._connected
-
-    @property
-    def is_alive(self) -> bool:
-        """Whether the bot entity is alive.
-
-        Derived from spawn/death/respawn events — no live bridge I/O.
-
-        Ref: mineflayer/lib/plugins/health.js — bot.isAlive
-        """
-        self._ensure_spawned()
-        return self._state.is_alive
-
-    @property
-    def position(self) -> Vec3:
-        """Current bot position.
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        self._ensure_spawned()
-        return self._require_snapshot(self._state.position, "position")
-
-    @property
-    def health(self) -> float:
-        """Bot health (0-20).
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        self._ensure_spawned()
-        return self._require_snapshot(self._state.health, "health")
-
-    @property
-    def food(self) -> float:
-        """Bot food level (0-20).
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        self._ensure_spawned()
-        return self._require_snapshot(self._state.food, "food")
-
-    @property
-    def username(self) -> str:
-        """Bot username.
-
-        After authentication the server may assign a different name
-        (e.g. Microsoft auth).  Populated from the JS bot during
-        state cache refresh — no live bridge I/O from this property.
-
-        Ref: mineflayer/lib/plugins/game.js — bot.username
-        """
-        if self._resolved_username is not None:
-            return self._resolved_username
-        return self._config.username
-
-    @property
-    def game_mode(self) -> str:
-        """Current game mode (``"survival"``, ``"creative"``, etc.)."""
-        return self.game.game_mode
-
-    @property
-    def players(self) -> dict[str, PlayerInfo]:
-        """Online players as ``{username: PlayerInfo}``.
-
-        Backed by event-driven snapshot updated via ``playerJoined``,
-        ``playerUpdated``, and ``playerLeft`` events.  Seeded from
-        ``bot.players`` at connect time.
-
-        Ref: mineflayer/docs/api.md — bot.players
-        """
-        self._ensure_connected()
-        return dict(self._state.players)
-
-    @property
-    def food_saturation(self) -> float:
-        """Bot food saturation level.
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        self._ensure_spawned()
-        return self._require_snapshot(
-            self._state.food_saturation,
-            "food_saturation",
-        )
-
-    @property
-    def oxygen_level(self) -> int:
-        """Bot oxygen (air supply) level (0-20).
-
-        Defaults to 20 when no metadata has been received yet.
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        self._ensure_spawned()
-        return self._require_snapshot(self._state.oxygen_level, "oxygen_level")
-
-    @property
-    def experience(self) -> Experience:
-        """Bot experience state snapshot.
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        self._ensure_spawned()
-        return self._require_snapshot(self._state.experience, "experience")
-
-    @property
-    def game(self) -> GameState:
-        """Server game state snapshot."""
-        self._ensure_connected()
-        return self._require_snapshot(self._state.game, "game")
-
-    @property
-    def difficulty(self) -> str:
-        """Server difficulty (``"peaceful"``, ``"easy"``, ``"normal"``, ``"hard"``)."""
-        return self.game.difficulty
-
-    @property
-    def is_raining(self) -> bool:
-        """Whether it is currently raining."""
-        return self.rain_state > 0.0
-
-    @property
-    def thunder_state(self) -> float:
-        """Thunder intensity level (0 means no thunder)."""
-        self._ensure_connected()
-        return self._require_snapshot(self._state.thunder_state, "thunder_state")
-
-    @property
-    def time(self) -> TimeState:
-        """World time state snapshot."""
-        self._ensure_connected()
-        return self._require_snapshot(self._state.time, "time")
-
-    @property
-    def held_item(self) -> ItemStack | None:
-        """Item currently held in the bot's main hand, or ``None``.
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        self._ensure_spawned()
-        if not self._state.held_item_known:
-            raise BridgeError("held_item snapshot is not available yet")
-        return self._state.held_item
-
-    @property
-    def quick_bar_slot(self) -> int:
-        """Currently selected quick bar slot (0-8).
-
-        Backed by snapshot, updated via ``heldItemChanged`` event and setter.
-
-        Ref: mineflayer/lib/plugins/inventory.js:43 — bot.quickBarSlot
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        self._ensure_spawned()
-        return self._require_snapshot(self._state.quick_bar_slot, "quick_bar_slot")
-
-    @quick_bar_slot.setter
-    def quick_bar_slot(self, slot: int) -> None:
-        if not (0 <= slot <= 8):
-            raise ValueError(f"quick_bar_slot must be 0-8, got {slot}")
-        ctrl = self._ensure_spawned()
-        ctrl.set_quick_bar_slot(slot)
-        self._state.quick_bar_slot = slot
-
-    async def get_spawn_point(self) -> Vec3:
-        """Bot spawn point position.
-
-        Ref: mineflayer/lib/plugins/spawn_point.js — bot.spawnPoint
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-            BridgeError: If the server has not yet sent a ``spawn_position``
-                packet (``bot.spawnPoint`` is ``null``).
-        """
-        ctrl = self._ensure_spawned()
-        data = ctrl.get_spawn_point()
-        return Vec3(x=data["x"], y=data["y"], z=data["z"])
-
-    @property
-    def is_sleeping(self) -> bool:
-        """Whether the bot is currently sleeping in a bed."""
-        self._ensure_connected()
-        if not self._state.is_sleeping_known:
-            raise BridgeError("is_sleeping snapshot is not available yet")
-        return self._state.is_sleeping
-
-    async def get_target_dig_block(self) -> Block | None:
-        """Block currently being dug, or ``None``.
-
-        Ref: mineflayer/lib/plugins/digging.js — bot.targetDigBlock
-        """
-        ctrl = self._ensure_connected()
-        js_block = ctrl.get_target_dig_block()
-        if js_block is None:
-            return None
-        return js_block_to_block(js_block)
-
-    async def get_entity(self) -> Entity:
-        """The bot's own entity snapshot.
-
-        Ref: mineflayer/lib/plugins/entities.js — bot.entity
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        ctrl = self._ensure_spawned()
-        return js_entity_to_entity(ctrl.get_bot_entity())
-
-    async def get_entities(self) -> dict[int, Entity]:
-        """All currently tracked entities as ``{entity_id: Entity}``.
-
-        Ref: mineflayer/lib/plugins/entities.js — bot.entities
-
-        Note:
-            This creates a snapshot of every tracked entity. For
-            frequent access consider caching or using
-            :meth:`find_entity` instead.
-
-            ``Entity.metadata`` is always ``None`` in this snapshot
-            for performance reasons.  Use :meth:`find_entity` if you
-            need metadata for a specific entity.
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-        """
-        ctrl = self._ensure_spawned()
-        result: dict[int, Entity] = {}
-        for raw in ctrl.get_entities_snapshot():
-            pos = raw["position"]  # type: ignore[assignment]
-            position = Vec3(float(pos["x"]), float(pos["y"]), float(pos["z"]))  # type: ignore[index]
-            velocity: Vec3 | None = None
-            vel = raw.get("velocity")
-            if vel is not None:
-                velocity = Vec3(float(vel["x"]), float(vel["y"]), float(vel["z"]))  # type: ignore[index]
-            etype = raw.get("type")
-            kind_map = {
-                "player": EntityKind.PLAYER,
-                "mob": EntityKind.MOB,
-                "animal": EntityKind.ANIMAL,
-                "hostile": EntityKind.HOSTILE,
-                "projectile": EntityKind.PROJECTILE,
-                "object": EntityKind.OBJECT,
-            }
-            kind = (
-                kind_map.get(str(etype), EntityKind.OTHER)
-                if etype
-                else EntityKind.OTHER
-            )
-            name = raw.get("username") or raw.get("name")
-            health_val: Any = raw.get("health")
-            eid = int(raw["id"])  # type: ignore[arg-type]
-            result[eid] = Entity(
-                id=eid,
-                name=str(name) if name is not None else None,
-                kind=kind,
-                position=position,
-                velocity=velocity,
-                health=float(health_val) if health_val is not None else None,
-            )
-        return result
-
-    @property
-    def version(self) -> str:
-        """Minecraft version string (e.g. ``"1.20.4"``).
-
-        Backed by one-time snapshot taken at connect (immutable after login).
-
-        Ref: mineflayer/lib/version.js — bot.version
-        """
-        self._ensure_connected()
-        return self._require_snapshot(self._state.version, "version")
-
-    @property
-    def physics_enabled(self) -> bool:
-        """Whether the physics simulation is active.
-
-        Backed by snapshot, updated via setter.
-
-        Ref: mineflayer/lib/plugins/physics.js — bot.physicsEnabled
-        """
-        self._ensure_connected()
-        return self._require_snapshot(self._state.physics_enabled, "physics_enabled")
-
-    @physics_enabled.setter
-    def physics_enabled(self, value: bool) -> None:
-        ctrl = self._ensure_connected()
-        ctrl.set_physics_enabled(value)
-        self._state.physics_enabled = value
-
-    async def get_firework_rocket_duration(self) -> int:
-        """Remaining firework rocket boost ticks (0 if not boosting).
-
-        Ref: mineflayer/lib/plugins/physics.js — bot.fireworkRocketDuration
-        """
-        ctrl = self._ensure_connected()
-        return ctrl.get_firework_rocket_duration()
-
-    async def get_tablist(self) -> tuple[str, str]:
-        """Tab list ``(header, footer)`` as plain strings.
-
-        Ref: mineflayer/lib/plugins/tablist.js — bot.tablist
-        """
-        ctrl = self._ensure_connected()
-        data = ctrl.get_tablist()
-        return (data["header"], data["footer"])
-
-    async def get_using_held_item(self) -> bool:
-        """Whether the bot is currently using its held item (e.g. eating).
-
-        Ref: mineflayer/lib/plugins/inventory.js:46 — bot.usingHeldItem
-        """
-        ctrl = self._ensure_connected()
-        return ctrl.get_using_held_item()
-
-    @property
-    def rain_state(self) -> float:
-        """Rain intensity (0.0 = clear, 1.0 = full rain)."""
-        self._ensure_connected()
-        return self._require_snapshot(self._state.rain_state, "rain_state")
-
-    async def get_inventory_items(self) -> list[ItemStack]:
-        """All items currently in the bot inventory.
-
-        Uses a batch JS helper to avoid per-item bridge round-trips.
-
-        Ref: mineflayer/lib/plugins/inventory.js — bot.inventory.items()
-        """
-        ctrl = self._ensure_connected()
-        result: list[ItemStack] = []
-        for raw in ctrl.get_inventory_snapshot():
-            enchants = raw.get("enchants")
-            nbt = raw.get("nbt")
-            result.append(
-                ItemStack(
-                    name=str(raw["name"]),
-                    display_name=str(raw["displayName"])
-                    if raw.get("displayName")
-                    else str(raw["name"]),
-                    count=int(raw["count"]),  # type: ignore[arg-type]
-                    slot=int(raw["slot"]),  # type: ignore[arg-type]
-                    max_stack_size=int(raw["stackSize"]),  # type: ignore[arg-type]
-                    enchantments=list(enchants) if enchants else None,  # type: ignore[arg-type]
-                    nbt=dict(nbt) if nbt else None,  # type: ignore[arg-type]
+            return getattr(self._js, name)
+        except AttributeError as exc:
+            if name == "pathfinder":
+                msg = (
+                    "pathfinder 尚未載入。先呼叫 "
+                    "bot.load_plugin('mineflayer-pathfinder')。"
                 )
-            )
-        return result
+                raise PluginNotInstalledError(msg) from exc
+            raise
 
-    # -- Chat --
+    def on(self, event: BotEvent) -> Callable[[F], F]:
+        """Register a handler for a mineflayer event.
 
-    async def chat(self, message: str) -> None:
-        """Send a chat message."""
-        ctrl = self._ensure_connected()
-        ctrl.chat(message)
+        Per-event typed overloads live in `bot.pyi`; at runtime this is a
+        generic dispatcher. Handlers run on the JSPyBridge event thread —
+        do not block them with long Python work.
 
-    async def whisper(self, username: str, message: str) -> None:
-        """Send a whisper (private message) to a player.
+        Handler arity is auto-normalized: mineflayer occasionally types
+        more callback params than it emits (the ``chat`` event is the
+        classic case), so missing trailing args are padded with ``None``.
 
-        Args:
-            username: Target player name.
-            message: Message content.
+        Ref: mineflayer/index.d.ts — Bot extends EventEmitter, see `on()`
         """
-        ctrl = self._ensure_connected()
-        ctrl.whisper(username, message)
+        js_bot = self._js
+        event_name = _require_event("on", event).value
 
-    # -- World queries --
+        def decorator(func: F) -> F:
+            On(js_bot, event_name)(_normalize_handler(func, emitter=js_bot))
+            return func
 
-    async def find_block(
+        return decorator
+
+    def once(self, event: BotEvent) -> Callable[[F], F]:
+        """Register a one-shot event handler.
+
+        Same arity-normalization rules apply as ``on()``.
+
+        Ref: mineflayer/index.d.ts — Bot.once (from EventEmitter)
+        """
+        js_bot = self._js
+        event_name = _require_event("once", event).value
+
+        def decorator(func: F) -> F:
+            Once(js_bot, event_name)(_normalize_handler(func, emitter=js_bot))
+            return func
+
+        return decorator
+
+    def load_plugin(
         self,
         name: str,
+        version: str | None = None,
         *,
-        max_distance: float = 64,
-        count: int = 1,
-    ) -> list[Block]:
-        """Find blocks by name near the bot.
+        export_key: str | None = None,
+        **options: Any,
+    ) -> Any:
+        """Install a Type A mineflayer plugin in one line.
 
         Args:
-            name: Block name (e.g. ``"oak_log"``).
-            max_distance: Search radius in blocks.
-            count: Maximum number of results.
+            name: npm package name (e.g. ``"mineflayer-pathfinder"``).
+            version: pinned version string. Bundled plugins may omit this and
+                use minethon's pinned default; all other packages must pass an
+                explicit version so npm resolution stays reproducible.
+            export_key: which attribute of the loaded module holds the
+                plugin installer function. Pass this for packages whose
+                installer is a named export (e.g. pathfinder's ``pathfinder``).
+                Overrides the built-in defaults in ``_PLUGIN_EXPORT_KEY``.
+            **options: collected into a Python dict and forwarded as a
+                single JS options-object to higher-order plugin factories
+                (e.g. ``dashboard({port: 25566})`` → ``bot.load_plugin(
+                "@ssmidge/mineflayer-dashboard", port=25566)``). This
+                matches the standard JS ``factory(opts)`` convention and
+                is required because JSPyBridge's ``Proxy.__call__`` only
+                accepts positional args — Python ``**kwargs`` expansion
+                would raise ``TypeError`` at the bridge boundary.
+                Regular plugins ignore this.
 
         Returns:
-            List of :class:`Block` snapshots, closest first.
-        """
-        ctrl = self._ensure_connected()
-        js_blocks = ctrl.find_blocks(name, max_distance, count)
-        return [js_block_to_block(b) for b in js_blocks]
+            The raw JS module — use the result to access classes/constants
+            the plugin exports, e.g. ``pf.goals.GoalNear(x, y, z, 1)``.
 
-    async def block_at(self, x: int, y: int, z: int) -> Block | None:
-        """Get the block at a specific position.
+        Ref: mineflayer/index.d.ts — Bot.loadPlugin (expects a ``(bot, options) => void`` function)
+        """
+        resolved_version = _resolve_package_version(name, version)
+        module = require(name, resolved_version)
+        key = export_key or _PLUGIN_EXPORT_KEY.get(name)
+        plugin_fn = getattr(module, key) if key else module
+        if options:
+            # Pass as a single JS object — JSPyBridge marshals the Python
+            # dict to a JS object literal. `plugin_fn(**options)` would fail
+            # because the bridge's Proxy.__call__ rejects keyword args.
+            plugin_fn = plugin_fn(options)
+        self._js.loadPlugin(plugin_fn)
+        return module
+
+    @staticmethod
+    def require(name: str, version: str | None = None) -> Any:
+        """Raw escape hatch — load a JS module and return its proxy.
+
+        Use for Type B/C/D plugins (prismarine-viewer, web-inventory,
+        mineflayer-statemachine, etc.) that don't fit the single-call
+        ``bot.loadPlugin`` pattern. You get the raw module back; initialize
+        it yourself following the package's README.
 
         Args:
-            x: Block X coordinate.
-            y: Block Y coordinate.
-            z: Block Z coordinate.
+            name: npm package name.
+            version: pinned version. Pass this unless the package is one of
+                minethon's bundled defaults.
 
         Returns:
-            A :class:`Block` snapshot, or ``None`` if the chunk is not loaded.
+            The raw JS module proxy — everything on it is untyped.
+
+        Ref: javascript.require (JSPyBridge)
         """
-        ctrl = self._ensure_connected()
-        js_block = ctrl.block_at(x, y, z)
-        if js_block is None:
-            return None
-        return js_block_to_block(js_block)
+        resolved_version = _resolve_package_version(name, version)
+        return require(name, resolved_version)
 
-    async def find_entity(
-        self,
-        *,
-        name: str | None = None,
-        kind: EntityKind | None = None,
-        max_distance: float = 32,
-    ) -> Entity | None:
-        """Find the nearest entity matching the given criteria.
+    def bind(self, handlers: BotHandlers) -> BotHandlers:
+        """Register every overridden ``on_<event>`` on a `BotHandlers` instance.
 
-        Args:
-            name: Entity name filter (e.g. ``"zombie"`` or a player name).
-            kind: Entity kind filter.
-            max_distance: Search radius in blocks.
+        Walks :class:`BotHandlers`' generated method set, finds entries
+        overridden on the concrete subclass, and wires each one to the
+        matching :class:`BotEvent` via :meth:`on`. Handler arity is still
+        normalized by ``_normalize_handler``, so short signatures like
+        ``def on_chat(self, username, message)`` work.
 
-        Returns:
-            The nearest matching :class:`Entity`, or ``None``.
+        Returns the handlers instance so calls can chain.
+
+        Example::
+
+            class My(BotHandlers):
+                def on_chat(self, username, message, *_): ...
+
+            bot.bind(My())
         """
-        ctrl = self._ensure_connected()
-        js_entity = ctrl.get_entity_by_filter(name, kind, max_distance)
-        if js_entity is None:
-            return None
-        return js_entity_to_entity(js_entity)
+        for attr, event in EVENT_ATTRIBUTE_MAP.items():
+            method_name = f"on_{attr}"
+            impl = getattr(type(handlers), method_name, None)
+            base_impl = getattr(BotHandlers, method_name, None)
+            if impl is None or impl is base_impl:
+                continue
+            self.on(event)(getattr(handlers, method_name))
+        return handlers
 
-    # -- Actions (non-blocking, event-driven) --
+    def run_forever(self) -> None:
+        """Block the calling thread until the bot disconnects.
 
-    async def dig(self, block: Block) -> None:
-        """Dig (break) a block.
+        Intended as the last line of a student script — keeps the main
+        Python thread alive while JSPyBridge's event thread drives the
+        bot. Exits cleanly on `end` event or Ctrl-C.
 
-        Args:
-            block: The :class:`Block` to dig. Use :meth:`find_block` or
-                :meth:`block_at` to obtain one.
+        Uses `Once` so repeated calls don't accumulate listeners on the
+        underlying JS EventEmitter.
 
-        Raises:
-            MinethonError: If the block is no longer present.
-            BridgeError: If the JS dig operation fails or times out.
+        Ref: mineflayer/index.d.ts — Bot.on('end', reason)
         """
-        async with self._dig_lock:
-            ctrl = self._ensure_connected()
-            js_block = ctrl.block_at(
-                int(block.position.x),
-                int(block.position.y),
-                int(block.position.z),
-            )
-            if js_block is None:
-                raise MinethonError(
-                    f"Block at {block.position} is no longer available "
-                    "(chunk unloaded or block changed)"
-                )
-            ctrl.start_dig(js_block)
-            try:
-                event = await self._relay.wait_for(DigDoneEvent, timeout=60.0)
-            except TimeoutError as exc:
-                raise BridgeError("dig timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"dig failed: {event.error}")
+        done = threading.Event()
 
-    async def place_block(
-        self,
-        reference_block: Block,
-        face: Vec3,
-        *,
-        item_name: str | None = None,
-    ) -> None:
-        """Place a block against a reference block face.
+        def _on_end(*_a: Any, **_kw: Any) -> None:
+            done.set()
 
-        Args:
-            reference_block: The block to place against.
-            face: Direction vector for the face (e.g. ``Vec3(0, 1, 0)``
-                for the top face).
-            item_name: If provided, equip this item before placing.
-
-        Raises:
-            InventoryError: If *item_name* is not found in inventory
-                or equip times out.
-            BridgeError: If the JS place operation fails or times out.
-        """
-        async with self._place_lock:
-            ctrl = self._ensure_connected()
-            if item_name is not None:
-                async with self._equip_lock:
-                    if not ctrl.start_equip(item_name):
-                        raise InventoryError(
-                            f"Item '{item_name}' not found in inventory"
-                        )
-                    try:
-                        equip_event = await self._relay.wait_for(
-                            EquipDoneEvent, timeout=10.0
-                        )
-                    except TimeoutError as exc:
-                        raise InventoryError("equip timed out") from exc
-                    if equip_event.error is not None:
-                        raise InventoryError(f"equip failed: {equip_event.error}")
-
-            js_block = ctrl.block_at(
-                int(reference_block.position.x),
-                int(reference_block.position.y),
-                int(reference_block.position.z),
-            )
-            if js_block is None:
-                raise MinethonError(
-                    f"Block at {reference_block.position} is no longer available "
-                    "(chunk unloaded or block changed)"
-                )
-            ctrl.start_place(js_block, face.x, face.y, face.z)
-            try:
-                event = await self._relay.wait_for(PlaceDoneEvent, timeout=30.0)
-            except TimeoutError as exc:
-                raise BridgeError("place timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"place failed: {event.error}")
-
-    async def place_entity(self, reference_block: Block, face: Vec3) -> None:
-        """Place an entity (e.g. a boat or minecart) against a block face.
-
-        Args:
-            reference_block: The block to place against.
-            face: Direction vector for the face (e.g. ``Vec3(0, 1, 0)``).
-
-        Raises:
-            MinethonError: If the block is not found.
-            BridgeError: If the place operation fails or times out.
-        """
-        async with self._place_entity_lock:
-            ctrl = self._ensure_connected()
-            js_block = self._resolve_js_block(reference_block)
-            if js_block is None:
-                raise MinethonError(f"Block at {reference_block.position} not found")
-            ctrl.start_place_entity(js_block, face.x, face.y, face.z)
-            try:
-                event = await self._relay.wait_for(PlaceEntityDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("place_entity timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"place_entity failed: {event.error}")
-
-    async def use_item(self) -> None:
-        """Activate the currently held item."""
-        ctrl = self._ensure_connected()
-        ctrl.use_item()
-
-    async def attack(self, entity: Entity) -> None:
-        """Attack an entity.
-
-        Args:
-            entity: The :class:`Entity` to attack. Looked up by
-                numeric entity ID for precision.
-        """
-        ctrl = self._ensure_connected()
-        js_entity = ctrl.get_entity_by_id(entity.id)
-        if js_entity is not None:
-            ctrl.attack(js_entity)
-
-    # -- Movement --
-
-    async def goto(self, x: float, y: float, z: float, radius: float = 1.0) -> None:
-        """Move the bot to a position using A* pathfinding.
-
-        Convenience wrapper for ``bot.navigation.goto()``.
-        Uses ``mineflayer-pathfinder`` for obstacle-aware navigation.
-
-        Args:
-            x: Target X coordinate.
-            y: Target Y coordinate.
-            z: Target Z coordinate.
-            radius: Acceptable distance from the target.
-
-        Raises:
-            NotSpawnedError: If ``wait_until_spawned()`` has not completed.
-            NavigationError: If the pathfinder cannot reach the goal.
-            BridgeError: If a low-level bridge or pathfinding operation fails.
-        """
-        self._ensure_spawned()
-        await self.navigation.goto(x, y, z, radius=radius)
-
-    async def look_at(self, x: float, y: float, z: float) -> None:
-        """Rotate the bot to look at a position.
-
-        Args:
-            x: Target X coordinate.
-            y: Target Y coordinate.
-            z: Target Z coordinate.
-
-        Raises:
-            BridgeError: If the look operation fails or times out.
-        """
-        async with self._look_at_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_look_at(x, y, z)
-            try:
-                event = await self._relay.wait_for(LookAtDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("look_at timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"look_at failed: {event.error}")
-
-    async def look(self, yaw: float, pitch: float, *, force: bool = False) -> None:
-        """Set head direction by yaw and pitch.
-
-        Args:
-            yaw: Horizontal rotation in radians.
-            pitch: Vertical rotation in radians.
-            force: If ``True``, snap instantly instead of smoothly rotating.
-
-        Raises:
-            BridgeError: If the look operation fails or times out.
-        """
-        async with self._look_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_look(yaw, pitch, force)
-            try:
-                event = await self._relay.wait_for(LookDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("look timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"look failed: {event.error}")
-
-    async def jump(self) -> None:
-        """Make the bot jump once."""
-        ctrl = self._ensure_connected()
-        ctrl.set_control_state("jump", True)
+        Once(self._js, BotEvent.END.value)(
+            _normalize_handler(_on_end, emitter=self._js)
+        )
+        # Race guard: if `end` fired between create_bot() returning and the
+        # Once(...) above, no listener was installed and done.wait() would
+        # block forever. Seed `done` from the protocol client's `ended` flag
+        # (minecraft-protocol sets it synchronously in end()/disconnect()).
+        client = getattr(self._js, "_client", None)
+        if client is not None and bool(getattr(client, "ended", False)):
+            done.set()
         try:
-            await asyncio.sleep(0.05)  # ~1 game tick (50 ms)
-        finally:
-            ctrl.set_control_state("jump", False)
-
-    async def stop(self) -> None:
-        """Stop all movement and cancel pathfinding."""
-        ctrl = self._ensure_connected()
-        await self.navigation.stop()
-        ctrl.clear_control_states()
-
-    # -- Sub-APIs --
-
-    @property
-    def navigation(self) -> NavigationAPI:
-        """Path-planning and movement control API."""
-        if self._navigation is None:
-            raise MinethonConnectionError("Bot is not connected.")
-        return self._navigation
-
-    @property
-    def armor(self) -> ArmorAPI:
-        """Armor management API.
-
-        Requires ``mineflayer-armor-manager`` to be loaded first::
-
-            bot.plugins.load("mineflayer-armor-manager")
-            await bot.armor.equip_best()
-
-        Raises:
-            MinethonConnectionError: If the bot is not connected.
-            BridgeError: If the armor-manager plugin is not loaded.
-
-        Ref: mineflayer-armor-manager/dist/index.js — ``bot.armorManager``
-        """
-        if self._registry is None:
-            raise MinethonConnectionError("Bot is not connected.")
-        if self._armor is not None:
-            return self._armor
-        bridge = self._registry.get_armor_manager()
-        if bridge is None or not bridge.is_loaded:
-            raise BridgeError(
-                "armor-manager plugin is not loaded. "
-                'Call bot.plugins.load("mineflayer-armor-manager") first.'
-            )
-        self._armor = ArmorAPI(bridge, self._relay)
-        return self._armor
-
-    @property
-    def gui(self) -> GuiAPI:
-        """GUI item management API (mineflayer-gui).
-
-        Provides convenience methods for clicking and dropping items
-        via the mineflayer-gui Query builder.
-
-        Requires ``mineflayer-gui`` to be loaded first::
-
-            bot.plugins.load("mineflayer-gui")
-            await bot.gui.click_item("diamond_sword")
-
-        Raises:
-            MinethonConnectionError: If the bot is not connected.
-            BridgeError: If the gui plugin is not loaded.
-
-        Ref: mineflayer-gui/src/query.js — Query builder pattern
-        """
-        if self._registry is None:
-            raise MinethonConnectionError("Bot is not connected.")
-        if self._gui is not None:
-            return self._gui
-        bridge = self._registry.get_gui()
-        if bridge is None or not bridge.is_loaded:
-            raise BridgeError(
-                "gui plugin is not loaded. "
-                'Call bot.plugins.load("mineflayer-gui") first.'
-            )
-        self._gui = GuiAPI(bridge, self._relay)
-        return self._gui
-
-    @property
-    def dashboard(self) -> DashboardAPI:
-        """Dashboard terminal UI API.
-
-        Requires ``@ssmidge/mineflayer-dashboard`` to be loaded first::
-
-            bot.plugins.load("@ssmidge/mineflayer-dashboard")
-            bot.dashboard.log("Hello!")
-
-        .. warning:: **Experimental.** This plugin targets mineflayer
-           ^2.28.1 and uses blessed terminal UI which may conflict with
-           Python's stdout/stderr.
-
-        Raises:
-            MinethonConnectionError: If the bot is not connected.
-            BridgeError: If the dashboard plugin is not loaded.
-
-        Ref: @ssmidge/mineflayer-dashboard/index.js — ``bot.dashboard``
-        """
-        if self._registry is None:
-            raise MinethonConnectionError("Bot is not connected.")
-        if self._dashboard is not None:
-            return self._dashboard
-        bridge = self._registry.get_dashboard()
-        if bridge is None or not bridge.is_loaded:
-            raise BridgeError(
-                "dashboard plugin is not loaded. "
-                'Call bot.plugins.load("@ssmidge/mineflayer-dashboard") first.'
-            )
-        self._dashboard = DashboardAPI(bridge)
-        return self._dashboard
-
-    @property
-    def combat(self) -> CombatAPI:
-        """Projectile combat API (minecrafthawkeye).
-
-        Requires ``minecrafthawkeye`` to be loaded first::
-
-            bot.plugins.load("minecrafthawkeye")
-            zombie = await bot.nearest_entity(name="zombie")
-            bot.combat.auto_attack(zombie)
-
-        Raises:
-            MinethonConnectionError: If the bot is not connected.
-            BridgeError: If the hawkeye plugin is not loaded.
-
-        Ref: minecrafthawkeye/dist/hawkEye.js
-        """
-        if self._registry is None:
-            raise MinethonConnectionError("Bot is not connected.")
-        if self._combat is not None:
-            return self._combat
-        bridge = self._registry.get_hawkeye()
-        if bridge is None or not bridge.is_loaded:
-            raise BridgeError(
-                "hawkeye plugin is not loaded. "
-                'Call bot.plugins.load("minecrafthawkeye") first.'
-            )
-        self._combat = CombatAPI(bridge, self._relay)
-        return self._combat
-
-    @property
-    def hawkeye(self) -> CombatAPI:
-        """Alias for :attr:`combat`."""
-        return self.combat
-
-    @property
-    def panorama(self) -> PanoramaAPI:
-        """Panorama and image capture API.
-
-        .. warning:: **Experimental.** Requires native ``node-canvas-webgl``.
-           mineflayer-panorama 0.0.1 -- API may be unstable.
-
-        Requires ``mineflayer-panorama`` to be loaded first::
-
-            bot.plugins.load("mineflayer-panorama")
-            stream = await bot.panorama.raw_take_panorama()
-
-        Raises:
-            MinethonConnectionError: If the bot is not connected.
-            BridgeError: If the panorama plugin is not loaded.
-
-        Ref: mineflayer-panorama/index.js
-        """
-        if self._registry is None:
-            raise MinethonConnectionError("Bot is not connected.")
-        if self._panorama is not None:
-            return self._panorama
-        bridge = self._registry.get_panorama()
-        if bridge is None or not bridge.is_loaded:
-            raise BridgeError(
-                "panorama plugin is not loaded. "
-                'Call bot.plugins.load("mineflayer-panorama") first.'
-            )
-        self._panorama = PanoramaAPI(bridge, self._relay)
-        return self._panorama
-
-    @property
-    def tool(self) -> ToolAPI:
-        """Tool-equip API (mineflayer-tool).
-
-        Requires ``mineflayer-tool`` to be loaded first::
-
-            bot.plugins.load("mineflayer-tool")
-            await bot.tool.equip_for_block(block)
-
-        Raises:
-            MinethonConnectionError: If the bot is not connected.
-            BridgeError: If the tool plugin is not loaded.
-
-        Ref: mineflayer-tool/lib/Tool.js
-        """
-        if self._registry is None:
-            raise MinethonConnectionError("Bot is not connected.")
-        if self._tool is not None:
-            return self._tool
-        bridge = self._registry.get_tool()
-        if bridge is None or not bridge.is_loaded:
-            raise BridgeError(
-                "tool plugin is not loaded. "
-                'Call bot.plugins.load("mineflayer-tool") first.'
-            )
-        self._tool = ToolAPI(bridge, self._relay)
-        return self._tool
-
-    @property
-    def observe(self) -> ObserveAPI:
-        """Event subscription API."""
-        return self._observe
-
-    @property
-    def raw(self) -> RawBotHandle:
-        """Raw access to the underlying mineflayer JS bot.
-
-        Warning:
-            This is an escape hatch for advanced use cases. The returned
-            handle exposes the raw JSPyBridge proxy with **no** type
-            safety or API stability guarantees. Refer to the mineflayer
-            JS docs for usage.
-        """
-        ctrl = self._ensure_connected()
-        plugin_loader = (
-            self._registry.raw_require if self._registry is not None else None
-        )
-        return RawBotHandle(
-            ctrl.js_bot,
-            raw_subscribe=self._observe._on_raw,  # pyright: ignore[reportPrivateUsage]
-            raw_unsubscribe=self._observe._off_raw,  # pyright: ignore[reportPrivateUsage]
-            plugin_loader=plugin_loader,
-        )
-
-    @property
-    def plugins(self) -> PluginAPI:
-        """Plugin management API.
-
-        Exposes only typed, supported plugin operations.
-        """
-        if self._registry is None:
-            raise MinethonConnectionError("Bot is not connected.")
-        if self._plugins_api is None:
-            self._plugins_api = PluginAPI(self._registry)
-        return self._plugins_api
-
-    @property
-    def viewer(self) -> ViewerAPI:
-        """Web 3D viewer (prismarine-viewer).
-
-        Type B service -- lazy-initialized on first access.  Call
-        ``await bot.viewer.start()`` to launch the HTTP server and
-        ``bot.viewer.stop()`` to shut it down.  The viewer is
-        automatically stopped on ``disconnect()``.
-
-        Ref: prismarine-viewer/lib/mineflayer.js
-        """
-        ctrl = self._ensure_connected()
-        if self._viewer_api is None:
-            from minethon._bridge.services.viewer import ViewerService  # noqa: PLC0415
-
-            assert self._runtime is not None
-            self._viewer_svc = ViewerService(
-                self._runtime,
-                ctrl.js_bot,
-                self._relay,
-            )
-            self._viewer_api = ViewerAPI(self._viewer_svc)
-        return self._viewer_api
-
-    @property
-    def inventory_viewer(self) -> InventoryViewerAPI:
-        """Web inventory viewer (mineflayer-web-inventory).
-
-        Type B service -- lazily created on first access.
-        Call ``bot.inventory_viewer.initialize()`` before using
-        ``start()``/``stop()``.
-
-        Ref: mineflayer-web-inventory/index.js
-        """
-        ctrl = self._ensure_connected()
-        if self._inv_viewer_api is None:
-            from minethon._bridge.services.web_inventory import (  # noqa: PLC0415 — lazy to avoid circular import
-                WebInventoryService,
-            )
-
-            self._inv_viewer_svc = WebInventoryService(
-                self._runtime,  # type: ignore[arg-type]
-                ctrl.js_bot,
-                self._relay,
-            )
-            self._inv_viewer_api = InventoryViewerAPI(self._inv_viewer_svc)
-        return self._inv_viewer_api
-
-    # -- Sleep / Wake --
-
-    async def sleep(self, bed_block: Block) -> None:
-        """Sleep in a bed.
-
-        Args:
-            bed_block: The :class:`Block` representing the bed.
-
-        Raises:
-            MinethonError: If the bed block is not found at the position.
-            BridgeError: If the sleep operation fails or times out.
-        """
-        async with self._sleep_lock:
-            ctrl = self._ensure_spawned()
-            js_block = ctrl.block_at(
-                int(bed_block.position.x),
-                int(bed_block.position.y),
-                int(bed_block.position.z),
-            )
-            if js_block is None:
-                raise MinethonError("Bed block not found")
-            ctrl.start_sleep(js_block)
-            try:
-                event = await self._relay.wait_for(SleepDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("sleep timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"sleep failed: {event.error}")
-
-    async def wake(self) -> None:
-        """Wake up from sleeping.
-
-        Raises:
-            BridgeError: If the wake operation fails or times out.
-        """
-        async with self._sleep_lock:
-            ctrl = self._ensure_spawned()
-            ctrl.start_wake()
-            try:
-                event = await self._relay.wait_for(WakeDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("wake timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"wake failed: {event.error}")
-
-    # -- Inventory operations --
-
-    async def equip(self, item_name: str, destination: str = "hand") -> None:
-        """Equip an item by name.
-
-        Args:
-            item_name: Name of the item to equip (e.g. ``"diamond_sword"``).
-            destination: Where to equip (``"hand"``, ``"off-hand"``,
-                ``"head"``, ``"torso"``, ``"legs"``, ``"feet"``).
-
-        Raises:
-            InventoryError: If the item is not found or equip fails.
-        """
-        async with self._equip_lock:
-            ctrl = self._ensure_connected()
-            if not ctrl.start_equip(item_name, destination):
-                raise InventoryError(f"Item '{item_name}' not found in inventory")
-            try:
-                event = await self._relay.wait_for(EquipDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise InventoryError("equip timed out") from exc
-            if event.error is not None:
-                raise InventoryError(f"equip failed: {event.error}")
-
-    async def unequip(self, destination: str) -> None:
-        """Unequip an item from a slot.
-
-        Args:
-            destination: Slot to unequip (``"hand"``, ``"off-hand"``,
-                ``"head"``, ``"torso"``, ``"legs"``, ``"feet"``).
-
-        Raises:
-            InventoryError: If the unequip operation fails.
-        """
-        async with self._unequip_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_unequip(destination)
-            try:
-                event = await self._relay.wait_for(UnequipDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise InventoryError("unequip timed out") from exc
-            if event.error is not None:
-                raise InventoryError(f"unequip failed: {event.error}")
-
-    async def toss(self, item_name: str, count: int | None = None) -> None:
-        """Toss items by name.
-
-        Args:
-            item_name: Name of the item to toss.
-            count: Number of items to toss. ``None`` tosses the whole stack.
-
-        Raises:
-            InventoryError: If the item is not found or toss fails.
-        """
-        async with self._toss_lock:
-            ctrl = self._ensure_connected()
-            item_type, js_item = ctrl.find_inventory_item_by_name(item_name)
-            if js_item is None or item_type is None:
-                raise InventoryError(f"Item '{item_name}' not found")
-            if count is None:
-                ctrl.start_toss_stack(js_item)
-                try:
-                    event = await self._relay.wait_for(TossStackDoneEvent, timeout=10.0)
-                except TimeoutError as exc:
-                    raise InventoryError("toss timed out") from exc
-                if event.error is not None:
-                    raise InventoryError(f"toss failed: {event.error}")
-            else:
-                ctrl.start_toss(item_type, None, count)
-                try:
-                    event = await self._relay.wait_for(TossDoneEvent, timeout=10.0)
-                except TimeoutError as exc:
-                    raise InventoryError("toss timed out") from exc
-                if event.error is not None:
-                    raise InventoryError(f"toss failed: {event.error}")
-
-    async def set_quick_bar_slot(self, slot: int) -> None:
-        """Select a quick bar slot.
-
-        Args:
-            slot: Slot index (0-8).
-        """
-        ctrl = self._ensure_connected()
-        ctrl.set_quick_bar_slot(slot)
-        self._state.quick_bar_slot = slot
-
-    # -- Actions (extended) --
-
-    async def consume(self) -> None:
-        """Eat or drink the currently held item.
-
-        Raises:
-            BridgeError: If the consume operation fails or times out.
-        """
-        async with self._consume_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_consume()
-            try:
-                event = await self._relay.wait_for(ConsumeDoneEvent, timeout=30.0)
-            except TimeoutError as exc:
-                raise BridgeError("consume timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"consume failed: {event.error}")
-
-    async def fish(self) -> None:
-        """Cast a fishing rod and wait for a catch.
-
-        Raises:
-            BridgeError: If the fish operation fails or times out.
-        """
-        async with self._fish_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_fish()
-            try:
-                event = await self._relay.wait_for(FishDoneEvent, timeout=120.0)
-            except TimeoutError as exc:
-                raise BridgeError("fish timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"fish failed: {event.error}")
-
-    async def activate_block(self, block: Block) -> None:
-        """Activate a block (open door, punch note block, etc.).
-
-        Args:
-            block: The :class:`Block` to activate.
-
-        Raises:
-            MinethonError: If the block is not found at the position.
-            BridgeError: If the activation fails or times out.
-        """
-        async with self._activate_block_lock:
-            ctrl = self._ensure_connected()
-            js_block = ctrl.block_at(
-                int(block.position.x),
-                int(block.position.y),
-                int(block.position.z),
-            )
-            if js_block is None:
-                raise MinethonError(f"Block at {block.position} not found")
-            ctrl.start_activate_block(js_block)
-            try:
-                event = await self._relay.wait_for(ActivateBlockDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("activate_block timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"activate_block failed: {event.error}")
-
-    async def activate_entity(self, entity: Entity) -> None:
-        """Activate (right-click) an entity.
-
-        Args:
-            entity: The :class:`Entity` to activate.
-
-        Raises:
-            BridgeError: If the activation fails or times out.
-        """
-        async with self._activate_entity_lock:
-            ctrl = self._ensure_connected()
-            js_entity = ctrl.get_entity_by_id(entity.id)
-            if js_entity is None:
-                return
-            ctrl.start_activate_entity(js_entity)
-            try:
-                event = await self._relay.wait_for(
-                    ActivateEntityDoneEvent, timeout=10.0
-                )
-            except TimeoutError as exc:
-                raise BridgeError("activate_entity timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"activate_entity failed: {event.error}")
-
-    async def activate_entity_at(self, entity: Entity, position: Vec3) -> None:
-        """Activate an entity at a specific position (e.g. armor stand).
-
-        Args:
-            entity: The :class:`Entity` to activate.
-            position: World position to click at.
-
-        Raises:
-            BridgeError: If the activation fails or times out.
-        """
-        async with self._activate_entity_at_lock:
-            ctrl = self._ensure_connected()
-            js_entity = ctrl.get_entity_by_id(entity.id)
-            if js_entity is None:
-                return
-            ctrl.start_activate_entity_at(js_entity, position.x, position.y, position.z)
-            try:
-                event = await self._relay.wait_for(
-                    ActivateEntityAtDoneEvent, timeout=10.0
-                )
-            except TimeoutError as exc:
-                raise BridgeError("activate_entity_at timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"activate_entity_at failed: {event.error}")
-
-    async def elytra_fly(self) -> None:
-        """Activate elytra flight.
-
-        Raises:
-            BridgeError: If the elytra fly activation fails or times out.
-        """
-        async with self._elytra_fly_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_elytra_fly()
-            try:
-                event = await self._relay.wait_for(ElytraFlyDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("elytra_fly timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"elytra_fly failed: {event.error}")
-
-    async def swing_arm(self, hand: str = "right") -> None:
-        """Swing the bot arm.
-
-        Args:
-            hand: ``"right"`` or ``"left"``.
-        """
-        ctrl = self._ensure_connected()
-        ctrl.swing_arm(hand)
-
-    async def deactivate_item(self) -> None:
-        """Stop using the currently held item (e.g. stop eating/blocking)."""
-        ctrl = self._ensure_connected()
-        ctrl.deactivate_item()
-
-    async def use_on(self, entity: Entity) -> None:
-        """Use the currently held item on an entity.
-
-        Args:
-            entity: The :class:`Entity` to interact with.
-        """
-        ctrl = self._ensure_connected()
-        js_entity = ctrl.get_entity_by_id(entity.id)
-        if js_entity is not None:
-            ctrl.use_on(js_entity)
-
-    async def mount(self, entity: Entity) -> None:
-        """Mount an entity (horse, boat, minecart, etc.).
-
-        Args:
-            entity: The :class:`Entity` to mount.
-        """
-        ctrl = self._ensure_connected()
-        js_entity = ctrl.get_entity_by_id(entity.id)
-        if js_entity is not None:
-            ctrl.mount(js_entity)
-
-    async def dismount(self) -> None:
-        """Dismount the currently mounted entity."""
-        ctrl = self._ensure_connected()
-        ctrl.dismount()
-
-    async def move_vehicle(self, left: float, forward: float) -> None:
-        """Move the currently mounted vehicle.
-
-        Args:
-            left: Leftward movement (-1.0 to 1.0).
-            forward: Forward movement (-1.0 to 1.0).
-        """
-        ctrl = self._ensure_connected()
-        ctrl.move_vehicle(left, forward)
-
-    # -- Crafting --
-
-    async def recipes_for(
-        self,
-        item_name: str,
-        *,
-        metadata: int | None = None,
-        min_result_count: int | None = None,
-        crafting_table: Block | None = None,
-    ) -> list[Recipe]:
-        """Return craftable recipes for an item name."""
-        ctrl = self._ensure_connected()
-        item_type = self._resolve_item_type(item_name)
-        js_table = self._resolve_js_block(crafting_table) if crafting_table else None
-        js_recipes = ctrl.recipes_for(item_type, metadata, min_result_count, js_table)
-        return self._register_recipes(js_recipes)
-
-    async def recipes_all(
-        self,
-        item_name: str,
-        *,
-        metadata: int | None = None,
-        crafting_table: Block | None = None,
-    ) -> list[Recipe]:
-        """Return all known recipes for an item name regardless of inventory."""
-        ctrl = self._ensure_connected()
-        item_type = self._resolve_item_type(item_name)
-        js_table = self._resolve_js_block(crafting_table) if crafting_table else None
-        js_recipes = ctrl.recipes_all(item_type, metadata, js_table)
-        return self._register_recipes(js_recipes)
-
-    def _register_recipes(self, js_recipes: list[Any]) -> list[Recipe]:
-        """Register JS recipe proxies and return typed handles."""
-        result: list[Recipe] = []
-        for js_recipe in js_recipes:
-            self._recipe_counter += 1
-            rid = self._recipe_counter
-            self._recipe_registry[rid] = js_recipe
-            result.append(Recipe(id=rid))
-        return result
-
-    async def open_container(self, target: Block | Entity) -> WindowHandle:
-        """Open a generic container and return a typed session handle."""
-        async with self._window_lock:
-            ctrl = self._ensure_connected()
-            js_target = (
-                self._resolve_js_block(target)
-                if isinstance(target, Block)
-                else self._resolve_js_entity(target)
-            )
-            if js_target is None:
-                raise MinethonError("Container target is no longer available")
-            ctrl.start_open_container(js_target)
-            try:
-                event = await self._relay.wait_for(OpenContainerDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("open_container timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"open_container failed: {event.error}")
-            if event.result is None:
-                raise BridgeError("open_container returned no window")
-            handle = js_window_to_window_handle(event.result)
-            self._window_registry[handle.id] = event.result
-            return handle
-
-    async def open_furnace(self, block: Block) -> WindowHandle:
-        """Open a furnace-like block and return a typed session handle."""
-        async with self._window_lock:
-            ctrl = self._ensure_connected()
-            js_block = self._resolve_js_block(block)
-            if js_block is None:
-                raise MinethonError(f"Block at {block.position} not found")
-            ctrl.start_open_furnace(js_block)
-            try:
-                event = await self._relay.wait_for(OpenFurnaceDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("open_furnace timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"open_furnace failed: {event.error}")
-            if event.result is None:
-                raise BridgeError("open_furnace returned no window")
-            handle = js_window_to_window_handle(event.result)
-            self._window_registry[handle.id] = event.result
-            return handle
-
-    async def open_enchantment_table(self, block: Block) -> WindowHandle:
-        """Open an enchantment table and return a typed session handle."""
-        async with self._window_lock:
-            ctrl = self._ensure_connected()
-            js_block = self._resolve_js_block(block)
-            if js_block is None:
-                raise MinethonError(f"Block at {block.position} not found")
-            ctrl.start_open_enchantment_table(js_block)
-            try:
-                event = await self._relay.wait_for(
-                    OpenEnchantmentTableDoneEvent,
-                    timeout=10.0,
-                )
-            except TimeoutError as exc:
-                raise BridgeError("open_enchantment_table timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"open_enchantment_table failed: {event.error}")
-            if event.result is None:
-                raise BridgeError("open_enchantment_table returned no window")
-            handle = js_window_to_window_handle(event.result)
-            self._window_registry[handle.id] = event.result
-            return handle
-
-    async def open_anvil(self, block: Block) -> WindowHandle:
-        """Open an anvil and return a typed session handle."""
-        async with self._window_lock:
-            ctrl = self._ensure_connected()
-            js_block = self._resolve_js_block(block)
-            if js_block is None:
-                raise MinethonError(f"Block at {block.position} not found")
-            ctrl.start_open_anvil(js_block)
-            try:
-                event = await self._relay.wait_for(OpenAnvilDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("open_anvil timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"open_anvil failed: {event.error}")
-            if event.result is None:
-                raise BridgeError("open_anvil returned no window")
-            handle = js_window_to_window_handle(event.result)
-            self._window_registry[handle.id] = event.result
-            return handle
-
-    async def open_villager(self, villager: Entity) -> VillagerSession:
-        """Open a villager trading window and return a typed session."""
-        async with self._window_lock:
-            ctrl = self._ensure_connected()
-            js_villager = self._resolve_js_entity(villager)
-            if js_villager is None:
-                raise MinethonError(f"Entity {villager.id} not found")
-            ctrl.start_open_villager(js_villager)
-            try:
-                event = await self._relay.wait_for(OpenVillagerDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("open_villager timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"open_villager failed: {event.error}")
-            if event.result is None:
-                raise BridgeError("open_villager returned no session")
-            ctrl = self._ensure_connected()
-            snapshot = ctrl.get_villager_session_snapshot(event.result)
-            session = villager_snapshot_to_session(snapshot)
-            self._window_registry[session.id] = event.result
-            return session
-
-    async def close_window(self, window: WindowHandle | VillagerSession) -> None:
-        """Close an open window or villager session."""
-        ctrl = self._ensure_connected()
-        js_proxy = self._window_registry.pop(window.id, None)
-        if js_proxy is None:
-            raise BridgeError(
-                f"No JS proxy found for window id={window.id} (already closed?)"
-            )
-        ctrl.close_window(js_proxy)
-
-    async def trade(
-        self,
-        villager: VillagerSession,
-        trade_index: int,
-        *,
-        times: int = 1,
-    ) -> VillagerSession:
-        """Execute a villager trade and return the updated session snapshot."""
-        async with self._trade_lock:
-            ctrl = self._ensure_connected()
-            js_proxy = self._window_registry.get(villager.id)
-            if js_proxy is None:
-                raise BridgeError(
-                    f"No JS proxy found for villager session id={villager.id}"
-                )
-            ctrl.start_trade(js_proxy, trade_index, times)
-            try:
-                event = await self._relay.wait_for(TradeDoneEvent, timeout=30.0)
-            except TimeoutError as exc:
-                raise BridgeError("trade timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"trade failed: {event.error}")
-            snapshot = ctrl.get_villager_session_snapshot(js_proxy)
-            session = villager_snapshot_to_session(snapshot)
-            self._window_registry[session.id] = js_proxy
-            return session
-
-    async def craft(
-        self,
-        recipe: Recipe,
-        count: int = 1,
-        crafting_table: Block | None = None,
-    ) -> None:
-        """Craft items using a recipe.
-
-        Args:
-            recipe: A typed recipe handle from :meth:`recipes_for` or
-                :meth:`recipes_all`.
-            count: Number of times to craft.
-            crafting_table: Optional crafting table :class:`Block` for
-                3x3 recipes.
-
-        Raises:
-            BridgeError: If the craft operation fails or times out.
-        """
-        async with self._craft_lock:
-            ctrl = self._ensure_connected()
-            js_table = None
-            if crafting_table is not None:
-                js_table = self._resolve_js_block(crafting_table)
-            js_recipe = self._recipe_registry.get(recipe.id)
-            if js_recipe is None:
-                raise BridgeError(
-                    f"Recipe handle id={recipe.id} is no longer valid "
-                    "(stale from a previous session?)"
-                )
-            ctrl.start_craft(js_recipe, count, js_table)
-            try:
-                event = await self._relay.wait_for(CraftDoneEvent, timeout=30.0)
-            except TimeoutError as exc:
-                raise BridgeError("craft timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"craft failed: {event.error}")
-
-    async def write_book(self, slot: int, pages: list[str]) -> None:
-        """Write text to a book and quill.
-
-        Args:
-            slot: Inventory window slot containing the book
-                (36 = first quickbar slot).
-            pages: List of strings, one per page.
-
-        Raises:
-            BridgeError: If the write operation fails or times out.
-        """
-        async with self._write_book_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_write_book(slot, pages)
-            try:
-                event = await self._relay.wait_for(WriteBookDoneEvent, timeout=30.0)
-            except TimeoutError as exc:
-                raise BridgeError("write_book timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"write_book failed: {event.error}")
-
-    # -- Lower-level inventory --
-
-    async def click_window(self, slot: int, mouse_button: int, mode: int) -> None:
-        """Perform a raw window click.
-
-        Args:
-            slot: The slot index to click.
-            mouse_button: Mouse button (0 = left, 1 = right).
-            mode: Click mode (0 = normal click, 1 = shift-click, etc.).
-
-        Raises:
-            BridgeError: If the click operation fails or times out.
-        """
-        async with self._click_window_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_click_window(slot, mouse_button, mode)
-            try:
-                event = await self._relay.wait_for(ClickWindowDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("click_window timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"click_window failed: {event.error}")
-
-    async def put_away(self, slot: int) -> None:
-        """Put the item at the given slot back into the inventory.
-
-        Args:
-            slot: The slot index to put away.
-
-        Raises:
-            BridgeError: If the operation fails or times out.
-        """
-        async with self._put_away_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_put_away(slot)
-            try:
-                event = await self._relay.wait_for(PutAwayDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("put_away timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"put_away failed: {event.error}")
-
-    async def transfer(
-        self,
-        item_type: int,
-        *,
-        source_start: int,
-        source_end: int,
-        dest_start: int,
-        dest_end: int | None = None,
-        count: int = 1,
-    ) -> None:
-        """Transfer items between slot ranges in the current window.
-
-        Args:
-            item_type: Numeric item type ID.
-            source_start: Start of the source slot range.
-            source_end: End of the source slot range.
-            dest_start: Start of the destination slot range.
-            dest_end: End of the destination range (defaults to
-                ``dest_start + 1``).
-            count: Number of items to transfer.
-
-        Raises:
-            BridgeError: If the transfer fails or times out.
-        """
-        async with self._transfer_lock:
-            ctrl = self._ensure_connected()
-            options: dict[str, Any] = {
-                "itemType": item_type,
-                "sourceStart": source_start,
-                "sourceEnd": source_end,
-                "destStart": dest_start,
-                "count": count,
-            }
-            if dest_end is not None:
-                options["destEnd"] = dest_end
-            ctrl.start_transfer(options)
-            try:
-                event = await self._relay.wait_for(TransferDoneEvent, timeout=30.0)
-            except TimeoutError as exc:
-                raise BridgeError("transfer timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"transfer failed: {event.error}")
-
-    async def move_slot_item(self, source_slot: int, dest_slot: int) -> None:
-        """Move an item from one slot to another in the current window.
-
-        Args:
-            source_slot: Source slot index.
-            dest_slot: Destination slot index.
-
-        Raises:
-            BridgeError: If the move fails or times out.
-        """
-        async with self._move_slot_item_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_move_slot_item(source_slot, dest_slot)
-            try:
-                event = await self._relay.wait_for(MoveSlotItemDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("move_slot_item timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"move_slot_item failed: {event.error}")
-
-    # -- Creative mode --
-
-    async def creative_fly_to(self, destination: Vec3) -> None:
-        """Fly to a destination in creative mode.
-
-        Calls ``startFlying()`` internally and moves in a straight line.
-        Will not avoid obstacles.
-
-        Args:
-            destination: Target position (tip: use ``.5`` for x/z).
-
-        Raises:
-            BridgeError: If the fly operation fails or times out.
-        """
-        async with self._creative_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_creative_fly_to(destination.x, destination.y, destination.z)
-            try:
-                event = await self._relay.wait_for(CreativeFlyToDoneEvent, timeout=30.0)
-            except TimeoutError as exc:
-                raise BridgeError("creative_fly_to timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"creative_fly_to failed: {event.error}")
-
-    async def creative_set_inventory_slot_raw(self, slot: int, item: Any) -> None:
-        """**Raw escape hatch.** Set an inventory slot in creative mode.
-
-        This method accepts a raw JS ``prismarine-item`` proxy because
-        there is no lossless way to reconstruct one from a Python
-        :class:`ItemStack`.  Callers must obtain the item via
-        :attr:`Bot.raw` or similar bridge-level access.
-
-        Ref: mineflayer/lib/plugins/creative.js — bot.creative.setInventorySlot()
-
-        Args:
-            slot: Inventory window slot (36 = first quickbar slot).
-            item: A raw JS ``prismarine-item`` instance, or ``None``
-                to clear the slot.
-
-        Raises:
-            BridgeError: If the operation fails or times out.
-        """
-        async with self._creative_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_creative_set_inventory_slot(slot, item)
-            try:
-                event = await self._relay.wait_for(
-                    CreativeSetSlotDoneEvent, timeout=10.0
-                )
-            except TimeoutError as exc:
-                raise BridgeError("creative_set_inventory_slot timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"creative_set_inventory_slot failed: {event.error}")
-
-    async def creative_clear_slot(self, slot: int) -> None:
-        """Clear an inventory slot in creative mode.
-
-        Args:
-            slot: Inventory window slot to clear.
-
-        Raises:
-            BridgeError: If the operation fails or times out.
-        """
-        async with self._creative_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_creative_clear_slot(slot)
-            try:
-                event = await self._relay.wait_for(
-                    CreativeClearSlotDoneEvent, timeout=10.0
-                )
-            except TimeoutError as exc:
-                raise BridgeError("creative_clear_slot timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"creative_clear_slot failed: {event.error}")
-
-    async def creative_clear_inventory(self) -> None:
-        """Clear the entire inventory in creative mode.
-
-        Raises:
-            BridgeError: If the operation fails or times out.
-        """
-        async with self._creative_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_creative_clear_inventory()
-            try:
-                event = await self._relay.wait_for(
-                    CreativeClearInventoryDoneEvent, timeout=30.0
-                )
-            except TimeoutError as exc:
-                raise BridgeError("creative_clear_inventory timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"creative_clear_inventory failed: {event.error}")
-
-    # -- World queries (extended) --
-
-    async def block_at_cursor(self, max_distance: float = 256) -> Block | None:
-        """Get the block the bot is currently looking at.
-
-        Args:
-            max_distance: Maximum raycast distance.
-
-        Returns:
-            A :class:`Block` snapshot, or ``None`` if nothing is in range.
-        """
-        ctrl = self._ensure_connected()
-        js_block = ctrl.block_at_cursor(max_distance)
-        return js_block_to_block(js_block) if js_block is not None else None
-
-    async def entity_at_cursor(self, max_distance: float = 3.5) -> Entity | None:
-        """Get the entity the bot is currently looking at.
-
-        Args:
-            max_distance: Maximum raycast distance.
-
-        Returns:
-            An :class:`Entity` snapshot, or ``None``.
-        """
-        ctrl = self._ensure_connected()
-        js_entity = ctrl.entity_at_cursor(max_distance)
-        return js_entity_to_entity(js_entity) if js_entity is not None else None
-
-    async def can_dig_block(self, block: Block) -> bool:
-        """Check whether the bot can dig the given block.
-
-        Args:
-            block: The :class:`Block` to check.
-
-        Returns:
-            ``True`` if the block is diggable.
-        """
-        ctrl = self._ensure_connected()
-        js_block = ctrl.block_at(
-            int(block.position.x),
-            int(block.position.y),
-            int(block.position.z),
-        )
-        return ctrl.can_dig_block(js_block) if js_block is not None else False
-
-    async def can_see_block(self, block: Block) -> bool:
-        """Check whether the bot has line-of-sight to the block.
-
-        Args:
-            block: The :class:`Block` to check.
-
-        Returns:
-            ``True`` if the block is visible.
-        """
-        ctrl = self._ensure_connected()
-        js_block = ctrl.block_at(
-            int(block.position.x),
-            int(block.position.y),
-            int(block.position.z),
-        )
-        return ctrl.can_see_block(js_block) if js_block is not None else False
-
-    async def dig_time(self, block: Block) -> int:
-        """Return the estimated dig time in milliseconds.
-
-        Args:
-            block: The :class:`Block` to query.
-
-        Returns:
-            Dig time in milliseconds.
-
-        Raises:
-            MinethonError: If the block is not found.
-        """
-        ctrl = self._ensure_connected()
-        js_block = ctrl.block_at(
-            int(block.position.x),
-            int(block.position.y),
-            int(block.position.z),
-        )
-        if js_block is None:
-            raise MinethonError(f"Block at {block.position} not found")
-        return ctrl.dig_time(js_block)
-
-    async def stop_digging(self) -> None:
-        """Cancel the current dig operation."""
-        ctrl = self._ensure_connected()
-        ctrl.stop_digging()
-
-    async def wait_for_chunks_to_load(self) -> None:
-        """Wait until all nearby chunks have been loaded.
-
-        Raises:
-            BridgeError: If the operation fails or times out.
-        """
-        async with self._wait_chunks_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_wait_for_chunks_to_load()
-            try:
-                event = await self._relay.wait_for(ChunksLoadedDoneEvent, timeout=30.0)
-            except TimeoutError as exc:
-                raise BridgeError("wait_for_chunks timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"wait_for_chunks failed: {event.error}")
-
-    async def wait_for_ticks(self, ticks: int) -> None:
-        """Wait for a specific number of game ticks.
-
-        Args:
-            ticks: Number of ticks to wait (1 tick ~ 50ms).
-
-        Raises:
-            BridgeError: If the operation fails or times out.
-        """
-        async with self._wait_ticks_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_wait_for_ticks(ticks)
-            try:
-                event = await self._relay.wait_for(
-                    WaitForTicksDoneEvent,
-                    timeout=max(30.0, ticks * 0.05 + 5.0),
-                )
-            except TimeoutError as exc:
-                raise BridgeError("wait_for_ticks timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"wait_for_ticks failed: {event.error}")
-
-    # -- Misc --
-
-    async def accept_resource_pack(self) -> None:
-        """Accept the server resource pack."""
-        ctrl = self._ensure_connected()
-        ctrl.accept_resource_pack()
-
-    async def deny_resource_pack(self) -> None:
-        """Deny the server resource pack."""
-        ctrl = self._ensure_connected()
-        ctrl.deny_resource_pack()
-
-    async def set_settings(self, **options: Any) -> None:
-        """Update client settings (view distance, skin parts, etc.).
-
-        Args:
-            **options: Key-value pairs of settings to update.
-        """
-        ctrl = self._ensure_connected()
-        ctrl.set_settings(options)
-
-    def support_feature(self, name: str) -> bool:
-        """Check whether the server supports a protocol feature.
-
-        Args:
-            name: Feature name string.
-
-        Returns:
-            ``True`` if the feature is supported.
-        """
-        ctrl = self._ensure_connected()
-        return ctrl.support_feature(name)
-
-    async def respawn(self) -> None:
-        """Respawn after death."""
-        ctrl = self._ensure_connected()
-        ctrl.do_respawn()
-
-    async def tab_complete(
-        self, text: str, *, assume_command: bool = False
-    ) -> list[str]:
-        """Request tab-completion suggestions from the server.
-
-        Args:
-            text: The partial text to complete.
-            assume_command: If ``True``, treat the text as a command
-                even without a leading ``/``.
-
-        Returns:
-            List of completion suggestions.
-
-        Raises:
-            BridgeError: If the tab-complete operation fails.
-        """
-        async with self._tab_complete_lock:
-            ctrl = self._ensure_connected()
-            ctrl.start_tab_complete(text, assume_command)
-            try:
-                event = await self._relay.wait_for(TabCompleteDoneEvent, timeout=10.0)
-            except TimeoutError as exc:
-                raise BridgeError("tab_complete timed out") from exc
-            if event.error is not None:
-                raise BridgeError(f"tab_complete failed: {event.error}")
-            try:
-                if event.result is not None:
-                    return [str(item) for item in event.result]
-                return []
-            except TypeError, ValueError:
-                return []
-
-    async def await_message(
-        self,
-        *patterns: str | re.Pattern[str] | list[str | re.Pattern[str]],
-        timeout: float = 30.0,
-    ) -> str:
-        """Wait for the next chat message matching any exact string or regex."""
-        flat_patterns: list[str | re.Pattern[str]] = []
-        for pattern in patterns:
-            if isinstance(pattern, list):
-                flat_patterns.extend(pattern)
-            else:
-                flat_patterns.append(pattern)
-        if not flat_patterns:
-            raise ValueError("await_message requires at least one pattern")
-
-        loop = asyncio.get_running_loop()
-        deadline = loop.time() + timeout
-        while True:
-            remaining = deadline - loop.time()
-            if remaining <= 0:
-                raise TimeoutError
-            event = await self._observe.wait_for(MessageStrEvent, timeout=remaining)
-            for pattern in flat_patterns:
-                if isinstance(pattern, str):
-                    if event.message == pattern:
-                        return event.message
-                elif pattern.search(event.message):
-                    return event.message
+            done.wait()
+        except KeyboardInterrupt:
+            pass
+
+
+def create_bot(**options: Any) -> Bot:
+    """Create and connect a mineflayer bot.
+
+    Keyword options mirror `mineflayer.createBot()` with snake_case:
+    `auth_server` → `authServer`, `session_server` → `sessionServer`, etc.
+    Typed overloads live in `bot.pyi`.
+
+    Returns immediately; the bot connects on the JS side. Register a
+    `spawn` handler to know when you can send chat, move, etc.
+
+    Ref: mineflayer/lib/loader.js — `createBot(options)`
+    """
+    js_options = {_to_camel(key): value for key, value in options.items()}
+    mineflayer = get_mineflayer()
+    js_bot = mineflayer.createBot(js_options)
+    return Bot(js_bot)
+
+
+def _to_camel(snake: str) -> str:
+    """snake_case → camelCase (auth_server → authServer)."""
+    head, *tail = snake.split("_")
+    return head + "".join(part.capitalize() for part in tail)
+
+
+def _resolve_package_version(name: str, version: str | None) -> str:
+    if version is not None:
+        return version
+    default = BUNDLED_VERSIONS.get(name)
+    if default is not None:
+        return default
+    msg = (
+        f"`{name}` 需要顯式版本號。請改成 "
+        f"`bot.require({name!r}, 'x.y.z')` 或 "
+        f"`bot.load_plugin({name!r}, 'x.y.z')`。"
+    )
+    raise VersionPinRequiredError(msg)

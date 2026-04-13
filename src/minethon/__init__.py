@@ -1,94 +1,48 @@
-"""minethon -- A Python-first Mineflayer SDK."""
+"""minethon — a Python-first Mineflayer SDK.
 
-from minethon.api.armor import ArmorAPI
-from minethon.api.combat import CombatAPI
-from minethon.api.dashboard import DashboardAPI
-from minethon.api.gui import GuiAPI
-from minethon.api.navigation import NavigationAPI
-from minethon.api.observe import ObserveAPI
-from minethon.api.panorama import PanoramaAPI
-from minethon.api.plugins import PluginAPI
-from minethon.api.tool import ToolAPI
-from minethon.bot import Bot
-from minethon.models.block import Block
-from minethon.models.entity import Entity, EntityKind
-from minethon.models.errors import (
-    BridgeError,
-    InventoryError,
-    MinethonConnectionError,
+Typical usage::
+
+    from minethon import BotEvent, create_bot
+
+    bot = create_bot(
+        host="mc.example.com",
+        port=25565,
+        username="my_bot",
+    )
+
+    @bot.on_spawn
+    def on_spawn() -> None:
+        bot.chat("Hello from minethon!")
+
+    @bot.on(BotEvent.CHAT)
+    def on_chat(username: str, message: str, *_: object) -> None:
+        if message == "quit":
+            bot.quit("bye")
+
+    bot.run_forever()
+"""
+
+from __future__ import annotations
+
+from minethon._events import BotEvent
+from minethon._handlers import BotHandlers
+from minethon.bot import Bot, create_bot
+from minethon.errors import (
     MinethonError,
-    NavigationError,
     NotSpawnedError,
-    PluginError,
+    PlayerNotFoundError,
+    PluginNotInstalledError,
+    VersionPinRequiredError,
 )
-from minethon.models.events import (
-    AutoShotStoppedEvent,
-    BlockBrokenEvent,
-    ChatEvent,
-    CollectCompletedEvent,
-    DeathEvent,
-    EndEvent,
-    GoalFailedEvent,
-    GoalReachedEvent,
-    HealthChangedEvent,
-    KickedEvent,
-    SpawnEvent,
-    WhisperEvent,
-)
-from minethon.models.experience import Experience
-from minethon.models.game_state import GameState
-from minethon.models.item import ItemStack
-from minethon.models.player_info import PlayerInfo
-from minethon.models.recipe import Recipe
-from minethon.models.time_state import TimeState
-from minethon.models.vec3 import Vec3
-from minethon.models.weapon import Weapon
-from minethon.models.window import TradeOffer, VillagerSession, WindowHandle
-from minethon.raw import RawBotHandle
 
 __all__ = [
-    "ArmorAPI",
-    "AutoShotStoppedEvent",
-    "Block",
-    "BlockBrokenEvent",
     "Bot",
-    "BridgeError",
-    "ChatEvent",
-    "CollectCompletedEvent",
-    "CombatAPI",
-    "DashboardAPI",
-    "DeathEvent",
-    "EndEvent",
-    "Entity",
-    "EntityKind",
-    "Experience",
-    "GameState",
-    "GoalFailedEvent",
-    "GoalReachedEvent",
-    "GuiAPI",
-    "HealthChangedEvent",
-    "InventoryError",
-    "ItemStack",
-    "KickedEvent",
-    "MinethonConnectionError",
+    "BotEvent",
+    "BotHandlers",
     "MinethonError",
-    "NavigationAPI",
-    "NavigationError",
     "NotSpawnedError",
-    "ObserveAPI",
-    "PanoramaAPI",
-    "PlayerInfo",
-    "PluginAPI",
-    "PluginError",
-    "RawBotHandle",
-    "Recipe",
-    "SpawnEvent",
-    "TimeState",
-    "ToolAPI",
-    "TradeOffer",
-    "Vec3",
-    "VillagerSession",
-    "Weapon",
-    "WhisperEvent",
-    "WindowHandle",
+    "PlayerNotFoundError",
+    "PluginNotInstalledError",
+    "VersionPinRequiredError",
+    "create_bot",
 ]
