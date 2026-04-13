@@ -87,6 +87,36 @@ def test_on_rejects_string_event() -> None:
         cast("Any", bot).on("chat")
 
 
+def test_unknown_event_shortcut_raises_informative_attribute_error() -> None:
+    bot = bot_module.Bot(_FakeJsBot())
+
+    with pytest.raises(AttributeError, match="未知的事件 shortcut"):
+        _ = bot.on_typo_event  # type: ignore[attr-defined]
+
+    with pytest.raises(AttributeError, match="未知的事件 shortcut"):
+        _ = bot.once_typo_event  # type: ignore[attr-defined]
+
+
+def test_once_chat_shortcut_registers_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[str] = []
+
+    def fake_once(js_bot: object, event: str):
+        def decorator(func: object) -> object:
+            seen.append(event)
+            return func
+
+        return decorator
+
+    monkeypatch.setattr(bot_module, "Once", fake_once)
+    bot = bot_module.Bot(_FakeJsBot())
+
+    @bot.once_chat
+    def _on_chat(*_args: object, **_kwargs: object) -> None:
+        pass
+
+    assert seen == ["chat"]
+
+
 def test_normalize_handler_drops_injected_emitter_and_pads_missing_args() -> None:
     calls: list[tuple[object | None, object | None]] = []
     emitter = object()

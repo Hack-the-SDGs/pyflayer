@@ -121,14 +121,23 @@ class Bot:
         """
         if name.startswith("_"):
             raise AttributeError(name)
-        if name.startswith("on_"):
-            event = EVENT_ATTRIBUTE_MAP.get(name[3:])
+        for prefix, register in (("once_", self.once), ("on_", self.on)):
+            if not name.startswith(prefix):
+                continue
+            suffix = name[len(prefix) :]
+            event = EVENT_ATTRIBUTE_MAP.get(suffix)
             if event is not None:
-                return self.on(event)
-        if name.startswith("once_"):
-            event = EVENT_ATTRIBUTE_MAP.get(name[5:])
-            if event is not None:
-                return self.once(event)
+                return register(event)
+            # Known-shape typo — surface a friendly hint instead of letting
+            # the lookup fall through to the JS proxy and produce a bare
+            # ``AttributeError`` with no guidance for students.
+            sample = ", ".join(f"{prefix}{k}" for k in list(EVENT_ATTRIBUTE_MAP)[:5])
+            msg = (
+                f"未知的事件 shortcut 'bot.{name}'。"
+                f"請確認事件名拼字，或改用 @bot.on(BotEvent.X)。"
+                f"常見例子 {sample} …"
+            )
+            raise AttributeError(msg)
         try:
             return getattr(self._js, name)
         except AttributeError as exc:
