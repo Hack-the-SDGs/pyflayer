@@ -197,9 +197,15 @@ class Bot:
                 plugin installer function. Pass this for packages whose
                 installer is a named export (e.g. pathfinder's ``pathfinder``).
                 Overrides the built-in defaults in ``_PLUGIN_EXPORT_KEY``.
-            **options: keyword options forwarded to higher-order plugin
-                factories (e.g. ``@ssmidge/mineflayer-dashboard``). Regular
-                plugins ignore this.
+            **options: collected into a Python dict and forwarded as a
+                single JS options-object to higher-order plugin factories
+                (e.g. ``dashboard({port: 25566})`` → ``bot.load_plugin(
+                "@ssmidge/mineflayer-dashboard", port=25566)``). This
+                matches the standard JS ``factory(opts)`` convention and
+                is required because JSPyBridge's ``Proxy.__call__`` only
+                accepts positional args — Python ``**kwargs`` expansion
+                would raise ``TypeError`` at the bridge boundary.
+                Regular plugins ignore this.
 
         Returns:
             The raw JS module — use the result to access classes/constants
@@ -212,6 +218,9 @@ class Bot:
         key = export_key or _PLUGIN_EXPORT_KEY.get(name)
         plugin_fn = getattr(module, key) if key else module
         if options:
+            # Pass as a single JS object — JSPyBridge marshals the Python
+            # dict to a JS object literal. `plugin_fn(**options)` would fail
+            # because the bridge's Proxy.__call__ rejects keyword args.
             plugin_fn = plugin_fn(options)
         self._js.loadPlugin(plugin_fn)
         return module
