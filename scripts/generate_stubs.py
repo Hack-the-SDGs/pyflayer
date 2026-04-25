@@ -20,6 +20,8 @@ Run: uv run python scripts/generate_stubs.py
 
 from __future__ import annotations
 
+import ast
+import inspect
 import re
 import subprocess
 import sys
@@ -142,6 +144,115 @@ def parse_stubs_doc() -> dict[str, str]:
     if current_key is not None:
         sections[current_key] = _finalize(current_body)
     return sections
+
+
+def parse_existing_pyi_docstrings(path: Path) -> dict[str, str]:
+    """Extract docstrings from an existing `.pyi` using `parse_stubs_doc`'s key scheme.
+
+    After the one-shot migration from `docs/stubs_zh_tw.md` into `bot.pyi`,
+    the `.pyi` itself becomes the source of truth for hover descriptions.
+    Each regen reads docstrings back from the prior `.pyi` instead of the md
+    file, so human edits made in the `.pyi` survive `generate_stubs.py` runs.
+
+    Key scheme (mirrors `parse_stubs_doc`):
+      - Class itself          → class name (e.g. ``"Bot"``, ``"Vec3"``)
+      - Bot member            → ``"bot.<name>"``
+      - Other class member    → ``"<ClassName>.<name>"``
+      - Event overload        → ``"event:<event_name>"``
+      - Module-level function → ``"<func_name>"``
+
+    AST-based so it tolerates ruff format reflows and any future formatter
+    changes without regex brittleness.
+    """
+    if not path.exists():
+        return {}
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except SyntaxError:
+        return {}
+
+    out: dict[str, str] = {}
+
+    def _add(key: str, doc: str | None) -> None:
+        if doc:
+            out[key] = doc
+
+    def _member_key(class_name: str, member: str) -> str:
+        if class_name == "Bot":
+            return f"bot.{member}"
+        return f"{class_name}.{member}"
+
+    def _event_overload_name(func: ast.FunctionDef) -> str | None:
+        # Only consider @overload-decorated `on(self, event: Literal["X"])`
+        if not any(
+            isinstance(d, ast.Name) and d.id == "overload" for d in func.decorator_list
+        ):
+            return None
+        if len(func.args.args) < 2:
+            return None
+        ann = func.args.args[1].annotation
+        if not isinstance(ann, ast.Subscript):
+            return None
+        if not (isinstance(ann.value, ast.Name) and ann.value.id == "Literal"):
+            return None
+        sub = ann.slice
+        if isinstance(sub, ast.Constant) and isinstance(sub.value, str):
+            return sub.value
+        return None
+
+    def _is_str_expr(node: ast.stmt) -> bool:
+        return (
+            isinstance(node, ast.Expr)
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        )
+
+    def _walk_class(cls: ast.ClassDef) -> None:
+        class_name = cls.name
+        _add(class_name, ast.get_docstring(cls, clean=True))
+
+        body = list(cls.body)
+        # Skip the class-level docstring node so we don't pair it as an attr doc
+        idx = 0
+        if body and _is_str_expr(body[0]):
+            idx = 1
+        while idx < len(body):
+            item = body[idx]
+            if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+                name = item.target.id
+                # Attribute docstring lives in the *next* statement; raw value
+                # carries the source's continuation-line indent, so cleandoc()
+                # it the same way ast.get_docstring(clean=True) would for a
+                # method docstring — otherwise format_doc_block stacks indents
+                # on every regen.
+                if idx + 1 < len(body) and _is_str_expr(body[idx + 1]):
+                    raw = body[idx + 1].value.value  # type: ignore[attr-defined]
+                    _add(_member_key(class_name, name), inspect.cleandoc(raw))
+                    idx += 2
+                    continue
+                idx += 1
+                continue
+            if isinstance(item, ast.FunctionDef):
+                name = item.name
+                doc = ast.get_docstring(item, clean=True)
+                if class_name == "Bot" and name in {"on", "once"}:
+                    ev = _event_overload_name(item)
+                    if ev is not None:
+                        _add(f"event:{ev}", doc)
+                        idx += 1
+                        continue
+                _add(_member_key(class_name, name), doc)
+                idx += 1
+                continue
+            idx += 1
+
+    for top in tree.body:
+        if isinstance(top, ast.ClassDef):
+            _walk_class(top)
+        elif isinstance(top, ast.FunctionDef):
+            _add(top.name, ast.get_docstring(top, clean=True))
+
+    return out
 
 
 def format_doc_block(body: str, indent: str) -> list[str]:
@@ -2413,15 +2524,21 @@ def main() -> None:
     out.append("")
 
     raw_text = "\n".join(out)
-    descriptions = parse_stubs_doc()
+    # Source of truth for hover descriptions is now the existing .pyi itself.
+    # docs/stubs_zh_tw.md was a one-time seed and is no longer consulted.
+    descriptions = parse_existing_pyi_docstrings(OUT_PATH)
     if descriptions:
         final_text = inject_docstrings(raw_text, descriptions)
         print(
-            f"injected docstrings for {len(descriptions)} symbols from {STUBS_DOC.name}"
+            f"preserved docstrings for {len(descriptions)} symbols "
+            f"from existing {OUT_PATH.name}"
         )
     else:
         final_text = raw_text
-        print(f"no stubs doc at {STUBS_DOC}; skipping docstring injection")
+        print(
+            f"no existing docstrings in {OUT_PATH}; "
+            "first-run regen produces a stub without descriptions"
+        )
     final_text = normalize_pyi_method_bodies(final_text)
     OUT_PATH.write_text(final_text)
     events_text = render_events_module(event_callbacks)

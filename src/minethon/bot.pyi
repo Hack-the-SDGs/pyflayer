@@ -2165,7 +2165,7 @@ class Bot:
 
         Args:
             block: 招牌 `Block`
-            text: 新文字（可用 `\n` 分行）
+            text: 新文字（可用 `換行符` 分行）
             back: `True` 寫到背面（1.20+）；預設寫正面
         """
 
@@ -4710,234 +4710,331 @@ class Bot:
 
     # Shortcut decorators for better IDE completion in JetBrains/Pylance
     on_action_bar: Callable[[_OnEvent_actionBar], _OnEvent_actionBar]
+    """Same as `bot.on(BotEvent.ACTION_BAR)`."""
     """Same as `bot.on(BotEvent.ACTION_BAR)`. """
     on_block_break_progress_end: Callable[
         [_OnEvent_blockBreakProgressEnd], _OnEvent_blockBreakProgressEnd
     ]
+    """Same as `bot.on(BotEvent.BLOCK_BREAK_PROGRESS_END)`."""
     """Same as `bot.on(BotEvent.BLOCK_BREAK_PROGRESS_END)`. """
     on_block_break_progress_observed: Callable[
         [_OnEvent_blockBreakProgressObserved], _OnEvent_blockBreakProgressObserved
     ]
+    """Same as `bot.on(BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED)`."""
     """Same as `bot.on(BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED)`. """
     on_block_update: Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]
+    """Same as `bot.on(BotEvent.BLOCK_UPDATE)`."""
     """Same as `bot.on(BotEvent.BLOCK_UPDATE)`. """
     on_boss_bar_created: Callable[[_OnEvent_bossBarCreated], _OnEvent_bossBarCreated]
+    """Same as `bot.on(BotEvent.BOSS_BAR_CREATED)`."""
     """Same as `bot.on(BotEvent.BOSS_BAR_CREATED)`. """
     on_boss_bar_deleted: Callable[[_OnEvent_bossBarDeleted], _OnEvent_bossBarDeleted]
+    """Same as `bot.on(BotEvent.BOSS_BAR_DELETED)`."""
     """Same as `bot.on(BotEvent.BOSS_BAR_DELETED)`. """
     on_boss_bar_updated: Callable[[_OnEvent_bossBarUpdated], _OnEvent_bossBarUpdated]
+    """Same as `bot.on(BotEvent.BOSS_BAR_UPDATED)`."""
     """Same as `bot.on(BotEvent.BOSS_BAR_UPDATED)`. """
     on_breath: Callable[[_OnEvent_breath], _OnEvent_breath]
+    """Same as `bot.on(BotEvent.BREATH)`."""
     """Same as `bot.on(BotEvent.BREATH)`. """
     on_chat: Callable[[_OnEvent_chat], _OnEvent_chat]
+    """Same as `bot.on(BotEvent.CHAT)`."""
     """Same as `bot.on(BotEvent.CHAT)`. """
     on_chest_lid_move: Callable[[_OnEvent_chestLidMove], _OnEvent_chestLidMove]
+    """Same as `bot.on(BotEvent.CHEST_LID_MOVE)`."""
     """Same as `bot.on(BotEvent.CHEST_LID_MOVE)`. """
     on_chunk_column_load: Callable[[_OnEvent_chunkColumnLoad], _OnEvent_chunkColumnLoad]
+    """Same as `bot.on(BotEvent.CHUNK_COLUMN_LOAD)`."""
     """Same as `bot.on(BotEvent.CHUNK_COLUMN_LOAD)`. """
     on_chunk_column_unload: Callable[
         [_OnEvent_chunkColumnUnload], _OnEvent_chunkColumnUnload
     ]
+    """Same as `bot.on(BotEvent.CHUNK_COLUMN_UNLOAD)`."""
     """Same as `bot.on(BotEvent.CHUNK_COLUMN_UNLOAD)`. """
     on_death: Callable[[_OnEvent_death], _OnEvent_death]
+    """Same as `bot.on(BotEvent.DEATH)`."""
     """Same as `bot.on(BotEvent.DEATH)`. """
     on_digging_aborted: Callable[[_OnEvent_diggingAborted], _OnEvent_diggingAborted]
+    """Same as `bot.on(BotEvent.DIGGING_ABORTED)`."""
     """Same as `bot.on(BotEvent.DIGGING_ABORTED)`. """
     on_digging_completed: Callable[
         [_OnEvent_diggingCompleted], _OnEvent_diggingCompleted
     ]
+    """Same as `bot.on(BotEvent.DIGGING_COMPLETED)`."""
     """Same as `bot.on(BotEvent.DIGGING_COMPLETED)`. """
     on_dismount: Callable[[_OnEvent_dismount], _OnEvent_dismount]
+    """Same as `bot.on(BotEvent.DISMOUNT)`."""
     """Same as `bot.on(BotEvent.DISMOUNT)`. """
     on_end: Callable[[_OnEvent_end], _OnEvent_end]
+    """Same as `bot.on(BotEvent.END)`."""
     """Same as `bot.on(BotEvent.END)`. """
     on_entity_attach: Callable[[_OnEvent_entityAttach], _OnEvent_entityAttach]
+    """Same as `bot.on(BotEvent.ENTITY_ATTACH)`."""
     """Same as `bot.on(BotEvent.ENTITY_ATTACH)`. """
     on_entity_attributes: Callable[
         [_OnEvent_entityAttributes], _OnEvent_entityAttributes
     ]
+    """Same as `bot.on(BotEvent.ENTITY_ATTRIBUTES)`."""
     """Same as `bot.on(BotEvent.ENTITY_ATTRIBUTES)`. """
     on_entity_critical_effect: Callable[
         [_OnEvent_entityCriticalEffect], _OnEvent_entityCriticalEffect
     ]
+    """Same as `bot.on(BotEvent.ENTITY_CRITICAL_EFFECT)`."""
     """Same as `bot.on(BotEvent.ENTITY_CRITICAL_EFFECT)`. """
     on_entity_crouch: Callable[[_OnEvent_entityCrouch], _OnEvent_entityCrouch]
+    """Same as `bot.on(BotEvent.ENTITY_CROUCH)`."""
     """Same as `bot.on(BotEvent.ENTITY_CROUCH)`. """
     on_entity_dead: Callable[[_OnEvent_entityDead], _OnEvent_entityDead]
+    """Same as `bot.on(BotEvent.ENTITY_DEAD)`."""
     """Same as `bot.on(BotEvent.ENTITY_DEAD)`. """
     on_entity_detach: Callable[[_OnEvent_entityDetach], _OnEvent_entityDetach]
+    """Same as `bot.on(BotEvent.ENTITY_DETACH)`."""
     """Same as `bot.on(BotEvent.ENTITY_DETACH)`. """
     on_entity_eat: Callable[[_OnEvent_entityEat], _OnEvent_entityEat]
+    """Same as `bot.on(BotEvent.ENTITY_EAT)`."""
     """Same as `bot.on(BotEvent.ENTITY_EAT)`. """
     on_entity_eating_grass: Callable[
         [_OnEvent_entityEatingGrass], _OnEvent_entityEatingGrass
     ]
+    """Same as `bot.on(BotEvent.ENTITY_EATING_GRASS)`."""
     """Same as `bot.on(BotEvent.ENTITY_EATING_GRASS)`. """
     on_entity_effect: Callable[[_OnEvent_entityEffect], _OnEvent_entityEffect]
+    """Same as `bot.on(BotEvent.ENTITY_EFFECT)`."""
     """Same as `bot.on(BotEvent.ENTITY_EFFECT)`. """
     on_entity_effect_end: Callable[[_OnEvent_entityEffectEnd], _OnEvent_entityEffectEnd]
+    """Same as `bot.on(BotEvent.ENTITY_EFFECT_END)`."""
     """Same as `bot.on(BotEvent.ENTITY_EFFECT_END)`. """
     on_entity_elytra_flew: Callable[
         [_OnEvent_entityElytraFlew], _OnEvent_entityElytraFlew
     ]
+    """Same as `bot.on(BotEvent.ENTITY_ELYTRA_FLEW)`."""
     """Same as `bot.on(BotEvent.ENTITY_ELYTRA_FLEW)`. """
     on_entity_equip: Callable[[_OnEvent_entityEquip], _OnEvent_entityEquip]
+    """Same as `bot.on(BotEvent.ENTITY_EQUIP)`."""
     """Same as `bot.on(BotEvent.ENTITY_EQUIP)`. """
     on_entity_gone: Callable[[_OnEvent_entityGone], _OnEvent_entityGone]
+    """Same as `bot.on(BotEvent.ENTITY_GONE)`."""
     """Same as `bot.on(BotEvent.ENTITY_GONE)`. """
     on_entity_hand_swap: Callable[[_OnEvent_entityHandSwap], _OnEvent_entityHandSwap]
+    """Same as `bot.on(BotEvent.ENTITY_HAND_SWAP)`."""
     """Same as `bot.on(BotEvent.ENTITY_HAND_SWAP)`. """
     on_entity_hurt: Callable[[_OnEvent_entityHurt], _OnEvent_entityHurt]
+    """Same as `bot.on(BotEvent.ENTITY_HURT)`."""
     """Same as `bot.on(BotEvent.ENTITY_HURT)`. """
     on_entity_magic_critical_effect: Callable[
         [_OnEvent_entityMagicCriticalEffect], _OnEvent_entityMagicCriticalEffect
     ]
+    """Same as `bot.on(BotEvent.ENTITY_MAGIC_CRITICAL_EFFECT)`."""
     """Same as `bot.on(BotEvent.ENTITY_MAGIC_CRITICAL_EFFECT)`. """
     on_entity_moved: Callable[[_OnEvent_entityMoved], _OnEvent_entityMoved]
+    """Same as `bot.on(BotEvent.ENTITY_MOVED)`."""
     """Same as `bot.on(BotEvent.ENTITY_MOVED)`. """
     on_entity_shaking_off_water: Callable[
         [_OnEvent_entityShakingOffWater], _OnEvent_entityShakingOffWater
     ]
+    """Same as `bot.on(BotEvent.ENTITY_SHAKING_OFF_WATER)`."""
     """Same as `bot.on(BotEvent.ENTITY_SHAKING_OFF_WATER)`. """
     on_entity_sleep: Callable[[_OnEvent_entitySleep], _OnEvent_entitySleep]
+    """Same as `bot.on(BotEvent.ENTITY_SLEEP)`."""
     """Same as `bot.on(BotEvent.ENTITY_SLEEP)`. """
     on_entity_spawn: Callable[[_OnEvent_entitySpawn], _OnEvent_entitySpawn]
+    """Same as `bot.on(BotEvent.ENTITY_SPAWN)`."""
     """Same as `bot.on(BotEvent.ENTITY_SPAWN)`. """
     on_entity_swing_arm: Callable[[_OnEvent_entitySwingArm], _OnEvent_entitySwingArm]
+    """Same as `bot.on(BotEvent.ENTITY_SWING_ARM)`."""
     """Same as `bot.on(BotEvent.ENTITY_SWING_ARM)`. """
     on_entity_tamed: Callable[[_OnEvent_entityTamed], _OnEvent_entityTamed]
+    """Same as `bot.on(BotEvent.ENTITY_TAMED)`."""
     """Same as `bot.on(BotEvent.ENTITY_TAMED)`. """
     on_entity_taming: Callable[[_OnEvent_entityTaming], _OnEvent_entityTaming]
+    """Same as `bot.on(BotEvent.ENTITY_TAMING)`."""
     """Same as `bot.on(BotEvent.ENTITY_TAMING)`. """
     on_entity_uncrouch: Callable[[_OnEvent_entityUncrouch], _OnEvent_entityUncrouch]
+    """Same as `bot.on(BotEvent.ENTITY_UNCROUCH)`."""
     """Same as `bot.on(BotEvent.ENTITY_UNCROUCH)`. """
     on_entity_update: Callable[[_OnEvent_entityUpdate], _OnEvent_entityUpdate]
+    """Same as `bot.on(BotEvent.ENTITY_UPDATE)`."""
     """Same as `bot.on(BotEvent.ENTITY_UPDATE)`. """
     on_entity_wake: Callable[[_OnEvent_entityWake], _OnEvent_entityWake]
+    """Same as `bot.on(BotEvent.ENTITY_WAKE)`."""
     """Same as `bot.on(BotEvent.ENTITY_WAKE)`. """
     on_error: Callable[[_OnEvent_error], _OnEvent_error]
+    """Same as `bot.on(BotEvent.ERROR)`."""
     """Same as `bot.on(BotEvent.ERROR)`. """
     on_experience: Callable[[_OnEvent_experience], _OnEvent_experience]
+    """Same as `bot.on(BotEvent.EXPERIENCE)`."""
     """Same as `bot.on(BotEvent.EXPERIENCE)`. """
     on_forced_move: Callable[[_OnEvent_forcedMove], _OnEvent_forcedMove]
+    """Same as `bot.on(BotEvent.FORCED_MOVE)`."""
     """Same as `bot.on(BotEvent.FORCED_MOVE)`. """
     on_game: Callable[[_OnEvent_game], _OnEvent_game]
+    """Same as `bot.on(BotEvent.GAME)`."""
     """Same as `bot.on(BotEvent.GAME)`. """
     on_goal_reached: Callable[[_OnEvent_goal_reached], _OnEvent_goal_reached]
+    """Same as `bot.on(BotEvent.GOAL_REACHED)`."""
     """Same as `bot.on(BotEvent.GOAL_REACHED)`. """
     on_goal_updated: Callable[[_OnEvent_goal_updated], _OnEvent_goal_updated]
+    """Same as `bot.on(BotEvent.GOAL_UPDATED)`."""
     """Same as `bot.on(BotEvent.GOAL_UPDATED)`. """
     on_hardcoded_sound_effect_heard: Callable[
         [_OnEvent_hardcodedSoundEffectHeard], _OnEvent_hardcodedSoundEffectHeard
     ]
+    """Same as `bot.on(BotEvent.HARDCODED_SOUND_EFFECT_HEARD)`."""
     """Same as `bot.on(BotEvent.HARDCODED_SOUND_EFFECT_HEARD)`. """
     on_health: Callable[[_OnEvent_health], _OnEvent_health]
+    """Same as `bot.on(BotEvent.HEALTH)`."""
     """Same as `bot.on(BotEvent.HEALTH)`. """
     on_inject_allowed: Callable[[_OnEvent_inject_allowed], _OnEvent_inject_allowed]
+    """Same as `bot.on(BotEvent.INJECT_ALLOWED)`."""
     """Same as `bot.on(BotEvent.INJECT_ALLOWED)`. """
     on_item_drop: Callable[[_OnEvent_itemDrop], _OnEvent_itemDrop]
+    """Same as `bot.on(BotEvent.ITEM_DROP)`."""
     """Same as `bot.on(BotEvent.ITEM_DROP)`. """
     on_kicked: Callable[[_OnEvent_kicked], _OnEvent_kicked]
+    """Same as `bot.on(BotEvent.KICKED)`."""
     """Same as `bot.on(BotEvent.KICKED)`. """
     on_login: Callable[[_OnEvent_login], _OnEvent_login]
+    """Same as `bot.on(BotEvent.LOGIN)`."""
     """Same as `bot.on(BotEvent.LOGIN)`. """
     on_message: Callable[[_OnEvent_message], _OnEvent_message]
+    """Same as `bot.on(BotEvent.MESSAGE)`."""
     """Same as `bot.on(BotEvent.MESSAGE)`. """
     on_messagestr: Callable[[_OnEvent_messagestr], _OnEvent_messagestr]
+    """Same as `bot.on(BotEvent.MESSAGESTR)`."""
     """Same as `bot.on(BotEvent.MESSAGESTR)`. """
     on_mount: Callable[[_OnEvent_mount], _OnEvent_mount]
+    """Same as `bot.on(BotEvent.MOUNT)`."""
     """Same as `bot.on(BotEvent.MOUNT)`. """
     on_move: Callable[[_OnEvent_move], _OnEvent_move]
+    """Same as `bot.on(BotEvent.MOVE)`."""
     """Same as `bot.on(BotEvent.MOVE)`. """
     on_note_heard: Callable[[_OnEvent_noteHeard], _OnEvent_noteHeard]
+    """Same as `bot.on(BotEvent.NOTE_HEARD)`."""
     """Same as `bot.on(BotEvent.NOTE_HEARD)`. """
     on_particle: Callable[[_OnEvent_particle], _OnEvent_particle]
+    """Same as `bot.on(BotEvent.PARTICLE)`."""
     """Same as `bot.on(BotEvent.PARTICLE)`. """
     on_path_reset: Callable[[_OnEvent_path_reset], _OnEvent_path_reset]
+    """Same as `bot.on(BotEvent.PATH_RESET)`."""
     """Same as `bot.on(BotEvent.PATH_RESET)`. """
     on_path_stop: Callable[[_OnEvent_path_stop], _OnEvent_path_stop]
+    """Same as `bot.on(BotEvent.PATH_STOP)`."""
     """Same as `bot.on(BotEvent.PATH_STOP)`. """
     on_path_update: Callable[[_OnEvent_path_update], _OnEvent_path_update]
+    """Same as `bot.on(BotEvent.PATH_UPDATE)`."""
     """Same as `bot.on(BotEvent.PATH_UPDATE)`. """
     on_physic_tick: Callable[[_OnEvent_physicTick], _OnEvent_physicTick]
+    """Same as `bot.on(BotEvent.PHYSIC_TICK)`."""
     """Same as `bot.on(BotEvent.PHYSIC_TICK)`. """
     on_physics_tick: Callable[[_OnEvent_physicsTick], _OnEvent_physicsTick]
+    """Same as `bot.on(BotEvent.PHYSICS_TICK)`."""
     """Same as `bot.on(BotEvent.PHYSICS_TICK)`. """
     on_piston_move: Callable[[_OnEvent_pistonMove], _OnEvent_pistonMove]
+    """Same as `bot.on(BotEvent.PISTON_MOVE)`."""
     """Same as `bot.on(BotEvent.PISTON_MOVE)`. """
     on_player_collect: Callable[[_OnEvent_playerCollect], _OnEvent_playerCollect]
+    """Same as `bot.on(BotEvent.PLAYER_COLLECT)`."""
     """Same as `bot.on(BotEvent.PLAYER_COLLECT)`. """
     on_player_joined: Callable[[_OnEvent_playerJoined], _OnEvent_playerJoined]
+    """Same as `bot.on(BotEvent.PLAYER_JOINED)`."""
     """Same as `bot.on(BotEvent.PLAYER_JOINED)`. """
     on_player_left: Callable[[_OnEvent_playerLeft], _OnEvent_playerLeft]
+    """Same as `bot.on(BotEvent.PLAYER_LEFT)`."""
     """Same as `bot.on(BotEvent.PLAYER_LEFT)`. """
     on_player_updated: Callable[[_OnEvent_playerUpdated], _OnEvent_playerUpdated]
+    """Same as `bot.on(BotEvent.PLAYER_UPDATED)`."""
     """Same as `bot.on(BotEvent.PLAYER_UPDATED)`. """
     on_rain: Callable[[_OnEvent_rain], _OnEvent_rain]
+    """Same as `bot.on(BotEvent.RAIN)`."""
     """Same as `bot.on(BotEvent.RAIN)`. """
     on_resource_pack: Callable[[_OnEvent_resourcePack], _OnEvent_resourcePack]
+    """Same as `bot.on(BotEvent.RESOURCE_PACK)`."""
     """Same as `bot.on(BotEvent.RESOURCE_PACK)`. """
     on_respawn: Callable[[_OnEvent_respawn], _OnEvent_respawn]
+    """Same as `bot.on(BotEvent.RESPAWN)`."""
     """Same as `bot.on(BotEvent.RESPAWN)`. """
     on_score_removed: Callable[[_OnEvent_scoreRemoved], _OnEvent_scoreRemoved]
+    """Same as `bot.on(BotEvent.SCORE_REMOVED)`."""
     """Same as `bot.on(BotEvent.SCORE_REMOVED)`. """
     on_score_updated: Callable[[_OnEvent_scoreUpdated], _OnEvent_scoreUpdated]
+    """Same as `bot.on(BotEvent.SCORE_UPDATED)`."""
     """Same as `bot.on(BotEvent.SCORE_UPDATED)`. """
     on_scoreboard_created: Callable[
         [_OnEvent_scoreboardCreated], _OnEvent_scoreboardCreated
     ]
+    """Same as `bot.on(BotEvent.SCOREBOARD_CREATED)`."""
     """Same as `bot.on(BotEvent.SCOREBOARD_CREATED)`. """
     on_scoreboard_deleted: Callable[
         [_OnEvent_scoreboardDeleted], _OnEvent_scoreboardDeleted
     ]
+    """Same as `bot.on(BotEvent.SCOREBOARD_DELETED)`."""
     """Same as `bot.on(BotEvent.SCOREBOARD_DELETED)`. """
     on_scoreboard_position: Callable[
         [_OnEvent_scoreboardPosition], _OnEvent_scoreboardPosition
     ]
+    """Same as `bot.on(BotEvent.SCOREBOARD_POSITION)`."""
     """Same as `bot.on(BotEvent.SCOREBOARD_POSITION)`. """
     on_scoreboard_title_changed: Callable[
         [_OnEvent_scoreboardTitleChanged], _OnEvent_scoreboardTitleChanged
     ]
+    """Same as `bot.on(BotEvent.SCOREBOARD_TITLE_CHANGED)`."""
     """Same as `bot.on(BotEvent.SCOREBOARD_TITLE_CHANGED)`. """
     on_sleep: Callable[[_OnEvent_sleep], _OnEvent_sleep]
+    """Same as `bot.on(BotEvent.SLEEP)`."""
     """Same as `bot.on(BotEvent.SLEEP)`. """
     on_sound_effect_heard: Callable[
         [_OnEvent_soundEffectHeard], _OnEvent_soundEffectHeard
     ]
+    """Same as `bot.on(BotEvent.SOUND_EFFECT_HEARD)`."""
     """Same as `bot.on(BotEvent.SOUND_EFFECT_HEARD)`. """
     on_spawn: Callable[[_OnEvent_spawn], _OnEvent_spawn]
+    """Same as `bot.on(BotEvent.SPAWN)`."""
     """Same as `bot.on(BotEvent.SPAWN)`. """
     on_spawn_reset: Callable[[_OnEvent_spawnReset], _OnEvent_spawnReset]
+    """Same as `bot.on(BotEvent.SPAWN_RESET)`."""
     """Same as `bot.on(BotEvent.SPAWN_RESET)`. """
     on_team_created: Callable[[_OnEvent_teamCreated], _OnEvent_teamCreated]
+    """Same as `bot.on(BotEvent.TEAM_CREATED)`."""
     """Same as `bot.on(BotEvent.TEAM_CREATED)`. """
     on_team_member_added: Callable[[_OnEvent_teamMemberAdded], _OnEvent_teamMemberAdded]
+    """Same as `bot.on(BotEvent.TEAM_MEMBER_ADDED)`."""
     """Same as `bot.on(BotEvent.TEAM_MEMBER_ADDED)`. """
     on_team_member_removed: Callable[
         [_OnEvent_teamMemberRemoved], _OnEvent_teamMemberRemoved
     ]
+    """Same as `bot.on(BotEvent.TEAM_MEMBER_REMOVED)`."""
     """Same as `bot.on(BotEvent.TEAM_MEMBER_REMOVED)`. """
     on_team_removed: Callable[[_OnEvent_teamRemoved], _OnEvent_teamRemoved]
+    """Same as `bot.on(BotEvent.TEAM_REMOVED)`."""
     """Same as `bot.on(BotEvent.TEAM_REMOVED)`. """
     on_team_updated: Callable[[_OnEvent_teamUpdated], _OnEvent_teamUpdated]
+    """Same as `bot.on(BotEvent.TEAM_UPDATED)`."""
     """Same as `bot.on(BotEvent.TEAM_UPDATED)`. """
     on_time: Callable[[_OnEvent_time], _OnEvent_time]
+    """Same as `bot.on(BotEvent.TIME)`."""
     """Same as `bot.on(BotEvent.TIME)`. """
     on_title: Callable[[_OnEvent_title], _OnEvent_title]
+    """Same as `bot.on(BotEvent.TITLE)`."""
     """Same as `bot.on(BotEvent.TITLE)`. """
     on_unmatched_message: Callable[
         [_OnEvent_unmatchedMessage], _OnEvent_unmatchedMessage
     ]
+    """Same as `bot.on(BotEvent.UNMATCHED_MESSAGE)`."""
     """Same as `bot.on(BotEvent.UNMATCHED_MESSAGE)`. """
     on_used_firework: Callable[[_OnEvent_usedFirework], _OnEvent_usedFirework]
+    """Same as `bot.on(BotEvent.USED_FIREWORK)`."""
     """Same as `bot.on(BotEvent.USED_FIREWORK)`. """
     on_wake: Callable[[_OnEvent_wake], _OnEvent_wake]
+    """Same as `bot.on(BotEvent.WAKE)`."""
     """Same as `bot.on(BotEvent.WAKE)`. """
     on_whisper: Callable[[_OnEvent_whisper], _OnEvent_whisper]
+    """Same as `bot.on(BotEvent.WHISPER)`."""
     """Same as `bot.on(BotEvent.WHISPER)`. """
     on_window_close: Callable[[_OnEvent_windowClose], _OnEvent_windowClose]
+    """Same as `bot.on(BotEvent.WINDOW_CLOSE)`."""
     """Same as `bot.on(BotEvent.WINDOW_CLOSE)`. """
     on_window_open: Callable[[_OnEvent_windowOpen], _OnEvent_windowOpen]
+    """Same as `bot.on(BotEvent.WINDOW_OPEN)`."""
     """Same as `bot.on(BotEvent.WINDOW_OPEN)`. """
 
     @overload
@@ -5917,240 +6014,337 @@ class Bot:
         """
 
     once_action_bar: Callable[[_OnEvent_actionBar], _OnEvent_actionBar]
+    """Same as `bot.once(BotEvent.ACTION_BAR)`."""
     """Same as `bot.once(BotEvent.ACTION_BAR)`. """
     once_block_break_progress_end: Callable[
         [_OnEvent_blockBreakProgressEnd], _OnEvent_blockBreakProgressEnd
     ]
+    """Same as `bot.once(BotEvent.BLOCK_BREAK_PROGRESS_END)`."""
     """Same as `bot.once(BotEvent.BLOCK_BREAK_PROGRESS_END)`. """
     once_block_break_progress_observed: Callable[
         [_OnEvent_blockBreakProgressObserved], _OnEvent_blockBreakProgressObserved
     ]
+    """Same as `bot.once(BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED)`."""
     """Same as `bot.once(BotEvent.BLOCK_BREAK_PROGRESS_OBSERVED)`. """
     once_block_update: Callable[[_OnEvent_blockUpdate], _OnEvent_blockUpdate]
+    """Same as `bot.once(BotEvent.BLOCK_UPDATE)`."""
     """Same as `bot.once(BotEvent.BLOCK_UPDATE)`. """
     once_boss_bar_created: Callable[[_OnEvent_bossBarCreated], _OnEvent_bossBarCreated]
+    """Same as `bot.once(BotEvent.BOSS_BAR_CREATED)`."""
     """Same as `bot.once(BotEvent.BOSS_BAR_CREATED)`. """
     once_boss_bar_deleted: Callable[[_OnEvent_bossBarDeleted], _OnEvent_bossBarDeleted]
+    """Same as `bot.once(BotEvent.BOSS_BAR_DELETED)`."""
     """Same as `bot.once(BotEvent.BOSS_BAR_DELETED)`. """
     once_boss_bar_updated: Callable[[_OnEvent_bossBarUpdated], _OnEvent_bossBarUpdated]
+    """Same as `bot.once(BotEvent.BOSS_BAR_UPDATED)`."""
     """Same as `bot.once(BotEvent.BOSS_BAR_UPDATED)`. """
     once_breath: Callable[[_OnEvent_breath], _OnEvent_breath]
+    """Same as `bot.once(BotEvent.BREATH)`."""
     """Same as `bot.once(BotEvent.BREATH)`. """
     once_chat: Callable[[_OnEvent_chat], _OnEvent_chat]
+    """Same as `bot.once(BotEvent.CHAT)`."""
     """Same as `bot.once(BotEvent.CHAT)`. """
     once_chest_lid_move: Callable[[_OnEvent_chestLidMove], _OnEvent_chestLidMove]
+    """Same as `bot.once(BotEvent.CHEST_LID_MOVE)`."""
     """Same as `bot.once(BotEvent.CHEST_LID_MOVE)`. """
     once_chunk_column_load: Callable[
         [_OnEvent_chunkColumnLoad], _OnEvent_chunkColumnLoad
     ]
+    """Same as `bot.once(BotEvent.CHUNK_COLUMN_LOAD)`."""
     """Same as `bot.once(BotEvent.CHUNK_COLUMN_LOAD)`. """
     once_chunk_column_unload: Callable[
         [_OnEvent_chunkColumnUnload], _OnEvent_chunkColumnUnload
     ]
+    """Same as `bot.once(BotEvent.CHUNK_COLUMN_UNLOAD)`."""
     """Same as `bot.once(BotEvent.CHUNK_COLUMN_UNLOAD)`. """
     once_death: Callable[[_OnEvent_death], _OnEvent_death]
+    """Same as `bot.once(BotEvent.DEATH)`."""
     """Same as `bot.once(BotEvent.DEATH)`. """
     once_digging_aborted: Callable[[_OnEvent_diggingAborted], _OnEvent_diggingAborted]
+    """Same as `bot.once(BotEvent.DIGGING_ABORTED)`."""
     """Same as `bot.once(BotEvent.DIGGING_ABORTED)`. """
     once_digging_completed: Callable[
         [_OnEvent_diggingCompleted], _OnEvent_diggingCompleted
     ]
+    """Same as `bot.once(BotEvent.DIGGING_COMPLETED)`."""
     """Same as `bot.once(BotEvent.DIGGING_COMPLETED)`. """
     once_dismount: Callable[[_OnEvent_dismount], _OnEvent_dismount]
+    """Same as `bot.once(BotEvent.DISMOUNT)`."""
     """Same as `bot.once(BotEvent.DISMOUNT)`. """
     once_end: Callable[[_OnEvent_end], _OnEvent_end]
+    """Same as `bot.once(BotEvent.END)`."""
     """Same as `bot.once(BotEvent.END)`. """
     once_entity_attach: Callable[[_OnEvent_entityAttach], _OnEvent_entityAttach]
+    """Same as `bot.once(BotEvent.ENTITY_ATTACH)`."""
     """Same as `bot.once(BotEvent.ENTITY_ATTACH)`. """
     once_entity_attributes: Callable[
         [_OnEvent_entityAttributes], _OnEvent_entityAttributes
     ]
+    """Same as `bot.once(BotEvent.ENTITY_ATTRIBUTES)`."""
     """Same as `bot.once(BotEvent.ENTITY_ATTRIBUTES)`. """
     once_entity_critical_effect: Callable[
         [_OnEvent_entityCriticalEffect], _OnEvent_entityCriticalEffect
     ]
+    """Same as `bot.once(BotEvent.ENTITY_CRITICAL_EFFECT)`."""
     """Same as `bot.once(BotEvent.ENTITY_CRITICAL_EFFECT)`. """
     once_entity_crouch: Callable[[_OnEvent_entityCrouch], _OnEvent_entityCrouch]
+    """Same as `bot.once(BotEvent.ENTITY_CROUCH)`."""
     """Same as `bot.once(BotEvent.ENTITY_CROUCH)`. """
     once_entity_dead: Callable[[_OnEvent_entityDead], _OnEvent_entityDead]
+    """Same as `bot.once(BotEvent.ENTITY_DEAD)`."""
     """Same as `bot.once(BotEvent.ENTITY_DEAD)`. """
     once_entity_detach: Callable[[_OnEvent_entityDetach], _OnEvent_entityDetach]
+    """Same as `bot.once(BotEvent.ENTITY_DETACH)`."""
     """Same as `bot.once(BotEvent.ENTITY_DETACH)`. """
     once_entity_eat: Callable[[_OnEvent_entityEat], _OnEvent_entityEat]
+    """Same as `bot.once(BotEvent.ENTITY_EAT)`."""
     """Same as `bot.once(BotEvent.ENTITY_EAT)`. """
     once_entity_eating_grass: Callable[
         [_OnEvent_entityEatingGrass], _OnEvent_entityEatingGrass
     ]
+    """Same as `bot.once(BotEvent.ENTITY_EATING_GRASS)`."""
     """Same as `bot.once(BotEvent.ENTITY_EATING_GRASS)`. """
     once_entity_effect: Callable[[_OnEvent_entityEffect], _OnEvent_entityEffect]
+    """Same as `bot.once(BotEvent.ENTITY_EFFECT)`."""
     """Same as `bot.once(BotEvent.ENTITY_EFFECT)`. """
     once_entity_effect_end: Callable[
         [_OnEvent_entityEffectEnd], _OnEvent_entityEffectEnd
     ]
+    """Same as `bot.once(BotEvent.ENTITY_EFFECT_END)`."""
     """Same as `bot.once(BotEvent.ENTITY_EFFECT_END)`. """
     once_entity_elytra_flew: Callable[
         [_OnEvent_entityElytraFlew], _OnEvent_entityElytraFlew
     ]
+    """Same as `bot.once(BotEvent.ENTITY_ELYTRA_FLEW)`."""
     """Same as `bot.once(BotEvent.ENTITY_ELYTRA_FLEW)`. """
     once_entity_equip: Callable[[_OnEvent_entityEquip], _OnEvent_entityEquip]
+    """Same as `bot.once(BotEvent.ENTITY_EQUIP)`."""
     """Same as `bot.once(BotEvent.ENTITY_EQUIP)`. """
     once_entity_gone: Callable[[_OnEvent_entityGone], _OnEvent_entityGone]
+    """Same as `bot.once(BotEvent.ENTITY_GONE)`."""
     """Same as `bot.once(BotEvent.ENTITY_GONE)`. """
     once_entity_hand_swap: Callable[[_OnEvent_entityHandSwap], _OnEvent_entityHandSwap]
+    """Same as `bot.once(BotEvent.ENTITY_HAND_SWAP)`."""
     """Same as `bot.once(BotEvent.ENTITY_HAND_SWAP)`. """
     once_entity_hurt: Callable[[_OnEvent_entityHurt], _OnEvent_entityHurt]
+    """Same as `bot.once(BotEvent.ENTITY_HURT)`."""
     """Same as `bot.once(BotEvent.ENTITY_HURT)`. """
     once_entity_magic_critical_effect: Callable[
         [_OnEvent_entityMagicCriticalEffect], _OnEvent_entityMagicCriticalEffect
     ]
+    """Same as `bot.once(BotEvent.ENTITY_MAGIC_CRITICAL_EFFECT)`."""
     """Same as `bot.once(BotEvent.ENTITY_MAGIC_CRITICAL_EFFECT)`. """
     once_entity_moved: Callable[[_OnEvent_entityMoved], _OnEvent_entityMoved]
+    """Same as `bot.once(BotEvent.ENTITY_MOVED)`."""
     """Same as `bot.once(BotEvent.ENTITY_MOVED)`. """
     once_entity_shaking_off_water: Callable[
         [_OnEvent_entityShakingOffWater], _OnEvent_entityShakingOffWater
     ]
+    """Same as `bot.once(BotEvent.ENTITY_SHAKING_OFF_WATER)`."""
     """Same as `bot.once(BotEvent.ENTITY_SHAKING_OFF_WATER)`. """
     once_entity_sleep: Callable[[_OnEvent_entitySleep], _OnEvent_entitySleep]
+    """Same as `bot.once(BotEvent.ENTITY_SLEEP)`."""
     """Same as `bot.once(BotEvent.ENTITY_SLEEP)`. """
     once_entity_spawn: Callable[[_OnEvent_entitySpawn], _OnEvent_entitySpawn]
+    """Same as `bot.once(BotEvent.ENTITY_SPAWN)`."""
     """Same as `bot.once(BotEvent.ENTITY_SPAWN)`. """
     once_entity_swing_arm: Callable[[_OnEvent_entitySwingArm], _OnEvent_entitySwingArm]
+    """Same as `bot.once(BotEvent.ENTITY_SWING_ARM)`."""
     """Same as `bot.once(BotEvent.ENTITY_SWING_ARM)`. """
     once_entity_tamed: Callable[[_OnEvent_entityTamed], _OnEvent_entityTamed]
+    """Same as `bot.once(BotEvent.ENTITY_TAMED)`."""
     """Same as `bot.once(BotEvent.ENTITY_TAMED)`. """
     once_entity_taming: Callable[[_OnEvent_entityTaming], _OnEvent_entityTaming]
+    """Same as `bot.once(BotEvent.ENTITY_TAMING)`."""
     """Same as `bot.once(BotEvent.ENTITY_TAMING)`. """
     once_entity_uncrouch: Callable[[_OnEvent_entityUncrouch], _OnEvent_entityUncrouch]
+    """Same as `bot.once(BotEvent.ENTITY_UNCROUCH)`."""
     """Same as `bot.once(BotEvent.ENTITY_UNCROUCH)`. """
     once_entity_update: Callable[[_OnEvent_entityUpdate], _OnEvent_entityUpdate]
+    """Same as `bot.once(BotEvent.ENTITY_UPDATE)`."""
     """Same as `bot.once(BotEvent.ENTITY_UPDATE)`. """
     once_entity_wake: Callable[[_OnEvent_entityWake], _OnEvent_entityWake]
+    """Same as `bot.once(BotEvent.ENTITY_WAKE)`."""
     """Same as `bot.once(BotEvent.ENTITY_WAKE)`. """
     once_error: Callable[[_OnEvent_error], _OnEvent_error]
+    """Same as `bot.once(BotEvent.ERROR)`."""
     """Same as `bot.once(BotEvent.ERROR)`. """
     once_experience: Callable[[_OnEvent_experience], _OnEvent_experience]
+    """Same as `bot.once(BotEvent.EXPERIENCE)`."""
     """Same as `bot.once(BotEvent.EXPERIENCE)`. """
     once_forced_move: Callable[[_OnEvent_forcedMove], _OnEvent_forcedMove]
+    """Same as `bot.once(BotEvent.FORCED_MOVE)`."""
     """Same as `bot.once(BotEvent.FORCED_MOVE)`. """
     once_game: Callable[[_OnEvent_game], _OnEvent_game]
+    """Same as `bot.once(BotEvent.GAME)`."""
     """Same as `bot.once(BotEvent.GAME)`. """
     once_goal_reached: Callable[[_OnEvent_goal_reached], _OnEvent_goal_reached]
+    """Same as `bot.once(BotEvent.GOAL_REACHED)`."""
     """Same as `bot.once(BotEvent.GOAL_REACHED)`. """
     once_goal_updated: Callable[[_OnEvent_goal_updated], _OnEvent_goal_updated]
+    """Same as `bot.once(BotEvent.GOAL_UPDATED)`."""
     """Same as `bot.once(BotEvent.GOAL_UPDATED)`. """
     once_hardcoded_sound_effect_heard: Callable[
         [_OnEvent_hardcodedSoundEffectHeard], _OnEvent_hardcodedSoundEffectHeard
     ]
+    """Same as `bot.once(BotEvent.HARDCODED_SOUND_EFFECT_HEARD)`."""
     """Same as `bot.once(BotEvent.HARDCODED_SOUND_EFFECT_HEARD)`. """
     once_health: Callable[[_OnEvent_health], _OnEvent_health]
+    """Same as `bot.once(BotEvent.HEALTH)`."""
     """Same as `bot.once(BotEvent.HEALTH)`. """
     once_inject_allowed: Callable[[_OnEvent_inject_allowed], _OnEvent_inject_allowed]
+    """Same as `bot.once(BotEvent.INJECT_ALLOWED)`."""
     """Same as `bot.once(BotEvent.INJECT_ALLOWED)`. """
     once_item_drop: Callable[[_OnEvent_itemDrop], _OnEvent_itemDrop]
+    """Same as `bot.once(BotEvent.ITEM_DROP)`."""
     """Same as `bot.once(BotEvent.ITEM_DROP)`. """
     once_kicked: Callable[[_OnEvent_kicked], _OnEvent_kicked]
+    """Same as `bot.once(BotEvent.KICKED)`."""
     """Same as `bot.once(BotEvent.KICKED)`. """
     once_login: Callable[[_OnEvent_login], _OnEvent_login]
+    """Same as `bot.once(BotEvent.LOGIN)`."""
     """Same as `bot.once(BotEvent.LOGIN)`. """
     once_message: Callable[[_OnEvent_message], _OnEvent_message]
+    """Same as `bot.once(BotEvent.MESSAGE)`."""
     """Same as `bot.once(BotEvent.MESSAGE)`. """
     once_messagestr: Callable[[_OnEvent_messagestr], _OnEvent_messagestr]
+    """Same as `bot.once(BotEvent.MESSAGESTR)`."""
     """Same as `bot.once(BotEvent.MESSAGESTR)`. """
     once_mount: Callable[[_OnEvent_mount], _OnEvent_mount]
+    """Same as `bot.once(BotEvent.MOUNT)`."""
     """Same as `bot.once(BotEvent.MOUNT)`. """
     once_move: Callable[[_OnEvent_move], _OnEvent_move]
+    """Same as `bot.once(BotEvent.MOVE)`."""
     """Same as `bot.once(BotEvent.MOVE)`. """
     once_note_heard: Callable[[_OnEvent_noteHeard], _OnEvent_noteHeard]
+    """Same as `bot.once(BotEvent.NOTE_HEARD)`."""
     """Same as `bot.once(BotEvent.NOTE_HEARD)`. """
     once_particle: Callable[[_OnEvent_particle], _OnEvent_particle]
+    """Same as `bot.once(BotEvent.PARTICLE)`."""
     """Same as `bot.once(BotEvent.PARTICLE)`. """
     once_path_reset: Callable[[_OnEvent_path_reset], _OnEvent_path_reset]
+    """Same as `bot.once(BotEvent.PATH_RESET)`."""
     """Same as `bot.once(BotEvent.PATH_RESET)`. """
     once_path_stop: Callable[[_OnEvent_path_stop], _OnEvent_path_stop]
+    """Same as `bot.once(BotEvent.PATH_STOP)`."""
     """Same as `bot.once(BotEvent.PATH_STOP)`. """
     once_path_update: Callable[[_OnEvent_path_update], _OnEvent_path_update]
+    """Same as `bot.once(BotEvent.PATH_UPDATE)`."""
     """Same as `bot.once(BotEvent.PATH_UPDATE)`. """
     once_physic_tick: Callable[[_OnEvent_physicTick], _OnEvent_physicTick]
+    """Same as `bot.once(BotEvent.PHYSIC_TICK)`."""
     """Same as `bot.once(BotEvent.PHYSIC_TICK)`. """
     once_physics_tick: Callable[[_OnEvent_physicsTick], _OnEvent_physicsTick]
+    """Same as `bot.once(BotEvent.PHYSICS_TICK)`."""
     """Same as `bot.once(BotEvent.PHYSICS_TICK)`. """
     once_piston_move: Callable[[_OnEvent_pistonMove], _OnEvent_pistonMove]
+    """Same as `bot.once(BotEvent.PISTON_MOVE)`."""
     """Same as `bot.once(BotEvent.PISTON_MOVE)`. """
     once_player_collect: Callable[[_OnEvent_playerCollect], _OnEvent_playerCollect]
+    """Same as `bot.once(BotEvent.PLAYER_COLLECT)`."""
     """Same as `bot.once(BotEvent.PLAYER_COLLECT)`. """
     once_player_joined: Callable[[_OnEvent_playerJoined], _OnEvent_playerJoined]
+    """Same as `bot.once(BotEvent.PLAYER_JOINED)`."""
     """Same as `bot.once(BotEvent.PLAYER_JOINED)`. """
     once_player_left: Callable[[_OnEvent_playerLeft], _OnEvent_playerLeft]
+    """Same as `bot.once(BotEvent.PLAYER_LEFT)`."""
     """Same as `bot.once(BotEvent.PLAYER_LEFT)`. """
     once_player_updated: Callable[[_OnEvent_playerUpdated], _OnEvent_playerUpdated]
+    """Same as `bot.once(BotEvent.PLAYER_UPDATED)`."""
     """Same as `bot.once(BotEvent.PLAYER_UPDATED)`. """
     once_rain: Callable[[_OnEvent_rain], _OnEvent_rain]
+    """Same as `bot.once(BotEvent.RAIN)`."""
     """Same as `bot.once(BotEvent.RAIN)`. """
     once_resource_pack: Callable[[_OnEvent_resourcePack], _OnEvent_resourcePack]
+    """Same as `bot.once(BotEvent.RESOURCE_PACK)`."""
     """Same as `bot.once(BotEvent.RESOURCE_PACK)`. """
     once_respawn: Callable[[_OnEvent_respawn], _OnEvent_respawn]
+    """Same as `bot.once(BotEvent.RESPAWN)`."""
     """Same as `bot.once(BotEvent.RESPAWN)`. """
     once_score_removed: Callable[[_OnEvent_scoreRemoved], _OnEvent_scoreRemoved]
+    """Same as `bot.once(BotEvent.SCORE_REMOVED)`."""
     """Same as `bot.once(BotEvent.SCORE_REMOVED)`. """
     once_score_updated: Callable[[_OnEvent_scoreUpdated], _OnEvent_scoreUpdated]
+    """Same as `bot.once(BotEvent.SCORE_UPDATED)`."""
     """Same as `bot.once(BotEvent.SCORE_UPDATED)`. """
     once_scoreboard_created: Callable[
         [_OnEvent_scoreboardCreated], _OnEvent_scoreboardCreated
     ]
+    """Same as `bot.once(BotEvent.SCOREBOARD_CREATED)`."""
     """Same as `bot.once(BotEvent.SCOREBOARD_CREATED)`. """
     once_scoreboard_deleted: Callable[
         [_OnEvent_scoreboardDeleted], _OnEvent_scoreboardDeleted
     ]
+    """Same as `bot.once(BotEvent.SCOREBOARD_DELETED)`."""
     """Same as `bot.once(BotEvent.SCOREBOARD_DELETED)`. """
     once_scoreboard_position: Callable[
         [_OnEvent_scoreboardPosition], _OnEvent_scoreboardPosition
     ]
+    """Same as `bot.once(BotEvent.SCOREBOARD_POSITION)`."""
     """Same as `bot.once(BotEvent.SCOREBOARD_POSITION)`. """
     once_scoreboard_title_changed: Callable[
         [_OnEvent_scoreboardTitleChanged], _OnEvent_scoreboardTitleChanged
     ]
+    """Same as `bot.once(BotEvent.SCOREBOARD_TITLE_CHANGED)`."""
     """Same as `bot.once(BotEvent.SCOREBOARD_TITLE_CHANGED)`. """
     once_sleep: Callable[[_OnEvent_sleep], _OnEvent_sleep]
+    """Same as `bot.once(BotEvent.SLEEP)`."""
     """Same as `bot.once(BotEvent.SLEEP)`. """
     once_sound_effect_heard: Callable[
         [_OnEvent_soundEffectHeard], _OnEvent_soundEffectHeard
     ]
+    """Same as `bot.once(BotEvent.SOUND_EFFECT_HEARD)`."""
     """Same as `bot.once(BotEvent.SOUND_EFFECT_HEARD)`. """
     once_spawn: Callable[[_OnEvent_spawn], _OnEvent_spawn]
+    """Same as `bot.once(BotEvent.SPAWN)`."""
     """Same as `bot.once(BotEvent.SPAWN)`. """
     once_spawn_reset: Callable[[_OnEvent_spawnReset], _OnEvent_spawnReset]
+    """Same as `bot.once(BotEvent.SPAWN_RESET)`."""
     """Same as `bot.once(BotEvent.SPAWN_RESET)`. """
     once_team_created: Callable[[_OnEvent_teamCreated], _OnEvent_teamCreated]
+    """Same as `bot.once(BotEvent.TEAM_CREATED)`."""
     """Same as `bot.once(BotEvent.TEAM_CREATED)`. """
     once_team_member_added: Callable[
         [_OnEvent_teamMemberAdded], _OnEvent_teamMemberAdded
     ]
+    """Same as `bot.once(BotEvent.TEAM_MEMBER_ADDED)`."""
     """Same as `bot.once(BotEvent.TEAM_MEMBER_ADDED)`. """
     once_team_member_removed: Callable[
         [_OnEvent_teamMemberRemoved], _OnEvent_teamMemberRemoved
     ]
+    """Same as `bot.once(BotEvent.TEAM_MEMBER_REMOVED)`."""
     """Same as `bot.once(BotEvent.TEAM_MEMBER_REMOVED)`. """
     once_team_removed: Callable[[_OnEvent_teamRemoved], _OnEvent_teamRemoved]
+    """Same as `bot.once(BotEvent.TEAM_REMOVED)`."""
     """Same as `bot.once(BotEvent.TEAM_REMOVED)`. """
     once_team_updated: Callable[[_OnEvent_teamUpdated], _OnEvent_teamUpdated]
+    """Same as `bot.once(BotEvent.TEAM_UPDATED)`."""
     """Same as `bot.once(BotEvent.TEAM_UPDATED)`. """
     once_time: Callable[[_OnEvent_time], _OnEvent_time]
+    """Same as `bot.once(BotEvent.TIME)`."""
     """Same as `bot.once(BotEvent.TIME)`. """
     once_title: Callable[[_OnEvent_title], _OnEvent_title]
+    """Same as `bot.once(BotEvent.TITLE)`."""
     """Same as `bot.once(BotEvent.TITLE)`. """
     once_unmatched_message: Callable[
         [_OnEvent_unmatchedMessage], _OnEvent_unmatchedMessage
     ]
+    """Same as `bot.once(BotEvent.UNMATCHED_MESSAGE)`."""
     """Same as `bot.once(BotEvent.UNMATCHED_MESSAGE)`. """
     once_used_firework: Callable[[_OnEvent_usedFirework], _OnEvent_usedFirework]
+    """Same as `bot.once(BotEvent.USED_FIREWORK)`."""
     """Same as `bot.once(BotEvent.USED_FIREWORK)`. """
     once_wake: Callable[[_OnEvent_wake], _OnEvent_wake]
+    """Same as `bot.once(BotEvent.WAKE)`."""
     """Same as `bot.once(BotEvent.WAKE)`. """
     once_whisper: Callable[[_OnEvent_whisper], _OnEvent_whisper]
+    """Same as `bot.once(BotEvent.WHISPER)`."""
     """Same as `bot.once(BotEvent.WHISPER)`. """
     once_window_close: Callable[[_OnEvent_windowClose], _OnEvent_windowClose]
+    """Same as `bot.once(BotEvent.WINDOW_CLOSE)`."""
     """Same as `bot.once(BotEvent.WINDOW_CLOSE)`. """
     once_window_open: Callable[[_OnEvent_windowOpen], _OnEvent_windowOpen]
+    """Same as `bot.once(BotEvent.WINDOW_OPEN)`."""
     """Same as `bot.once(BotEvent.WINDOW_OPEN)`. """
 
     # --- Minethon-specific methods (defined in bot.py) ---
