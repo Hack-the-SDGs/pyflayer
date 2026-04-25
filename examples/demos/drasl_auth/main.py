@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import os
 
-from minethon import BotEvent, BotHandlers, create_bot
+from minethon import EventAdaptor, create_bot
 from minethon.models import ChatMessage
 
 
@@ -29,7 +29,7 @@ def main() -> None:
         session_server=os.environ["MC_SESSION_SERVER"],
     )
 
-    class Handler(BotHandlers):
+    class Events(EventAdaptor):
         def on_login(self) -> None:
             print(f"Logged in as {bot.username}")
 
@@ -38,35 +38,43 @@ def main() -> None:
             print(f"Spawned at ({p.x:.1f}, {p.y:.1f}, {p.z:.1f})")
             bot.chat("Hello from minethon!")
 
-    bot.bind(Handler())
+        def on_chat(
+            self,
+            username: str,
+            message: str,
+            translate: str | None,
+            json_msg: ChatMessage,
+            matches: list[str] | None,
+        ) -> None:
+            if username == bot.username:
+                return
 
-    @bot.on_chat
-    def on_chat(
-        username: str,
-        message: str,
-        translate: str | None,
-        json_msg: ChatMessage,
-        matches: list[str] | None,
-    ) -> None:
-        if username == bot.username:
-            return
-        if message == "quit":
-            bot.quit("bye")
-        elif message == "where":
-            p = bot.entity.position
-            bot.chat(f"I'm at ({p.x:.1f}, {p.y:.1f}, {p.z:.1f})")
-        elif message == "players":
-            names = list(bot.players)  # dict-like keys
-            bot.chat(f"Online: {', '.join(names)}")
+            if message == "quit":
+                bot.quit("bye")
 
-    @bot.on(BotEvent.KICKED)
-    def on_kicked(reason: str, logged_in: bool) -> None:
-        print(f"Kicked (loggedIn={logged_in}): {reason}")
+            elif message == "where":
+                if (e := bot.entity) is None:
+                    return
 
-    @bot.on_end
-    def on_end(reason: str) -> None:
-        print(f"Disconnected: {reason}")
+                if (p := e.position) is None:
+                    return
 
+                bot.chat(f"I'm at ({p.x:.1f}, {p.y:.1f}, {p.z:.1f})")
+
+            elif message == "players":
+                names = list(bot.players)
+                bot.chat(f"Online: {', '.join(names)}")
+
+        def on_kicked(self, reason: str, logged_in: bool) -> None:
+            print(f"Kicked (loggedIn={logged_in}): {reason}")
+
+        def on_death(self) -> None:
+            print()
+
+        def on_end(self, reason: str) -> None:
+            print(f"Disconnected: {reason}")
+
+    bot.bind(Events())
     bot.run_forever()
 
 
