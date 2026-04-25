@@ -11,24 +11,27 @@ cd "$(dirname "$0")/.."
 
 MODE="${1:-format}"
 
-echo "[1/5] regenerate stubs…"
+echo "[1/6] regenerate stubs…"
 uv run python scripts/generate_stubs.py
 
 if [[ "$MODE" == "--check" ]]; then
-    echo "[2/5] ruff format --check…"
+    echo "[2/6] ruff format --check…"
     uv run ruff format --check src scripts tests
 else
-    echo "[2/5] ruff format…"
+    echo "[2/6] ruff format…"
     uv run ruff format src scripts tests
 fi
 
-echo "[3/5] ruff check…"
+echo "[3/6] ruff check…"
 uv run ruff check src scripts tests
 
-echo "[4/5] pyright…"
+echo "[4/6] pyright…"
 uv run pyright src/
 
-echo "[5/5] pytest (unit)…"
+echo "[5/6] pytest (unit)…"
 uv run pytest -m "not integration" --tb=short -q
+
+echo "[6/6] check_stubs (TS↔.pyi drift gate)…"
+uv run python scripts/check_stubs.py
 
 echo "✓ all green"

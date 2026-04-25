@@ -142,7 +142,12 @@ uv run ruff format src scripts tests
 uv run ruff check src scripts tests
 uv run pyright src/
 uv run pytest -m "not integration" --tb=short -q
+uv run python scripts/check_stubs.py        # TS d.ts ↔ bot.pyi drift gate
 ```
+
+`scripts/parse_dts.py` 是 TS 解析器的 stable public surface（目前 façade
+re-export 自 `generate_stubs.py`）；`scripts/check_stubs.py` 用它比對
+mineflayer d.ts 跟現存 `bot.pyi` 的 class member 列表，缺項會 exit 1。
 
 `src/mineflayer/` 是 legacy / scratch 區，不納入目前 package 的 lint 與 pyright 範圍。
 
